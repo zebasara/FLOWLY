@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Flowly</string>
+    <string name="tagline">moverse tiene recompensa</string>
+    <!-- Auth -->
+    <string name="create_account">Crear mi cuenta</string>
+    <string name="already_have_account">Ya tengo cuenta</string>
+    <string name="login">Ingresar</string>
+    <string name="continue_with_google">Continuar con Google</string>
+    <string name="forgot_password">Olvidé mi contraseña</string>
+    <!-- Nav -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_canjes">Canjes</string>
+    <string name="nav_store">Tienda</string>
+    <string name="nav_rankings">Rankings</string>
+    <string name="nav_profile">Perfil</string>
+    <!-- MOVE -->
+    <string name="move_token">MOVE</string>
+    <string name="daily_limit">Límite diario</string>
+</resources>

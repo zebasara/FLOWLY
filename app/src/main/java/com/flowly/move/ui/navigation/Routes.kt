@@ -1,0 +1,28 @@
+package com.flowly.move.ui.navigation
+
+object Routes {
+    const val ONBOARDING       = "onboarding"
+    const val LOGIN            = "login"
+    const val REGISTER         = "register"
+    const val COMPLETE_PROFILE = "complete_profile/{uid}"
+    const val HOME             = "home"
+    const val MAP              = "map"
+    const val VIDEO            = "video"
+    const val CANJES           = "canjes"
+    const val CONFIRM_CANJE    = "confirm_canje/{amount}/{move}"
+    const val MY_CANJES        = "my_canjes"
+    const val STORE            = "store"
+    const val RANKINGS         = "rankings"
+    const val LEVELS           = "levels"
+    const val PROFILE          = "profile"
+    const val HOLDING          = "holding"
+    const val CONFIRM_HOLDING  = "confirm_holding/{move}/{months}"
+    const val BLOCKCHAIN       = "blockchain"
+    const val NOTIFICATIONS    = "notifications"
+    const val REFERRALS        = "referrals"
+    const val EDIT_PROFILE     = "edit_profile"
+
+    fun completeProfile(uid: String) = "complete_profile/$uid"
+    fun confirmCanje(amount: String, move: String) = "confirm_canje/$amount/$move"
+    fun confirmHolding(move: Int, months: Int) = "confirm_holding/$move/$months"
+}

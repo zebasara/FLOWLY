@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!-- Flowly palette -->
+    <color name="flowly_bg">#0A120A</color>
+    <color name="flowly_card">#141F14</color>
+    <color name="flowly_card2">#1C2A1C</color>
+    <color name="flowly_border">#243024</color>
+    <color name="flowly_accent">#7EE621</color>
+    <color name="flowly_accent2">#F59E0B</color>
+    <color name="flowly_accent3">#60A5FA</color>
+    <color name="flowly_purple">#A78BFA</color>
+    <color name="flowly_text">#F0F4FF</color>
+    <color name="flowly_muted">#8892A4</color>
+    <color name="flowly_danger">#F87171</color>
+    <color name="flowly_success">#34D399</color>
+    <color name="flowly_warn">#FBBF24</color>
+</resources>
