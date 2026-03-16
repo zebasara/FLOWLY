@@ -337,7 +337,7 @@
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, collectionGroup, query, orderBy, where, getDocs, limit }
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, collectionGroup, query, orderBy, where, getDocs, getDocsFromServer, limit }
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { getCountFromServer }
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -681,7 +681,7 @@
     try {
       // collectionGroup query: todos los retirosBlockchain donde estado = 'pendiente'
       const q    = query(collectionGroup(db, 'retirosBlockchain'), where('estado', '==', 'pendiente'), orderBy('createdAt', 'desc'), limit(50));
-      const snap = await getDocs(q);
+      const snap = await getDocsFromServer(q);
       if (snap.empty) {
         listEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No hay retiros pendientes. ✅</p>';
         return;
@@ -750,7 +750,7 @@
     listEl.innerHTML = '<div class="loading">Cargando…</div>';
     try {
       const q    = query(collectionGroup(db, 'canjes'), where('estado', '==', 'pendiente'), orderBy('createdAt', 'desc'), limit(50));
-      const snap = await getDocs(q);
+      const snap = await getDocsFromServer(q);
       if (snap.empty) {
         listEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No hay canjes pendientes. ✅</p>';
         return;
