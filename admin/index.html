@@ -119,6 +119,7 @@
     <div class="section">
       <div class="section-title">configuración general</div>
       <div class="card">
+        <!-- Umbral de usuarios -->
         <div class="card-row">
           <div class="field">
             <label>Umbral de usuarios para abrir la tienda</label>
@@ -132,6 +133,24 @@
         <p style="font-size:12px; color:var(--muted)">
           Usuarios actuales: <strong id="user-count" style="color:var(--accent)">…</strong>
         </p>
+
+        <hr/>
+
+        <!-- URL base de referidos -->
+        <div class="card-row" style="align-items:flex-end">
+          <div class="field" style="flex:2">
+            <label>URL base del link de referidos</label>
+            <input type="text" id="referral-base-url"
+                   placeholder="https://flowly.app/r"
+                   style="font-family:monospace" />
+            <p style="font-size:11px;color:var(--muted);margin-top:4px">
+              El link completo del usuario será: <span id="referral-preview" style="color:var(--accent)">URL/CODIGO</span>
+            </p>
+          </div>
+          <div style="padding-bottom:22px; margin-left:12px">
+            <button class="btn btn-primary" onclick="saveReferralUrl()">Guardar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -284,23 +303,40 @@
       const snap = await getDoc(storeRef);
       if (snap.exists()) {
         currentConfig = snap.data();
-        // Si el doc existe pero no tiene productos, inicializar con defaults
         if (!currentConfig.productos || currentConfig.productos.length === 0) {
           currentConfig.productos = DEFAULT_PRODUCTS;
           await setDoc(storeRef, currentConfig);
           showToast('Productos inicializados con valores por defecto ✓');
         }
       } else {
-        // Doc no existe: crear con defaults
-        currentConfig = { umbralUsuarios: 500, productos: DEFAULT_PRODUCTS };
+        currentConfig = { umbralUsuarios: 500, productos: DEFAULT_PRODUCTS, referralBaseUrl: 'https://flowly.app/r' };
         await setDoc(storeRef, currentConfig);
         showToast('Configuración creada con valores por defecto ✓');
       }
       document.getElementById('umbral').value = currentConfig.umbralUsuarios || 500;
+      const urlInput = document.getElementById('referral-base-url');
+      urlInput.value = currentConfig.referralBaseUrl || 'https://flowly.app/r';
+      updateReferralPreview();
       renderProducts(currentConfig.productos || []);
     } catch(e) {
       showToast('Error al cargar config: ' + e.message, true);
     }
+  };
+
+  function updateReferralPreview() {
+    const base = document.getElementById('referral-base-url').value.trim().replace(/\/$/, '');
+    document.getElementById('referral-preview').textContent = base ? base + '/CODIGO_USUARIO' : 'URL/CODIGO';
+  }
+  document.getElementById('referral-base-url').addEventListener('input', updateReferralPreview);
+
+  window.saveReferralUrl = async function() {
+    const url = document.getElementById('referral-base-url').value.trim().replace(/\/$/, '');
+    if (!url) { showToast('Ingresá una URL válida', true); return; }
+    try {
+      await setDoc(storeRef, { ...currentConfig, referralBaseUrl: url });
+      currentConfig.referralBaseUrl = url;
+      showToast('URL de referidos guardada ✓');
+    } catch(e) { showToast('Error: ' + e.message, true); }
   };
 
   async function loadUserCount() {
