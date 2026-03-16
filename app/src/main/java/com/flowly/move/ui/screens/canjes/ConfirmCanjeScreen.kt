@@ -25,7 +25,7 @@ import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
 
 @Composable
-fun ConfirmCanjeScreen(amount: String, move: String, navController: NavController) {
+fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash", navController: NavController) {
     val vm: CanjesViewModel = viewModel()
     val user     by vm.user.collectAsStateWithLifecycle()
     val uiState  by vm.uiState.collectAsStateWithLifecycle()
@@ -151,7 +151,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, navController: NavControlle
             FlowlyPrimaryButton(
                 text    = "Confirmar canje",
                 enabled = aliasMP.isNotBlank(),
-                onClick = { vm.confirmarCanje(amount, moveInt) }
+                onClick = { vm.confirmarCanje(amount, moveInt, categoria) }
             )
 
             Spacer(Modifier.height(8.dp))

@@ -14,13 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
 
@@ -121,6 +124,7 @@ fun FlowlyInput(
     label: String,
     placeholder: String = "",
     isPassword: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -135,6 +139,7 @@ fun FlowlyInput(
             onValueChange = onValueChange,
             placeholder = { Text(placeholder, color = FlowlyMuted, fontSize = 13.sp) },
             visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = keyboardOptions,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
@@ -197,22 +202,34 @@ fun FlowlyProgressBar(
 // ── Avatar ────────────────────────────────────────────────────
 
 @Composable
-fun FlowlyAvatar(initials: String, size: Dp = 34.dp, modifier: Modifier = Modifier) {
+fun FlowlyAvatar(
+    initials: String,
+    photoUrl: String = "",
+    size: Dp = 34.dp,
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .size(size)
-            .background(
-                Brush.linearGradient(listOf(FlowlyAccent, FlowlyAccent2)),
-                CircleShape
-            ),
+            .clip(CircleShape)
+            .background(Brush.linearGradient(listOf(FlowlyAccent, FlowlyAccent2))),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            initials.take(2).uppercase(),
-            fontSize = (size.value * 0.38f).sp,
-            fontWeight = FontWeight.Bold,
-            color = FlowlyBg
-        )
+        if (photoUrl.isNotBlank()) {
+            AsyncImage(
+                model              = photoUrl,
+                contentDescription = initials,
+                contentScale       = ContentScale.Crop,
+                modifier           = Modifier.fillMaxSize()
+            )
+        } else {
+            Text(
+                initials.take(2).uppercase(),
+                fontSize   = (size.value * 0.38f).sp,
+                fontWeight = FontWeight.Bold,
+                color      = FlowlyBg
+            )
+        }
     }
 }
 

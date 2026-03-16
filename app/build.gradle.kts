@@ -29,12 +29,17 @@ android {
         // Credenciales inyectadas desde secrets.properties
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID",
             "\"${secrets.getProperty("GOOGLE_WEB_CLIENT_ID", "")}\"")
-        buildConfigField("String", "ADMOB_APP_ID",
-            "\"${secrets.getProperty("ADMOB_APP_ID", "ca-app-pub-3940256099942544~3347511713")}\"")
-        buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID",
-            "\"${secrets.getProperty("ADMOB_REWARDED_AD_UNIT_ID", "ca-app-pub-3940256099942544/5224354917")}\"")
-        buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID",
-            "\"${secrets.getProperty("ADMOB_BANNER_AD_UNIT_ID", "ca-app-pub-3940256099942544/6300978111")}\"")
+        // IDs de AdMob — si están vacíos en secrets.properties se usan los IDs de prueba oficiales
+        val admobAppId = secrets.getProperty("ADMOB_APP_ID", "")
+            .takeIf { it.isNotBlank() } ?: "ca-app-pub-3940256099942544~3347511713"
+        val admobRewardedId = secrets.getProperty("ADMOB_REWARDED_AD_UNIT_ID", "")
+            .takeIf { it.isNotBlank() } ?: "ca-app-pub-3940256099942544/5224354917"
+        val admobBannerId = secrets.getProperty("ADMOB_BANNER_AD_UNIT_ID", "")
+            .takeIf { it.isNotBlank() } ?: "ca-app-pub-3940256099942544/6300978111"
+
+        buildConfigField("String", "ADMOB_APP_ID",            "\"$admobAppId\"")
+        buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"$admobRewardedId\"")
+        buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID",   "\"$admobBannerId\"")
         buildConfigField("String", "MERCADOPAGO_PUBLIC_KEY",
             "\"${secrets.getProperty("MERCADOPAGO_PUBLIC_KEY", "")}\"")
         buildConfigField("String", "BASE_URL",
@@ -44,9 +49,8 @@ android {
         buildConfigField("String", "FLOWLY_CONTRACT_ADDRESS",
             "\"${secrets.getProperty("FLOWLY_CONTRACT_ADDRESS", "0x0000000000000000000000000000000000000000")}\"")
 
-        // AdMob App ID en manifest (necesario para inicializar el SDK)
-        manifestPlaceholders["admobAppId"] =
-            secrets.getProperty("ADMOB_APP_ID", "ca-app-pub-3940256099942544~3347511713")
+        // admobAppId está hardcodeado directamente en AndroidManifest.xml
+        // (evita crashes por placeholder vacío durante desarrollo)
     }
 
     buildFeatures {

@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.flowly.move.data.model.NIVEL_LIMITES
 import com.flowly.move.data.model.TODAS_LAS_INSIGNIAS
 import com.flowly.move.ui.screens.home.UserViewModel
 import com.flowly.move.ui.components.*
@@ -47,7 +48,7 @@ fun ProfileScreen(navController: NavController) {
     val aliasMP       = user?.aliasMercadoPago ?: ""
     val tokensLibres  = user?.tokensActuales ?: 0
     val nivel         = user?.nivel ?: 1
-    val limiteTokens  = user?.limiteTokens ?: 2_000
+    val limiteTokens  = NIVEL_LIMITES.getOrElse(nivel - 1) { NIVEL_LIMITES.first() }
     val moveEnHolding = user?.moveEnHolding ?: 0
     val rachaDias     = user?.diasConsecutivosVideos ?: 0
     val photoUrl      = user?.profilePhotoUrl ?: ""

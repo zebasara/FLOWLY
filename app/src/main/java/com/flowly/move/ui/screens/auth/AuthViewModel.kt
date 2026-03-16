@@ -29,6 +29,13 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
+    /**
+     * Perfil existente cargado desde Firestore.
+     * Se usa para pre-llenar CompleteProfileScreen cuando el usuario reinstala la app.
+     */
+    private val _existingUser = MutableStateFlow<User?>(null)
+    val existingUser: StateFlow<User?> = _existingUser.asStateFlow()
+
     // ── Email / Password ────────────────────────────────────────
 
     fun login(email: String, password: String) {
@@ -42,7 +49,10 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
                 onSuccess = { uid ->
                     val profileOk = repository.isProfileComplete(uid)
                     prefs.setLoggedIn(uid, email, "")
-                    if (profileOk) prefs.setProfileComplete()
+                    if (profileOk) {
+                        val user = flowlyRepository.getUser(uid).getOrNull()
+                        prefs.setProfileComplete(user?.nombre ?: "")
+                    }
                     _uiState.value = AuthUiState.Success(uid, isNewUser = !profileOk)
                 },
                 onFailure = { _uiState.value = AuthUiState.Error(friendlyError(it.message)) }
@@ -82,7 +92,10 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
                     prefs.setLoggedIn(uid, email, "")
                     if (!isNew) {
                         val profileOk = repository.isProfileComplete(uid)
-                        if (profileOk) prefs.setProfileComplete()
+                        if (profileOk) {
+                            val user = flowlyRepository.getUser(uid).getOrNull()
+                            prefs.setProfileComplete(user?.nombre ?: "")
+                        }
                         _uiState.value = AuthUiState.Success(uid, isNewUser = !profileOk)
                     } else {
                         _uiState.value = AuthUiState.Success(uid, isNewUser = true)
@@ -93,8 +106,32 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ── Carga perfil existente ────────────────────────────────────
+
+    /**
+     * Carga el perfil del usuario desde Firestore y lo expone en [existingUser].
+     * Llamar desde CompleteProfileScreen para pre-llenar los campos si el usuario
+     * ya tiene datos (reinstalación / cambio de teléfono).
+     */
+    fun loadExistingProfile(uid: String) {
+        viewModelScope.launch {
+            _existingUser.value = flowlyRepository.getUser(uid).getOrNull()
+        }
+    }
+
     // ── Save profile (after registration / Google) ───────────────
 
+    /**
+     * Guarda el perfil del usuario.
+     *
+     * ⚠️  REGLA CRÍTICA: si el usuario YA EXISTE en Firestore (reinstalación, cambio
+     * de teléfono, etc.) se actualiza SOLO los campos de perfil con updateProfile().
+     * Nunca se sobreescribe tokensActuales, nivel, limiteTokens, badges, historial,
+     * createdAt ni ningún otro dato de juego — de lo contrario el usuario perdería
+     * todo su progreso acumulado.
+     *
+     * Si el usuario es NUEVO se crea el documento completo con los valores iniciales.
+     */
     fun saveProfile(
         uid: String,
         nombre: String,
@@ -110,33 +147,57 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
-            val email = repository.currentUser?.email ?: ""
-            val user = User(
-                uid              = uid,
-                nombre           = nombre.trim(),
-                email            = email,
-                telefono         = telefono.trim(),
-                provincia        = provincia.trim(),
-                ciudad           = ciudad.trim(),
-                aliasMercadoPago = alias.trim(),
-                nivel            = 1,
-                limiteTokens     = 2_000,
-                tokensActuales   = 100, // bono de registro
-                badges           = listOf("soy_move"),
-                createdAt        = System.currentTimeMillis()
-            )
-            repository.saveUser(user).fold(
+
+            // Preferir el usuario ya cargado; si no, consultarlo ahora
+            val existingInFirestore = _existingUser.value
+                ?: flowlyRepository.getUser(uid).getOrNull()
+
+            val result = if (existingInFirestore != null) {
+                // ─────────────────────────────────────────────────────────
+                // USUARIO EXISTENTE (reinstalación / cambio de teléfono)
+                // updateProfile() solo toca nombre, telefono, provincia,
+                // ciudad, aliasMercadoPago — el resto queda intacto
+                // ─────────────────────────────────────────────────────────
+                flowlyRepository.updateProfile(
+                    uid       = uid,
+                    nombre    = nombre.trim(),
+                    telefono  = telefono.trim(),
+                    provincia = provincia.trim(),
+                    ciudad    = ciudad.trim(),
+                    alias     = alias.trim()
+                )
+            } else {
+                // ─────────────────────────────────────────────────────────
+                // USUARIO NUEVO — crear documento completo con defaults
+                // ─────────────────────────────────────────────────────────
+                val email = repository.currentUser?.email ?: ""
+                val user = User(
+                    uid              = uid,
+                    nombre           = nombre.trim(),
+                    email            = email,
+                    telefono         = telefono.trim(),
+                    provincia        = provincia.trim(),
+                    ciudad           = ciudad.trim(),
+                    aliasMercadoPago = alias.trim(),
+                    nivel            = 1,
+                    limiteTokens     = 20_000,   // Nivel 1 por defecto
+                    tokensActuales   = 100,       // Bono de registro
+                    badges           = listOf("soy_move"),
+                    createdAt        = System.currentTimeMillis()
+                )
+                repository.saveUser(user)
+            }
+
+            result.fold(
                 onSuccess = {
-                    prefs.setProfileComplete(nombre)
-                    // Procesar código de referido
-                    if (referralCode.isNotBlank()) {
+                    prefs.setProfileComplete(nombre.trim())
+                    // Código de referido: solo para usuarios nuevos
+                    if (existingInFirestore == null && referralCode.isNotBlank()) {
                         flowlyRepository.findUidByReferralCode(referralCode)
                             .getOrNull()
                             ?.let { referidorUid ->
                                 if (referidorUid != uid) {
                                     flowlyRepository.registrarReferido(referidorUid)
-                                    // Guardar quién nos refirió
-                                    flowlyRepository.updateProfile(uid, nombre.trim(), "", "", "", "")
                                 }
                             }
                     }

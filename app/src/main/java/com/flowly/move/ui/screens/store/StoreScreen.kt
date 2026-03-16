@@ -11,12 +11,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.flowly.move.data.model.StoreProduct
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
@@ -111,7 +114,7 @@ fun StoreScreen(navController: NavController) {
                         tokensLibres = tokensLibres,
                         onCanjear  = {
                             navController.navigate(
-                                Routes.confirmCanje(product.montoLabel, product.moveRequerido.toString())
+                                Routes.confirmCanje(product.montoLabel, product.moveRequerido.toString(), product.categoria)
                             )
                         }
                     )
@@ -150,11 +153,21 @@ private fun ProductCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
-                .background(FlowlyCard, RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
+                .height(100.dp)
+                .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+                .background(FlowlyCard),
             contentAlignment = Alignment.Center
         ) {
-            Text(categoryIcon, fontSize = 36.sp)
+            if (product.imagenUrl.isNotBlank()) {
+                AsyncImage(
+                    model             = product.imagenUrl,
+                    contentDescription = product.nombre,
+                    contentScale      = ContentScale.Crop,
+                    modifier          = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(categoryIcon, fontSize = 36.sp)
+            }
         }
 
         Column(modifier = Modifier.padding(12.dp)) {

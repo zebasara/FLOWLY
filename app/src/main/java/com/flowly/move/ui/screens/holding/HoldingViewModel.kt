@@ -64,7 +64,7 @@ class HoldingViewModel(app: Application) : AndroidViewModel(app) {
                 fechaInicio = ahora,
                 fechaFin    = fin
             )
-            repo.createHolding(uid, holding).fold(
+            repo.createHoldingConBadges(uid, holding).fold(
                 onSuccess = {
                     repo.getUser(uid).onSuccess { _user.value = it }
                     repo.getHoldings(uid).onSuccess { _holdings.value = it }

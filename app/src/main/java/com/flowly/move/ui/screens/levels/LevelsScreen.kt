@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.flowly.move.data.model.NIVEL_LIMITES
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.screens.home.UserViewModel
@@ -30,8 +31,6 @@ private data class NivelData(
     val estado: String    // "done" | "curr" | "pending"
 )
 
-private val NIVEL_LIMITES = listOf(2_000, 5_000, 10_000, 18_000, 28_000, 40_000, 55_000, 70_000, 85_000, 100_000)
-
 @Composable
 fun LevelsScreen(navController: NavController) {
     val vm: UserViewModel = viewModel()
@@ -40,8 +39,9 @@ fun LevelsScreen(navController: NavController) {
 
     val nivelActual    = user?.nivel ?: 1
     val tokensActuales = user?.tokensActuales ?: 0
-    val limiteActual   = user?.limiteTokens ?: NIVEL_LIMITES.getOrElse(nivelActual - 1) { 2_000 }
-    val saldoMinimo    = user?.saldoMinimoParaSubir ?: (limiteActual * 3 / 4)
+    // NIVEL_LIMITES es la fuente de verdad — ignora el valor viejo de Firestore
+    val limiteActual   = NIVEL_LIMITES.getOrElse(nivelActual - 1) { NIVEL_LIMITES.first() }
+    val saldoMinimo    = limiteActual * 3 / 4
     val videosConsec   = (user?.diasConsecutivosVideos ?: 0).coerceAtMost(5)
     val nivelSiguiente = nivelActual + 1
     val videosOk       = videosConsec >= 5

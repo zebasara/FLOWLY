@@ -1,10 +1,16 @@
 package com.flowly.move.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.*
 import androidx.navigation.compose.*
+import kotlinx.coroutines.launch
 import com.flowly.move.data.local.UserPreferences
+import com.flowly.move.ui.theme.FlowlyBg
 import com.flowly.move.ui.screens.auth.*
 import com.flowly.move.ui.screens.blockchain.BlockchainScreen
 import com.flowly.move.ui.screens.canjes.*
@@ -26,17 +32,29 @@ fun FlowlyNavGraph() {
     val context = LocalContext.current
     val prefs   = remember { UserPreferences(context) }
 
-    val isLoggedIn        by prefs.isLoggedIn.collectAsState(initial = false)
-    val isOnboardingDone  by prefs.isOnboardingDone.collectAsState(initial = false)
-    val isProfileComplete by prefs.isProfileComplete.collectAsState(initial = false)
-    val userId            by prefs.userId.collectAsState(initial = "")
+    // initial = null → sabemos que DataStore aún no cargó
+    // Cuando emite el primer valor, pasan a Boolean/String → ya podemos navegar
+    val isLoggedIn:        Boolean? by prefs.isLoggedIn.collectAsState(initial = null)
+    val isOnboardingDone:  Boolean? by prefs.isOnboardingDone.collectAsState(initial = null)
+    val isProfileComplete: Boolean? by prefs.isProfileComplete.collectAsState(initial = null)
+    val userId:            String?  by prefs.userId.collectAsState(initial = null)
 
+    // Splash negro mientras DataStore carga (< 50 ms en el 99% de los casos)
+    if (isLoggedIn == null || isOnboardingDone == null || isProfileComplete == null || userId == null) {
+        Box(Modifier.fillMaxSize().background(FlowlyBg))
+        return
+    }
+
+    // DataStore es la fuente de verdad para la sesión.
+    // Firebase Auth restaura su sesión del disco de forma asíncrona — usar currentUser
+    // directamente en este punto puede devolver null en arranque frío aunque el usuario
+    // esté logueado. DataStore se escribe explícitamente en login/logout, por eso es fiable.
     val startDest = when {
-        !isOnboardingDone                   -> Routes.ONBOARDING
-        !isLoggedIn                         -> Routes.LOGIN
-        !isProfileComplete && userId.isNotBlank() -> Routes.completeProfile(userId)
-        !isProfileComplete                  -> Routes.LOGIN
-        else                                -> Routes.HOME
+        !isOnboardingDone!!                               -> Routes.ONBOARDING
+        !isLoggedIn!!                                     -> Routes.LOGIN
+        !isProfileComplete!! && userId!!.isNotBlank()     -> Routes.completeProfile(userId!!)
+        !isProfileComplete!!                              -> Routes.LOGIN
+        else                                              -> Routes.HOME
     }
 
     val navController = rememberNavController()
@@ -44,7 +62,11 @@ fun FlowlyNavGraph() {
     NavHost(navController = navController, startDestination = startDest) {
 
         composable(Routes.ONBOARDING) {
+            val scope = rememberCoroutineScope()
             OnboardingScreen {
+                // Guardar en DataStore ANTES de navegar — sin esto la sesión
+                // se reinicia en cada arranque frío porque isOnboardingDone queda false
+                scope.launch { prefs.setOnboardingDone() }
                 navController.navigate(Routes.LOGIN) {
                     popUpTo(Routes.ONBOARDING) { inclusive = true }
                 }
@@ -88,13 +110,15 @@ fun FlowlyNavGraph() {
         composable(
             Routes.CONFIRM_CANJE,
             arguments = listOf(
-                navArgument("amount") { defaultValue = "0" },
-                navArgument("move")   { defaultValue = "0" }
+                navArgument("amount")    { defaultValue = "0"    },
+                navArgument("move")      { defaultValue = "0"    },
+                navArgument("categoria") { defaultValue = "cash" }
             )
         ) { back ->
             ConfirmCanjeScreen(
-                amount = back.arguments?.getString("amount") ?: "0",
-                move   = back.arguments?.getString("move")   ?: "0",
+                amount    = back.arguments?.getString("amount")    ?: "0",
+                move      = back.arguments?.getString("move")      ?: "0",
+                categoria = back.arguments?.getString("categoria") ?: "cash",
                 navController = navController
             )
         }

@@ -151,6 +151,25 @@
             <button class="btn btn-primary" onclick="saveReferralUrl()">Guardar</button>
           </div>
         </div>
+
+        <hr/>
+
+        <!-- URL de Mercado Pago -->
+        <div class="card-row" style="align-items:flex-end">
+          <div class="field" style="flex:2">
+            <label>Link de descarga Mercado Pago <span style="color:var(--accent)">💳</span></label>
+            <input type="url" id="mp-url"
+                   placeholder="https://mpago.la/tu-link"
+                   style="font-family:monospace" />
+            <p style="font-size:11px;color:var(--muted);margin-top:4px">
+              Se mostrará en la pantalla de Canjes para que los usuarios descarguen MP.
+              Dejá vacío para ocultar el botón.
+            </p>
+          </div>
+          <div style="padding-bottom:22px; margin-left:12px">
+            <button class="btn btn-primary" onclick="saveMercadoPagoUrl()">Guardar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -345,13 +364,13 @@
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
   const firebaseConfig = {
-    apiKey:            "AIzaSyAuDS7u683ge-HxVJpUfMHNJ3Al1XJT5-U",
-    authDomain:        "flowly-be00e.firebaseapp.com",
-    projectId:         "flowly-be00e",
-    storageBucket:     "flowly-be00e.firebasestorage.app",
-    messagingSenderId: "630993807429",
-    appId:             "1:630993807429:web:7f483cc6bd23bd38d25b2c",
-    measurementId:     "G-982YG53L7J"
+    apiKey: "AIzaSyCMn5VvZxN6b9_H4gIqHFd7h-Wtnkzu5TQ",
+    authDomain: "flowly-move.firebaseapp.com",
+    projectId: "flowly-move",
+    storageBucket: "flowly-move.firebasestorage.app",
+    messagingSenderId: "353360357334",
+    appId: "1:353360357334:web:140938bb47940e19d52677",
+    measurementId: "G-746LV8GZYR"
   };
 
   const app          = initializeApp(firebaseConfig);
@@ -412,6 +431,7 @@
       const urlInput = document.getElementById('referral-base-url');
       urlInput.value = currentConfig.referralBaseUrl || 'https://flowly.app/r';
       updateReferralPreview();
+      document.getElementById('mp-url').value = currentConfig.mercadoPagoUrl || '';
       renderProducts(currentConfig.productos || []);
     } catch(e) {
       showToast('Error al cargar config: ' + e.message, true);
@@ -431,6 +451,15 @@
       await setDoc(storeRef, { ...currentConfig, referralBaseUrl: url });
       currentConfig.referralBaseUrl = url;
       showToast('URL de referidos guardada ✓');
+    } catch(e) { showToast('Error: ' + e.message, true); }
+  };
+
+  window.saveMercadoPagoUrl = async function() {
+    const url = document.getElementById('mp-url').value.trim();
+    try {
+      await setDoc(storeRef, { ...currentConfig, mercadoPagoUrl: url });
+      currentConfig.mercadoPagoUrl = url;
+      showToast(url ? 'Link de Mercado Pago guardado ✓' : 'Botón de Mercado Pago ocultado ✓');
     } catch(e) { showToast('Error: ' + e.message, true); }
   };
 

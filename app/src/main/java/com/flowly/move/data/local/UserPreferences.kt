@@ -14,14 +14,15 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "fl
 class UserPreferences(private val context: Context) {
 
     companion object {
-        val IS_LOGGED_IN          = booleanPreferencesKey("is_logged_in")
-        val USER_ID               = stringPreferencesKey("user_id")
-        val USER_EMAIL            = stringPreferencesKey("user_email")
-        val USER_NAME             = stringPreferencesKey("user_name")
-        val PROFILE_COMPLETE      = booleanPreferencesKey("profile_complete")
-        val ONBOARDING_DONE       = booleanPreferencesKey("onboarding_done")
-        val WELCOME_DIALOG_SHOWN  = booleanPreferencesKey("welcome_dialog_shown")
-        val SHOWN_BADGES          = stringSetPreferencesKey("shown_badges")
+        val IS_LOGGED_IN                  = booleanPreferencesKey("is_logged_in")
+        val USER_ID                       = stringPreferencesKey("user_id")
+        val USER_EMAIL                    = stringPreferencesKey("user_email")
+        val USER_NAME                     = stringPreferencesKey("user_name")
+        val PROFILE_COMPLETE              = booleanPreferencesKey("profile_complete")
+        val ONBOARDING_DONE               = booleanPreferencesKey("onboarding_done")
+        val WELCOME_DIALOG_SHOWN          = booleanPreferencesKey("welcome_dialog_shown")
+        val SHOWN_BADGES                  = stringSetPreferencesKey("shown_badges")
+        val LOCATION_SHARING_CONSENTED    = booleanPreferencesKey("location_sharing_consented")
     }
 
     val isLoggedIn: Flow<Boolean> = context.dataStore.data
@@ -56,6 +57,10 @@ class UserPreferences(private val context: Context) {
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it[SHOWN_BADGES] ?: emptySet() }
 
+    val locationSharingConsented: Flow<Boolean> = context.dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[LOCATION_SHARING_CONSENTED] ?: false }
+
     suspend fun setWelcomeDialogShown() {
         context.dataStore.edit { it[WELCOME_DIALOG_SHOWN] = true }
     }
@@ -85,6 +90,10 @@ class UserPreferences(private val context: Context) {
 
     suspend fun setOnboardingDone() {
         context.dataStore.edit { it[ONBOARDING_DONE] = true }
+    }
+
+    suspend fun setLocationSharingConsented() {
+        context.dataStore.edit { it[LOCATION_SHARING_CONSENTED] = true }
     }
 
     suspend fun clearAll() {

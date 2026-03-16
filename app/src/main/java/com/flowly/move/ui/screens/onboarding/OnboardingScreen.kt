@@ -45,17 +45,17 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 FlowlyCard2 {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Nivel 1",      fontSize = 12.sp, color = FlowlyMuted)
-                        Text("2.000 MOVE",   fontSize = 12.sp, color = FlowlyAccent)
+                        Text("20.000 MOVE",  fontSize = 12.sp, color = FlowlyAccent)
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Nivel 5",      fontSize = 12.sp, color = FlowlyMuted)
-                        Text("28.000 MOVE",  fontSize = 12.sp, color = FlowlyAccent)
+                        Text("210.000 MOVE", fontSize = 12.sp, color = FlowlyAccent)
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Nivel 10 máx.", fontSize = 12.sp, color = FlowlyMuted)
-                        Text("100.000 MOVE", fontSize = 12.sp, color = FlowlyAccent)
+                        Text("1.000.000 MOVE", fontSize = 12.sp, color = FlowlyAccent)
                     }
                 }
             }

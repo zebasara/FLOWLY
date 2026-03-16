@@ -27,7 +27,8 @@ class VideoViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _uiState.value = VideoUiState.Loading
             val uid = prefs.userId.first()
-            repo.cobrarVideo(uid, amount).fold(
+            // cobrarVideoConBadges también otorga insignias y actualiza videosCompletadosTotales
+            repo.cobrarVideoConBadges(uid, amount).fold(
                 onSuccess = { _uiState.value = VideoUiState.Success },
                 onFailure = { _uiState.value = VideoUiState.Error(it.message ?: "Error al cobrar recompensa") }
             )

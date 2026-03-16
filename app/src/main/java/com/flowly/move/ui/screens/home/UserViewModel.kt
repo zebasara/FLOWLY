@@ -25,11 +25,13 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    // Diálogos de bienvenida e insignias
+    // ── Diálogos ──────────────────────────────────────────────────────────
+    // La secuencia es: primero welcome (si aplica), luego badge uno por uno.
+    // pendingBadge solo se activa DESPUÉS de que se cierre el welcome dialog.
+
     private val _showWelcomeDialog = MutableStateFlow(false)
     val showWelcomeDialog: StateFlow<Boolean> = _showWelcomeDialog.asStateFlow()
 
-    // Cola de insignias pendientes de mostrar
     private val _pendingBadge = MutableStateFlow<String?>(null)
     val pendingBadge: StateFlow<String?> = _pendingBadge.asStateFlow()
 
@@ -41,26 +43,38 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val uid = prefs.userId.first()
             if (uid.isBlank()) { _isLoading.value = false; return@launch }
+
             repository.getUser(uid).fold(
                 onSuccess = { u ->
-                    _user.value = u
-                    u?.let { checkDialogs(it) }
+                    var finalUser = u
+                    // Para usuarios existentes sin badges, otorgar soy_move
+                    if (u != null && u.badges.isEmpty()) {
+                        flowlyRepository.garantizarBadgeBienvenida(uid)
+                        // Actualizar local sin re-fetch para no tardar
+                        finalUser = u.copy(badges = listOf("soy_move"))
+                    }
+                    _user.value = finalUser
+                    finalUser?.let { checkDialogs(it) }
                 },
-                onFailure = { /* red/perm issue: leave null */ }
+                onFailure = { /* sin red: dejar null */ }
             )
             _isLoading.value = false
         }
     }
 
     private suspend fun checkDialogs(user: User) {
-        // 1. Diálogo de bienvenida (100 MOVE)
         val welcomeShown = prefs.welcomeDialogShown.first()
         if (!welcomeShown) {
+            // Mostrar welcome primero; badges se encolan para después
             _showWelcomeDialog.value = true
+        } else {
+            // Welcome ya fue visto: mostrar primera insignia pendiente
+            checkPendingBadge(user)
         }
+    }
 
-        // 2. Insignias nuevas pendientes de mostrar
-        val shown = prefs.shownBadges.first()
+    private suspend fun checkPendingBadge(user: User) {
+        val shown   = prefs.shownBadges.first()
         val pending = user.badges.firstOrNull { it !in shown }
         _pendingBadge.value = pending
     }
@@ -69,13 +83,14 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             prefs.setWelcomeDialogShown()
             _showWelcomeDialog.value = false
+            // Ahora mostrar la primera insignia pendiente
+            _user.value?.let { checkPendingBadge(it) }
         }
     }
 
     fun dismissBadgeDialog(badgeId: String) {
         viewModelScope.launch {
             prefs.markBadgeShown(badgeId)
-            // Verificar si hay más insignias pendientes
             val shown   = prefs.shownBadges.first()
             val pending = _user.value?.badges?.firstOrNull { it !in shown }
             _pendingBadge.value = pending
@@ -83,6 +98,19 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun refresh() = loadUser()
+
+    /** Refresca datos sin mostrar el spinner de carga (para volver desde otras pantallas). */
+    fun refreshSilently() {
+        if (_isLoading.value) return   // carga inicial en curso, no duplicar
+        viewModelScope.launch {
+            val uid = prefs.userId.first()
+            if (uid.isBlank()) return@launch
+            repository.getUser(uid).fold(
+                onSuccess = { u -> if (u != null) _user.value = u },
+                onFailure = { }
+            )
+        }
+    }
 
     fun signOut(onDone: () -> Unit) {
         viewModelScope.launch {

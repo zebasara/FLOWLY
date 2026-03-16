@@ -1,5 +1,7 @@
 package com.flowly.move.ui.screens.referrals
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -26,29 +29,80 @@ import androidx.navigation.NavController
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.screens.home.UserViewModel
+import com.flowly.move.ui.screens.store.StoreViewModel
 import com.flowly.move.ui.theme.*
 
 @Composable
 fun ReferralsScreen(navController: NavController) {
-    val vm: UserViewModel = viewModel()
-    val user      by vm.user.collectAsStateWithLifecycle()
-    val isLoading by vm.isLoading.collectAsStateWithLifecycle()
+    val userVm: UserViewModel   = viewModel()
+    val storeVm: StoreViewModel = viewModel()
 
+    val user        by userVm.user.collectAsStateWithLifecycle()
+    val isLoading   by userVm.isLoading.collectAsStateWithLifecycle()
+    val storeConfig by storeVm.storeConfig.collectAsStateWithLifecycle()
+
+    val context          = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
-    // Link basado en UID real (primeros 8 chars para ser legible)
-    val referralLink      = if (user != null) "flowly.app/r/${user!!.uid.take(8)}" else ""
+    // URL base configurable desde el panel admin (sin barra final)
+    val baseUrl      = storeConfig?.referralBaseUrl?.trimEnd('/') ?: "https://flowly.app/r"
+    val userCode     = user?.uid?.take(8) ?: ""
+    val referralLink = if (userCode.isNotBlank()) "$baseUrl/$userCode" else ""
+
     val amigosRegistrados = user?.totalReferidos ?: 0
     val moveGanados       = amigosRegistrados * 200
+
+    // ── Helpers de sharing ─────────────────────────────────────────────────
+
+    fun shareViaWhatsApp() {
+        if (referralLink.isBlank()) return
+        val texto = "¡Unite a MOVE y ganamos juntos! Descargá la app y registrate con mi link: $referralLink"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type    = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, texto)
+            setPackage("com.whatsapp")
+        }
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent)
+        } else {
+            // WhatsApp no instalado → share genérico
+            context.startActivity(
+                Intent.createChooser(
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, texto)
+                    },
+                    "Compartir por…"
+                )
+            )
+        }
+    }
+
+    fun shareViaInstagram() {
+        if (referralLink.isBlank()) return
+        // Instagram no tiene un intent estándar para texto/links.
+        // Copiamos el link y abrimos la app para que el usuario lo pegue.
+        clipboardManager.setText(AnnotatedString(referralLink))
+        val instagramIntent = context.packageManager
+            .getLaunchIntentForPackage("com.instagram.android")
+        if (instagramIntent != null) {
+            context.startActivity(instagramIntent)
+        } else {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://play.google.com/store/apps/details?id=com.instagram.android"))
+            )
+        }
+    }
+
+    // ── UI ─────────────────────────────────────────────────────────────────
 
     FlowlyScaffold(navController = navController, currentRoute = Routes.HOME) { padding ->
         if (isLoading) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = FlowlyAccent)
-            }
+                modifier            = Modifier.fillMaxSize().padding(padding),
+                contentAlignment    = Alignment.Center
+            ) { CircularProgressIndicator(color = FlowlyAccent) }
             return@FlowlyScaffold
         }
 
@@ -62,33 +116,33 @@ fun ReferralsScreen(navController: NavController) {
 
             Text(
                 "Referir amigos",
-                fontSize = 17.sp,
+                fontSize   = 17.sp,
                 fontWeight = FontWeight.Bold,
-                color = FlowlyText,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                color      = FlowlyText,
+                modifier   = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
 
-            // Hero
+            // Hero card
             FlowlyCard(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier            = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("👥", fontSize = 36.sp)
                     Spacer(Modifier.height(8.dp))
                     Text(
                         "Invitá amigos y ganás",
-                        fontSize = 16.sp,
+                        fontSize   = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = FlowlyText,
-                        textAlign = TextAlign.Center
+                        color      = FlowlyText,
+                        textAlign  = TextAlign.Center
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "Cada amigo que se registre con tu link te da 200 MOVE. A ellos también les damos 100 MOVE.",
-                        fontSize = 13.sp,
-                        color = FlowlyMuted,
-                        textAlign = TextAlign.Center,
+                        fontSize   = 13.sp,
+                        color      = FlowlyMuted,
+                        textAlign  = TextAlign.Center,
                         lineHeight = 19.sp
                     )
                 }
@@ -98,37 +152,37 @@ fun ReferralsScreen(navController: NavController) {
 
             Text(
                 "TU LINK DE REFERIDO",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF4B6B4B),
+                fontSize      = 10.sp,
+                fontWeight    = FontWeight.SemiBold,
+                color         = Color(0xFF4B6B4B),
                 letterSpacing = 1.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier      = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
+            // Link box
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .background(FlowlyCard2, RoundedCornerShape(12.dp))
                     .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    referralLink,
+                    if (referralLink.isNotBlank()) referralLink else "Cargando…",
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
-                    color = FlowlyAccent,
-                    modifier = Modifier.weight(1f)
+                    fontSize   = 12.sp,
+                    color      = FlowlyAccent,
+                    modifier   = Modifier.weight(1f)
                 )
                 Box(
                     modifier = Modifier
                         .background(FlowlyAccent, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                         .clickable {
-                            if (referralLink.isNotBlank()) {
+                            if (referralLink.isNotBlank())
                                 clipboardManager.setText(AnnotatedString(referralLink))
-                            }
                         }
                         .padding(horizontal = 12.dp, vertical = 7.dp)
                 ) {
@@ -138,28 +192,38 @@ fun ReferralsScreen(navController: NavController) {
 
             Spacer(Modifier.height(10.dp))
 
+            // Compartir
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FlowlySecondaryButton(
                     text     = "📱 WhatsApp",
-                    onClick  = { /* TODO: Intent compartir */ },
+                    onClick  = { shareViaWhatsApp() },
                     modifier = Modifier.weight(1f)
                 )
                 FlowlySecondaryButton(
                     text     = "📸 Instagram",
-                    onClick  = { /* TODO: Intent compartir */ },
+                    onClick  = { shareViaInstagram() },
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Text(
+                "💡 Al tocar Instagram el link se copia automáticamente — pegalo en tu bio o historia.",
+                fontSize   = 11.sp,
+                color      = FlowlyMuted,
+                lineHeight = 16.sp,
+                modifier   = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+            )
 
+            Spacer(Modifier.height(8.dp))
+
+            // Stats
             FlowlyCard(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Amigos registrados", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = FlowlyText)
-                    Text("$amigosRegistrados", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent)
+                    Text("$amigosRegistrados",  fontSize = 16.sp, fontWeight = FontWeight.Bold,   color = FlowlyAccent)
                 }
                 FlowlySeparator()
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

@@ -20,7 +20,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.flowly.move.data.model.NIVEL_LIMITES
 import com.flowly.move.data.model.TODAS_LAS_INSIGNIAS
+import com.flowly.move.data.repository.FlowlyRepository
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
@@ -40,14 +42,25 @@ fun HomeScreen(navController: NavController) {
     ).joinToString(", ")
     val tokensActuales = user?.tokensActuales ?: 0
     val nivel          = user?.nivel ?: 1
-    val limiteTokens   = user?.limiteTokens ?: 2_000
+    val limiteTokens   = NIVEL_LIMITES.getOrElse(nivel - 1) { NIVEL_LIMITES.first() }
     val rachaDias      = user?.diasConsecutivosVideos ?: 0
     val movHoy         = user?.tokenMovimientoHoy ?: 0
+    val kmHoy          = user?.kmHoy ?: 0f
     val moveVideos     = user?.tokenVideosHoy ?: 0
+    val videosHoy      = if (moveVideos > 0) (moveVideos / 50).coerceAtLeast(1) else 0
     val moveEnHolding  = user?.moveEnHolding ?: 0
     val iniciales      = (user?.nombre ?: "")
         .split(" ").filter { it.isNotBlank() }.take(2)
         .joinToString("") { it.first().uppercase() }.ifBlank { "?" }
+
+    // Refrescar datos cada vez que el usuario vuelve a esta pantalla (ej: desde el mapa)
+    DisposableEffect(navController) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            if (destination.route == Routes.HOME) vm.refreshSilently()
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
+    }
 
     // Diálogo de bienvenida — 100 MOVE de registro
     if (showWelcome) {
@@ -101,7 +114,12 @@ fun HomeScreen(navController: NavController) {
                     if (ciudad.isNotBlank())
                         Text(ciudad, fontSize = 12.sp, color = FlowlyMuted)
                 }
-                FlowlyAvatar(iniciales, size = 38.dp, modifier = Modifier.clickable { navController.navigate(Routes.PROFILE) })
+                FlowlyAvatar(
+                    initials = iniciales,
+                    photoUrl = user?.profilePhotoUrl ?: "",
+                    size     = 38.dp,
+                    modifier = Modifier.clickable { navController.navigate(Routes.PROFILE) }
+                )
             }
 
             // Hero card
@@ -148,7 +166,7 @@ fun HomeScreen(navController: NavController) {
             // Hoy
             SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "hoy")
 
-            val movLimiteDiario = 200
+            val movLimiteDiario = FlowlyRepository.DAILY_LIMIT_MOVIMIENTO
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -165,7 +183,12 @@ fun HomeScreen(navController: NavController) {
                     Text("$movHoy", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent2)
                     Text("MOVE movimiento", fontSize = 11.sp, color = FlowlyMuted)
                     FlowlyProgressBar(progress = (movHoy / movLimiteDiario.toFloat()).coerceIn(0f, 1f), color = FlowlyAccent)
-                    Text("${(movHoy * 100 / movLimiteDiario).coerceIn(0, 100)}% del límite", fontSize = 11.sp, color = FlowlyMuted)
+                    Text(
+                        if (kmHoy > 0f) "%.2f km recorridos".format(kmHoy)
+                        else "${(movHoy * 100 / movLimiteDiario).coerceIn(0, 100)}% del límite",
+                        fontSize = 11.sp,
+                        color    = FlowlyMuted
+                    )
                 }
                 Column(
                     modifier = Modifier
@@ -176,8 +199,13 @@ fun HomeScreen(navController: NavController) {
                 ) {
                     Text("$moveVideos", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent3)
                     Text("MOVE de videos", fontSize = 11.sp, color = FlowlyMuted)
-                    FlowlyProgressBar(progress = if (moveVideos > 0) 1f else 0f, color = FlowlyAccent3)
-                    Text(if (moveVideos > 0) "videos completados" else "sin videos hoy", fontSize = 11.sp, color = FlowlyMuted)
+                    FlowlyProgressBar(progress = (moveVideos.toFloat() / FlowlyRepository.DAILY_LIMIT_VIDEOS).coerceIn(0f, 1f), color = FlowlyAccent3)
+                    Text(
+                        if (videosHoy > 0) "$videosHoy ${if (videosHoy == 1) "video" else "videos"} hoy"
+                        else "sin videos hoy",
+                        fontSize = 11.sp,
+                        color    = FlowlyMuted
+                    )
                 }
             }
 

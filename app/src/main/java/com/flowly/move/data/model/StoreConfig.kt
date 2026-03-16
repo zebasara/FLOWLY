@@ -7,12 +7,17 @@ data class StoreProduct(
     val moveRequerido: Int = 0,
     val montoLabel: String = "",   // ej. "$500 ARS"
     val categoria: String = "",    // "cash" | "gift" | "promo"
-    val activo: Boolean = true
+    val activo: Boolean = true,
+    val imagenUrl: String = ""     // URL de Firebase Storage (puede estar vacía)
 )
 
 data class StoreConfig(
     val umbralUsuarios: Int = 500,      // cuántos usuarios para abrir la tienda
-    val productos: List<StoreProduct> = emptyList()
+    val productos: List<StoreProduct> = emptyList(),
+    // URL base del link de referidos (se concatena el código del usuario al final)
+    val referralBaseUrl: String = "https://flowly.app/r/",
+    // URL de Mercado Pago del admin (configurable desde el panel)
+    val mercadoPagoUrl: String = ""
 )
 
 // Productos por defecto (se muestran si Firestore no tiene config aún)

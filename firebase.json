@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "flowly-move",
     "public": "admin",
     "ignore": [
       "firebase.json",

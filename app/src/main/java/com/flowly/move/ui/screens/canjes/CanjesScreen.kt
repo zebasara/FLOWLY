@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,8 +35,10 @@ private data class CanjeOption(
 @Composable
 fun CanjesScreen(navController: NavController) {
     val vm: CanjesViewModel = viewModel()
-    val user      by vm.user.collectAsStateWithLifecycle()
-    val isLoading by vm.isLoading.collectAsStateWithLifecycle()
+    val user           by vm.user.collectAsStateWithLifecycle()
+    val isLoading      by vm.isLoading.collectAsStateWithLifecycle()
+    val mercadoPagoUrl by vm.mercadoPagoUrl.collectAsStateWithLifecycle()
+    val uriHandler      = LocalUriHandler.current
 
     val tokensLibres = user?.tokensActuales ?: 0
     val aliasMP      = user?.aliasMercadoPago ?: ""
@@ -114,6 +117,52 @@ fun CanjesScreen(navController: NavController) {
                     color = FlowlyMuted,
                     lineHeight = 18.sp
                 )
+            }
+
+            // Botón Mercado Pago (solo si hay URL configurada desde el admin)
+            if (mercadoPagoUrl.isNotBlank()) {
+                SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "mercado pago")
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .background(FlowlyCard2, RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable { uriHandler.openUri(mercadoPagoUrl) }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("💳", fontSize = 26.sp)
+                        Column {
+                            Text(
+                                "Descargar Mercado Pago",
+                                fontSize   = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = FlowlyText
+                            )
+                            Text(
+                                "Necesario para recibir tus canjes",
+                                fontSize = 11.sp,
+                                color    = FlowlyMuted
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .background(FlowlyAccent.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text("Descargar", fontSize = 11.sp, color = FlowlyAccent, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
             }
 
             SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "más opciones")

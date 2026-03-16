@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ícono monocromático para la notificación del foreground service.
+    Android 5+ exige que el small icon de notificación sea blanco sobre fondo transparente.
+    Figura estilizada de persona corriendo.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Cabeza -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M13.5,5.5 A1.5,1.5 0,1,0 13.5,2.5 A1.5,1.5 0,1,0 13.5,5.5Z" />
+
+    <!-- Cuerpo y piernas corriendo -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,17.5 L11,12.5 L14,14 L16,10.5 L14,9 L11,10.5 L9,7 L7,8 L9.5,12 L7.5,17.5Z" />
+
+    <!-- Brazo delantero -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,9 L17,11 L16.5,12 L13.5,10Z" />
+
+</vector>

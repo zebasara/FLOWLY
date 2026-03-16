@@ -1,0 +1,163 @@
+================================================================
+  FLOWLY · NOTAS PARA REGISTRO EN GOOGLE PLAY STORE
+================================================================
+Última actualización: Marzo 2026
+
+----------------------------------------------------------------
+1. PERMISOS QUE DECLARARÁS EN LA FICHA DE LA APP
+----------------------------------------------------------------
+
+ACCESS_FINE_LOCATION
+  → Declarar como: "Foreground location"
+  → Justificación: "La app registra el recorrido del usuario
+    mientras hace actividad física (caminar/correr) para
+    calcular distancia y acreditar tokens MOVE."
+
+ACCESS_BACKGROUND_LOCATION  ← SOLO si lo agregás en el futuro
+  → Play Store lo revisa MANUALMENTE. No lo agregues hasta
+    que sea estrictamente necesario.
+  → Por ahora el tracking es SOLO en primer plano (Foreground
+    Service con notificación visible). Esto NO requiere
+    ACCESS_BACKGROUND_LOCATION.
+
+
+----------------------------------------------------------------
+2. POLÍTICA DE PRIVACIDAD (OBLIGATORIA)
+----------------------------------------------------------------
+
+Debés tener una Política de Privacidad publicada en una URL
+accesible. Agrégala en la ficha de Play Console.
+
+URL sugerida: https://flowly.app/privacidad
+
+La política DEBE mencionar:
+  a) Que se recolecta ubicación GPS durante sesiones activas
+  b) Que la ubicación se comparte en tiempo real con otros
+     usuarios de la app mientras la sesión está activa
+  c) Cómo se almacena (Google Firebase/Firestore)
+  d) Que la ubicación se elimina del mapa al detener la sesión
+  e) Datos de contacto del desarrollador
+  f) Derecho del usuario a eliminar su cuenta y datos
+
+Generador gratuito recomendado:
+  https://app.privacypolicies.com  (elegir "Mobile App")
+  o https://www.iubenda.com/en/
+
+Cláusula que debés incluir sí o sí (copiá y adaptá):
+  "Cuando el usuario activa la función MOVErme, su nombre de
+  usuario y ubicación GPS aproximada son compartidos en tiempo
+  real en el mapa de la aplicación y son visibles para otros
+  usuarios registrados. Al detener la sesión, la ubicación
+  es eliminada inmediatamente del mapa. En ningún caso la
+  ubicación es compartida con terceros fuera de la plataforma."
+
+
+----------------------------------------------------------------
+3. FORMULARIO DE PERMISOS DE UBICACIÓN (Data Safety)
+----------------------------------------------------------------
+
+En Play Console → tu app → Política y privacidad → Data Safety:
+
+SECCIÓN "Location":
+  ¿Recopilás ubicación precisa?       → SÍ
+  ¿Es recopilada en primer plano?     → SÍ
+  ¿Es recopilada en segundo plano?    → NO (por ahora)
+  ¿Está cifrada en tránsito?          → SÍ (Firebase usa TLS)
+  ¿Puede el usuario solicitar borrado? → SÍ
+  Propósito:
+    [x] Funciones de la app
+    [x] Analytics (si usás Firebase Analytics)
+
+SECCIÓN "App info and performance":
+  [x] Crash logs (Firebase Crashlytics si lo agregás)
+
+SECCIÓN "Device or other IDs":
+  [x] Advertising ID (si usás AdMob)
+
+
+----------------------------------------------------------------
+4. CONSENTIMIENTO EN LA APP (ya implementado en el código)
+----------------------------------------------------------------
+
+El dialog de consentimiento ya está implementado en MapScreen.kt.
+Aparece la primera vez que el usuario toca "Iniciar MOVErme".
+
+Texto del dialog:
+  "Mientras MOVErme esté activo, tu nombre y posición en el
+  mapa serán visibles para otros usuarios de MOVE.
+  Al detener la sesión, tu ubicación desaparece del mapa."
+
+Botones: "Acepto" / "No, gracias"
+
+El consentimiento se guarda en DataStore (no vuelve a preguntar).
+
+IMPORTANTE para Play Store: Asegurate de que el link a la
+Política de Privacidad que aparece en el dialog sea accesible
+ANTES de que el usuario haga clic en "Acepto".
+
+
+----------------------------------------------------------------
+5. REGLAS DE FIRESTORE — AGREGAR EN FIREBASE CONSOLE
+----------------------------------------------------------------
+
+Después de agregar la feature de mapa social, actualizá las
+Firestore Security Rules para incluir la colección sesionesActivas:
+
+  // Sesiones activas en el mapa
+  match /sesionesActivas/{uid} {
+    // Cualquier usuario autenticado puede leer (para ver el mapa)
+    allow read: if request.auth != null;
+    // Solo el propio usuario puede escribir/eliminar su sesión
+    allow write: if request.auth != null && request.auth.uid == uid;
+  }
+
+Agregalo DENTRO del bloque:
+  match /databases/{database}/documents { ... }
+
+
+----------------------------------------------------------------
+6. DESCRIPCIÓN PARA PLAY STORE (sección "Acerca de los datos")
+----------------------------------------------------------------
+
+Copiá esto en la descripción de la app en Play Console:
+
+  "MOVE registra tu ubicación GPS únicamente durante sesiones
+  activas de MOVErme, con tu consentimiento explícito. Tu
+  posición se comparte en tiempo real con otros usuarios solo
+  mientras la sesión está activa. Al detenerla, tu ubicación
+  es eliminada del mapa inmediatamente. Nunca compartimos tu
+  ubicación con terceros."
+
+
+----------------------------------------------------------------
+7. CLASIFICACIÓN DE CONTENIDO (Content Rating)
+----------------------------------------------------------------
+
+En el cuestionario de clasificación:
+  ¿La app comparte ubicación del usuario en tiempo real? → SÍ
+  → Esto NO afecta el rating, solo requiere la declaración.
+
+La app debería quedar clasificada como: Everyone / Para todos
+(sin contenido violento, adulto, ni apuestas reales)
+
+
+----------------------------------------------------------------
+8. CHECKLIST ANTES DE PUBLICAR
+----------------------------------------------------------------
+
+[ ] Política de Privacidad publicada en URL pública
+[ ] URL de Política de Privacidad cargada en Play Console
+[ ] Data Safety completado en Play Console
+[ ] Google-services.json en app/ (con el proyecto correcto)
+[ ] secrets.properties con todos los valores reales
+[ ] Firebase: Email/Password y Google Auth habilitados
+[ ] Firebase: Firestore habilitado con las Security Rules correctas
+[ ] Firebase: índices collectionGroup creados (canjes, retirosBlockchain)
+[ ] Firebase: colección 'admins/{tu-uid}' con role:"admin" creada
+[ ] Ícono de la app (512x512 PNG, sin transparencia) en Play Console
+[ ] Screenshots de la app (mínimo 2, recomendado 4-8)
+[ ] Texto descriptivo corto (máx 80 chars) y largo (máx 4000 chars)
+[ ] versionCode y versionName actualizados en app/build.gradle.kts
+[ ] Release APK/AAB firmado con keystore de producción
+
+================================================================

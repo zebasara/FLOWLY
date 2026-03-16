@@ -34,6 +34,9 @@ class CanjesViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _mercadoPagoUrl = MutableStateFlow("")
+    val mercadoPagoUrl: StateFlow<String> = _mercadoPagoUrl.asStateFlow()
+
     private var uid = ""
 
     init {
@@ -41,6 +44,7 @@ class CanjesViewModel(app: Application) : AndroidViewModel(app) {
             uid = prefs.userId.first()
             loadUser()
             loadCanjes()
+            repo.getStoreConfig().onSuccess { _mercadoPagoUrl.value = it.mercadoPagoUrl }
             _isLoading.value = false
         }
     }
@@ -53,7 +57,7 @@ class CanjesViewModel(app: Application) : AndroidViewModel(app) {
         repo.getCanjes(uid).onSuccess { _canjes.value = it }
     }
 
-    fun confirmarCanje(montoLabel: String, moveAmount: Int) {
+    fun confirmarCanje(montoLabel: String, moveAmount: Int, categoria: String = "cash") {
         val aliasMP = _user.value?.aliasMercadoPago ?: ""
         if (aliasMP.isBlank()) {
             _uiState.value = CanjesUiState.Error("Necesitás cargar tu alias de Mercado Pago en tu perfil")
@@ -67,6 +71,8 @@ class CanjesViewModel(app: Application) : AndroidViewModel(app) {
             _uiState.value = CanjesUiState.Loading
             val canje = Canje(
                 uid            = uid,
+                nombre         = montoLabel,
+                categoria      = categoria,
                 montoLabel     = montoLabel,
                 moveDescontado = moveAmount,
                 aliasDestino   = aliasMP

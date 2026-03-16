@@ -9,7 +9,7 @@ object Routes {
     const val MAP              = "map"
     const val VIDEO            = "video"
     const val CANJES           = "canjes"
-    const val CONFIRM_CANJE    = "confirm_canje/{amount}/{move}"
+    const val CONFIRM_CANJE    = "confirm_canje/{amount}/{move}/{categoria}"
     const val MY_CANJES        = "my_canjes"
     const val STORE            = "store"
     const val RANKINGS         = "rankings"
@@ -23,6 +23,6 @@ object Routes {
     const val EDIT_PROFILE     = "edit_profile"
 
     fun completeProfile(uid: String) = "complete_profile/$uid"
-    fun confirmCanje(amount: String, move: String) = "confirm_canje/$amount/$move"
+    fun confirmCanje(amount: String, move: String, categoria: String = "cash") = "confirm_canje/$amount/$move/$categoria"
     fun confirmHolding(move: Int, months: Int) = "confirm_holding/$move/$months"
 }
