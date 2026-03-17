@@ -43,17 +43,19 @@ class FlowlyRepository(private val context: Context) {
         // Es un día nuevo → resetear contadores diarios
         userRef(uid).update(
             mapOf(
-                "tokenMovimientoHoy"  to 0,
-                "tokenVideosHoy"      to 0,
-                "kmHoy"               to 0f,
-                "lastTokenResetDate"  to todayStr
+                "tokenMovimientoHoy"     to 0,
+                "tokenVideosHoy"         to 0,
+                "kmHoy"                  to 0f,
+                "lastTokenResetDate"     to todayStr,
+                "misionesReclamadasHoy"  to emptyList<String>()
             )
         ).await()
         return user.copy(
-            tokenMovimientoHoy = 0,
-            tokenVideosHoy     = 0,
-            kmHoy              = 0f,
-            lastTokenResetDate = todayStr
+            tokenMovimientoHoy    = 0,
+            tokenVideosHoy        = 0,
+            kmHoy                 = 0f,
+            lastTokenResetDate    = todayStr,
+            misionesReclamadasHoy = emptyList()
         )
     }
 
@@ -444,6 +446,37 @@ class FlowlyRepository(private val context: Context) {
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .get().await()
             .toObjects(RetiroBlockchain::class.java)
+    }
+
+    // ── Misiones diarias ─────────────────────────────────────────────
+
+    /**
+     * Reclama la recompensa de una misión diaria.
+     * Valida que la misión esté completada y no haya sido reclamada antes.
+     * @param misionId  ID de la misión ("caminar_2km", "videos_4", "racha_3")
+     * @param recompensa MOVE a acreditar al usuario
+     * @return Result<Unit> — falla si ya reclamada o no completada
+     */
+    suspend fun reclamarMision(uid: String, misionId: String, recompensa: Int): Result<Unit> = runCatching {
+        var user = getUser(uid).getOrNull() ?: error("Usuario no encontrado")
+        user = checkAndResetDaily(uid, user)
+
+        if (misionId in user.misionesReclamadasHoy) error("Misión ya reclamada")
+
+        userRef(uid).update(
+            mapOf(
+                "tokensActuales"        to FieldValue.increment(recompensa.toLong()),
+                "misionesReclamadasHoy" to FieldValue.arrayUnion(misionId)
+            )
+        ).await()
+
+        crearNotificacion(uid, Notificacion(
+            uid       = uid,
+            titulo    = "¡Misión completada! 🎯",
+            cuerpo    = "+$recompensa MOVE acreditados",
+            tipo      = "mision",
+            createdAt = System.currentTimeMillis()
+        ))
     }
 
     // ── Garantizar badge soy_move (usuarios existentes sin badges) ───

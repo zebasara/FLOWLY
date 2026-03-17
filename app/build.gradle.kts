@@ -58,9 +58,25 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = secrets.getProperty("KEYSTORE_PATH", "")
+            val keystorePass = secrets.getProperty("KEYSTORE_PASSWORD", "")
+            val keyAliasVal  = secrets.getProperty("KEY_ALIAS", "")
+            val keyPass      = secrets.getProperty("KEY_PASSWORD", "")
+            if (keystorePath.isNotBlank() && file(keystorePath).exists()) {
+                storeFile     = file(keystorePath)
+                storePassword = keystorePass
+                keyAlias      = keyAliasVal
+                keyPassword   = keyPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig   = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

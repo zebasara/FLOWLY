@@ -50,6 +50,8 @@ data class User(
     val referidoPor: String = "",
     // Insignias
     val badges: List<String> = emptyList(),
+    // Misiones diarias — se resetea junto con los contadores diarios
+    val misionesReclamadasHoy: List<String> = emptyList(),
     // Blockchain / Web3
     val walletAddress: String = "",        // dirección 0x… guardada por el usuario
     // Metadata

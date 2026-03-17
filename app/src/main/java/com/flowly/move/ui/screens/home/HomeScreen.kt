@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.flowly.move.data.model.NIVEL_LIMITES
 import com.flowly.move.data.model.TODAS_LAS_INSIGNIAS
 import com.flowly.move.data.repository.FlowlyRepository
+import com.flowly.move.ui.screens.misiones.getMisionesDelDia
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
@@ -44,6 +45,9 @@ fun HomeScreen(navController: NavController) {
     val nivel          = user?.nivel ?: 1
     val limiteTokens   = NIVEL_LIMITES.getOrElse(nivel - 1) { NIVEL_LIMITES.first() }
     val rachaDias      = user?.diasConsecutivosVideos ?: 0
+    val misiones       = user?.let { getMisionesDelDia(it) } ?: emptyList()
+    val misionesComp   = misiones.count { it.completada }
+    val misionesTotal  = misiones.size
     val movHoy         = user?.tokenMovimientoHoy ?: 0
     val kmHoy          = user?.kmHoy ?: 0f
     val moveVideos     = user?.tokenVideosHoy ?: 0
@@ -206,6 +210,46 @@ fun HomeScreen(navController: NavController) {
                         fontSize = 11.sp,
                         color    = FlowlyMuted
                     )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // Misiones del día
+            FlowlyCard2(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clickable { navController.navigate(Routes.MISIONES) }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🎯", fontSize = 22.sp)
+                        Column {
+                            Text(
+                                "Misiones del día",
+                                fontSize   = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = FlowlyText
+                            )
+                            Text(
+                                if (misionesComp == misionesTotal && misionesTotal > 0)
+                                    "¡Todas completadas! 🏆"
+                                else
+                                    "$misionesComp/$misionesTotal completadas · hasta 450 MOVE",
+                                fontSize = 12.sp,
+                                color    = if (misionesComp == misionesTotal && misionesTotal > 0)
+                                    FlowlyAccent else FlowlyMuted
+                            )
+                        }
+                    }
+                    Text("→", fontSize = 18.sp, color = FlowlyMuted)
                 }
             }
 
