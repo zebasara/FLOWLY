@@ -18,9 +18,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -86,11 +88,13 @@ private fun calcCountdown(): String {
 @Composable
 fun RankingsScreen(navController: NavController) {
     val vm: RankingsViewModel = viewModel()
-    val currentUser  by vm.currentUser.collectAsStateWithLifecycle()
-    val rankings     by vm.rankings.collectAsStateWithLifecycle()
-    val campeon      by vm.campeon.collectAsStateWithLifecycle()
-    val topArgentina by vm.topArgentina.collectAsStateWithLifecycle()
-    val isLoading    by vm.isLoading.collectAsStateWithLifecycle()
+    val currentUser          by vm.currentUser.collectAsStateWithLifecycle()
+    val rankings             by vm.rankings.collectAsStateWithLifecycle()
+    val campeon              by vm.campeon.collectAsStateWithLifecycle()
+    val topArgentina         by vm.topArgentina.collectAsStateWithLifecycle()
+    val isLoading            by vm.isLoading.collectAsStateWithLifecycle()
+    val showNewCampeonDialog by vm.showNewCampeonDialog.collectAsStateWithLifecycle()
+    val showCelebration      by vm.showCampeonCelebration.collectAsStateWithLifecycle()
 
     // Countdown en vivo: se actualiza cada segundo
     var countdown by remember { mutableStateOf(calcCountdown()) }
@@ -110,6 +114,18 @@ fun RankingsScreen(navController: NavController) {
         0 -> currentUser?.ciudad?.ifBlank { "tu ciudad" }       ?: "tu ciudad"
         1 -> currentUser?.provincia?.ifBlank { "tu provincia" } ?: "tu provincia"
         else -> "Argentina"
+    }
+
+    // ── Dialog: anuncio de nuevo campeón (para todos excepto el ganador) ──────
+    showNewCampeonDialog?.let { c ->
+        NewCampeonDialog(campeon = c, onDismiss = { vm.dismissNewCampeonDialog() })
+    }
+
+    // ── Dialog: celebración exclusiva para el campeón ─────────────────────────
+    if (showCelebration) {
+        campeon?.let { c ->
+            CampeonCelebrationDialog(campeon = c, onDismiss = { vm.dismissCelebration() })
+        }
     }
 
     FlowlyScaffold(navController = navController, currentRoute = Routes.RANKINGS) { padding ->
@@ -495,6 +511,213 @@ private fun CampeonCard(
                     color      = Color(0xFFF59E0B)
                 )
                 Text("MOVE", fontSize = 9.sp, color = FlowlyMuted)
+            }
+        }
+    }
+}
+
+// ── Dialog: anuncio de nuevo campeón (para todos los usuarios) ───────────────
+
+@Composable
+private fun NewCampeonDialog(campeon: CampeonSemanal, onDismiss: () -> Unit) {
+    val iniciales = campeon.nombre.trim().split(" ")
+        .filter { it.isNotBlank() }.take(2)
+        .joinToString("") { it.first().uppercase() }.ifBlank { "?" }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.linearGradient(listOf(Color(0xFF2A1F00), Color(0xFF1A2A00)))
+                )
+                .border(
+                    1.5.dp,
+                    Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFF7EE621))),
+                    RoundedCornerShape(20.dp)
+                )
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("👑", fontSize = 44.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "¡Nuevo Campeón Semanal!",
+                fontSize   = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color      = Color(0xFFF59E0B),
+                textAlign  = TextAlign.Center
+            )
+            Spacer(Modifier.height(16.dp))
+
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706)))
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (campeon.photoUrl.isNotBlank()) {
+                    AsyncImage(
+                        model              = campeon.photoUrl,
+                        contentDescription = campeon.nombre,
+                        modifier           = Modifier.fillMaxSize(),
+                        contentScale       = ContentScale.Crop
+                    )
+                } else {
+                    Text(iniciales, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                campeon.nombre,
+                fontSize   = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color      = FlowlyText,
+                textAlign  = TextAlign.Center
+            )
+            val location = listOfNotNull(
+                campeon.ciudad.takeIf { it.isNotBlank() },
+                campeon.provincia.takeIf { it.isNotBlank() }
+            ).joinToString(", ")
+            if (location.isNotBlank()) {
+                Text("📍 $location", fontSize = 12.sp, color = FlowlyMuted, textAlign = TextAlign.Center)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "lideró Argentina y ganó\n+1.000 MOVE esta semana",
+                fontSize   = 13.sp,
+                color      = FlowlyMuted,
+                textAlign  = TextAlign.Center,
+                lineHeight = 19.sp
+            )
+            if (campeon.racha > 1) {
+                Spacer(Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFFF59E0B).copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        "🔥 ×${campeon.racha} semanas consecutivas",
+                        fontSize = 12.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+            Spacer(Modifier.height(20.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onDismiss() }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Ver ranking", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            }
+        }
+    }
+}
+
+// ── Dialog: celebración exclusiva para el campeón ─────────────────────────────
+
+@Composable
+private fun CampeonCelebrationDialog(campeon: CampeonSemanal, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.linearGradient(listOf(Color(0xFF0D2A1A), Color(0xFF1A2A00)))
+                )
+                .border(
+                    2.dp,
+                    Brush.linearGradient(listOf(FlowlyAccent, Color(0xFFF59E0B))),
+                    RoundedCornerShape(20.dp)
+                )
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("🏆", fontSize = 52.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "¡Sos el Campeón\nSemanal!",
+                fontSize   = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color      = FlowlyAccent,
+                textAlign  = TextAlign.Center,
+                lineHeight = 28.sp
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "¡Felicitaciones, ${campeon.nombre.split(" ").first()}!",
+                fontSize   = 15.sp,
+                color      = FlowlyText,
+                fontWeight = FontWeight.Medium,
+                textAlign  = TextAlign.Center
+            )
+            Text(
+                "Lideraste Argentina esta semana.",
+                fontSize  = 13.sp,
+                color     = FlowlyMuted,
+                textAlign = TextAlign.Center,
+                modifier  = Modifier.padding(top = 4.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+
+            // Badge de MOVE
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(FlowlyAccent.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                    .border(1.dp, FlowlyAccent.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("+1.000 MOVE", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent)
+                    Text("acreditados en tu cuenta", fontSize = 12.sp, color = FlowlyMuted)
+                }
+            }
+
+            if (campeon.racha > 1) {
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFFF59E0B).copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        "🔥 ×${campeon.racha} semanas consecutivas",
+                        fontSize = 12.sp, color = Color(0xFFF59E0B), fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.linearGradient(listOf(FlowlyAccent, Color(0xFF5AB030))),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onDismiss() }
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("¡Genial! 🎉", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0A120A))
             }
         }
     }

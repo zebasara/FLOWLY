@@ -34,6 +34,14 @@ class RankingsViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading    = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    /** Campeón nuevo que aún no vio este usuario (distinto al ganador). */
+    private val _showNewCampeonDialog = MutableStateFlow<CampeonSemanal?>(null)
+    val showNewCampeonDialog: StateFlow<CampeonSemanal?> = _showNewCampeonDialog.asStateFlow()
+
+    /** El usuario logueado ES el campeón y aún no vio su celebración. */
+    private val _showCampeonCelebration = MutableStateFlow(false)
+    val showCampeonCelebration: StateFlow<Boolean> = _showCampeonCelebration.asStateFlow()
+
     private var uid       = ""
     private var ciudad    = ""
     private var provincia = ""
@@ -54,7 +62,32 @@ class RankingsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun loadCampeon() {
-        repo.getCampeonSemanal().onSuccess { _campeon.value = it }
+        repo.getCampeonSemanal().onSuccess { c ->
+            _campeon.value = c
+            if (c == null || c.uid.isBlank() || c.semana.isBlank()) return@onSuccess
+
+            if (c.uid == uid) {
+                // El usuario logueado es el campeón — mostrar celebración si no la vio
+                val lastCelebrated = prefs.lastCelebratedCampeonSemana.first()
+                if (lastCelebrated != c.semana) _showCampeonCelebration.value = true
+            } else {
+                // Otro usuario es el campeón — mostrar anuncio si no lo vio
+                val lastSeen = prefs.lastSeenCampeonSemana.first()
+                if (lastSeen != c.semana) _showNewCampeonDialog.value = c
+            }
+        }
+    }
+
+    fun dismissNewCampeonDialog() {
+        val semana = _campeon.value?.semana ?: return
+        _showNewCampeonDialog.value = null
+        viewModelScope.launch { prefs.markCampeonSemanaVista(semana) }
+    }
+
+    fun dismissCelebration() {
+        val semana = _campeon.value?.semana ?: return
+        _showCampeonCelebration.value = false
+        viewModelScope.launch { prefs.markCampeonCelebrado(semana) }
     }
 
     /** Carga solo el #1 global de Argentina (limit 1 del ranking general). */

@@ -23,6 +23,8 @@ class UserPreferences(private val context: Context) {
         val WELCOME_DIALOG_SHOWN          = booleanPreferencesKey("welcome_dialog_shown")
         val SHOWN_BADGES                  = stringSetPreferencesKey("shown_badges")
         val LOCATION_SHARING_CONSENTED    = booleanPreferencesKey("location_sharing_consented")
+        val LAST_SEEN_CAMPEON_SEMANA      = stringPreferencesKey("last_seen_campeon_semana")
+        val LAST_CELEBRATED_CAMPEON_SEMANA = stringPreferencesKey("last_celebrated_campeon_semana")
     }
 
     val isLoggedIn: Flow<Boolean> = context.dataStore.data
@@ -60,6 +62,22 @@ class UserPreferences(private val context: Context) {
     val locationSharingConsented: Flow<Boolean> = context.dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it[LOCATION_SHARING_CONSENTED] ?: false }
+
+    val lastSeenCampeonSemana: Flow<String> = context.dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[LAST_SEEN_CAMPEON_SEMANA] ?: "" }
+
+    val lastCelebratedCampeonSemana: Flow<String> = context.dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[LAST_CELEBRATED_CAMPEON_SEMANA] ?: "" }
+
+    suspend fun markCampeonSemanaVista(semana: String) {
+        context.dataStore.edit { it[LAST_SEEN_CAMPEON_SEMANA] = semana }
+    }
+
+    suspend fun markCampeonCelebrado(semana: String) {
+        context.dataStore.edit { it[LAST_CELEBRATED_CAMPEON_SEMANA] = semana }
+    }
 
     suspend fun setWelcomeDialogShown() {
         context.dataStore.edit { it[WELCOME_DIALOG_SHOWN] = true }
