@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1024px;
+    height: 500px;
+    overflow: hidden;
+    background: #0A120A;
+    font-family: 'Arial Black', Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 60px;
+    position: relative;
+  }
+
+  /* Fondo con círculos decorativos */
+  .bg-circle-1 {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(126,230,33,0.08) 0%, transparent 70%);
+    top: -200px;
+    right: -100px;
+  }
+  .bg-circle-2 {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(126,230,33,0.05) 0%, transparent 70%);
+    bottom: -150px;
+    left: -50px;
+  }
+
+  /* Lado izquierdo */
+  .left {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    z-index: 1;
+    max-width: 480px;
+  }
+
+  .badge {
+    background: rgba(126,230,33,0.15);
+    border: 1px solid rgba(126,230,33,0.4);
+    border-radius: 30px;
+    padding: 6px 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+  }
+  .badge span {
+    color: #7EE621;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #7EE621;
+    animation: pulse 1.5s infinite;
+  }
+
+  .app-name {
+    font-size: 82px;
+    font-weight: 900;
+    color: #FFFFFF;
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  .app-name span {
+    color: #7EE621;
+  }
+
+  .tagline {
+    font-size: 20px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 400;
+    line-height: 1.4;
+    font-family: Arial, sans-serif;
+  }
+
+  .pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    font-family: Arial, sans-serif;
+  }
+
+  /* Lado derecho */
+  .right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    z-index: 1;
+  }
+
+  .phone-mockup {
+    width: 200px;
+    height: 340px;
+    background: #111D11;
+    border-radius: 32px;
+    border: 2px solid rgba(126,230,33,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    gap: 12px;
+    box-shadow: 0 0 60px rgba(126,230,33,0.15), 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .phone-notch {
+    position: absolute;
+    top: 10px;
+    width: 60px;
+    height: 6px;
+    background: rgba(126,230,33,0.2);
+    border-radius: 3px;
+  }
+
+  .badge-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 2px solid #7EE621;
+    background: rgba(126,230,33,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .mock-text-green {
+    color: #7EE621;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-family: Arial, sans-serif;
+  }
+
+  .mock-title {
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 900;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+
+  .mock-sub {
+    color: rgba(255,255,255,0.5);
+    font-size: 10px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    line-height: 1.4;
+  }
+
+  .mock-btn {
+    background: #7EE621;
+    color: #0A120A;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-size: 11px;
+    font-weight: 900;
+    font-family: Arial, sans-serif;
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* Stats flotantes */
+  .stat-bubble {
+    position: absolute;
+    background: #1A2A1A;
+    border: 1px solid rgba(126,230,33,0.3);
+    border-radius: 14px;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .stat-bubble.top-left {
+    top: 40px;
+    right: 220px;
+  }
+  .stat-bubble.bottom-right {
+    bottom: 60px;
+    right: 10px;
+  }
+  .stat-num {
+    font-size: 18px;
+    font-weight: 900;
+    color: #7EE621;
+    font-family: Arial, sans-serif;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    font-family: Arial, sans-serif;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="bg-circle-1"></div>
+  <div class="bg-circle-2"></div>
+
+  <!-- Izquierda -->
+  <div class="left">
+    <div class="badge">
+      <div class="badge-dot"></div>
+      <span>Disponible en Google Play</span>
+    </div>
+
+    <div class="app-name">FLOW<span>LY</span></div>
+
+    <div class="tagline">
+      Caminá. Ganá puntos MOVE.<br>Cobrálos en Mercado Pago.
+    </div>
+
+    <div class="pills">
+      <div class="pill">🏃 Pasos reales</div>
+      <div class="pill">💸 Dinero real</div>
+      <div class="pill">🏆 Rankings</div>
+      <div class="pill">🎁 Referidos</div>
+    </div>
+  </div>
+
+  <!-- Derecha: mockup del teléfono -->
+  <div class="right" style="position:relative;">
+
+    <div class="stat-bubble top-left">
+      <div class="stat-num">+2.4K</div>
+      <div class="stat-label">usuarios activos</div>
+    </div>
+
+    <div class="phone-mockup">
+      <div class="phone-notch"></div>
+      <div class="badge-icon">🏅</div>
+      <div class="mock-text-green">¡Insignia desbloqueada!</div>
+      <div class="mock-title">Primer referido</div>
+      <div class="mock-sub">Invitaste a tu primer<br>amigo a MOVE.</div>
+      <div class="mock-btn">Compartir logro</div>
+    </div>
+
+    <div class="stat-bubble bottom-right">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">gratuito</div>
+    </div>
+
+  </div>
+
+</body>
+</html>

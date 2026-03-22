@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── Usuarios ─────────────────────────────────────────────────────────
+    match /usuarios/{uid} {
+      // Cualquier usuario autenticado puede LEER (Rankings, búsqueda de referidos)
+      allow read: if request.auth != null;
+
+      // Escritura propia: el usuario puede modificar su propio documento
+      allow write: if request.auth != null && request.auth.uid == uid;
+
+      // ── Regla de referidos ───────────────────────────────────────────
+      // Permite que cualquier usuario autenticado actualice SOLO los campos
+      // de referidos en el documento de OTRO usuario, con restricciones de seguridad:
+      //   - totalReferidos solo puede incrementarse en exactamente +1
+      //   - tokensActuales solo puede aumentar (nunca disminuir)
+      //   - badges solo puede agregar elementos (nunca quitar)
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['totalReferidos', 'tokensActuales', 'badges'])
+        && (
+             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalReferidos'])
+             || request.resource.data.totalReferidos == resource.data.totalReferidos + 1
+           )
+        && (
+             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tokensActuales'])
+             || request.resource.data.tokensActuales > resource.data.tokensActuales
+           )
+        && (
+             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['badges'])
+             || request.resource.data.badges.hasAll(resource.data.badges)
+           );
+
+      allow read, write: if isAdmin();
+    }
+
+    // ── Subcollections propias ────────────────────────────────────────────
+    match /usuarios/{uid}/canjes/{canjeId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isAdmin();
+    }
+
+    match /usuarios/{uid}/retirosBlockchain/{retiroId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isAdmin();
+    }
+
+    match /usuarios/{uid}/holdings/{holdingId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isAdmin();
+    }
+
+    // Notificaciones: el propio usuario puede leer/escribir las suyas.
+    // CUALQUIER usuario autenticado puede CREAR (para notificaciones de referidos).
+    match /usuarios/{uid}/notificaciones/{notifId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow create:      if request.auth != null; // referidos crean notif al referidor
+      allow read, write: if isAdmin();
+    }
+
+    // ── collectionGroup para admin ────────────────────────────────────────
+    match /{path=**}/canjes/{canjeId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{path=**}/retirosBlockchain/{retiroId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Config global ─────────────────────────────────────────────────────
+    match /config/{docId} {
+      allow read:  if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // ── Admins ────────────────────────────────────────────────────────────
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isAdmin();
+    }
+
+    // ── Sesiones activas (mapa en tiempo real) ────────────────────────────
+    match /sesionesActivas/{uid} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

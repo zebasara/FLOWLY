@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="FLOWLY – Caminá, ganá puntos MOVE y cobrálos en Mercado Pago. La app que convierte tu actividad física en dinero real." />
+  <title>FLOWLY – Move. Earn. Repeat.</title>
+  <meta property="og:title" content="FLOWLY – Move. Earn. Repeat." />
+  <meta property="og:description" content="Caminá, ganá puntos MOVE y cobrálos en Mercado Pago. ¡Descargá gratis!" />
+  <meta property="og:image" content="https://flowly-move.web.app/og-image.png" />
+  <meta property="og:url" content="https://flowly-move.web.app" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://flowly-move.web.app/og-image.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0A120A;
+      --bg2: #0f1a0f;
+      --accent: #7EE621;
+      --accent2: #5ab81a;
+      --text: #e8e8e8;
+      --muted: #7a8a7a;
+      --card: #111c11;
+      --border: #1e2e1e;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; overflow-x: hidden; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(10,18,10,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-size: 1.4rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; text-decoration: none; }
+    .nav-link {
+      background: var(--accent); color: #0A120A; font-weight: 800; font-size: 0.9rem;
+      padding: 10px 22px; border-radius: 50px; text-decoration: none;
+      transition: opacity .2s;
+    }
+    .nav-link:hover { opacity: 0.85; }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(126,230,33,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(126,230,33,0.1); border: 1px solid rgba(126,230,33,0.3);
+      color: var(--accent); font-size: 0.82rem; font-weight: 700; letter-spacing: 1px;
+      padding: 6px 16px; border-radius: 50px; margin-bottom: 28px;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 8vw, 5rem);
+      font-weight: 900; line-height: 1.05;
+      color: #fff; margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero-sub {
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      color: var(--muted); max-width: 520px; margin: 0 auto 40px;
+    }
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--accent); color: #0A120A;
+      font-size: 1.05rem; font-weight: 900;
+      padding: 18px 40px; border-radius: 50px; text-decoration: none;
+      box-shadow: 0 8px 32px rgba(126,230,33,0.35);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(126,230,33,0.45); }
+    .hero-cta svg { width: 22px; height: 22px; }
+    .hero-note { margin-top: 16px; font-size: 0.82rem; color: var(--muted); }
+
+    /* STATS */
+    .stats {
+      display: flex; justify-content: center; gap: 0;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 24px;
+    }
+    .stat {
+      flex: 1; min-width: 160px;
+      text-align: center; padding: 36px 24px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-size: 2.2rem; font-weight: 900; color: var(--accent); }
+    .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+    /* HOW IT WORKS */
+    section { padding: 96px 24px; max-width: 1080px; margin: 0 auto; }
+    .section-label {
+      text-align: center; font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+    }
+    .section-title { text-align: center; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 900; color: #fff; margin-bottom: 56px; }
+
+    .steps { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; left: 28px; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(to bottom, var(--accent), transparent);
+    }
+    .step { display: flex; gap: 28px; align-items: flex-start; padding: 0 0 48px 0; }
+    .step-num {
+      width: 56px; height: 56px; flex-shrink: 0;
+      background: var(--accent); color: #0A120A;
+      font-size: 1.2rem; font-weight: 900; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .step-content h3 { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .step-content p { color: var(--muted); font-size: 0.97rem; }
+
+    /* FEATURES */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 28px;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover { border-color: rgba(126,230,33,0.4); transform: translateY(-3px); }
+    .feature-icon { font-size: 2rem; margin-bottom: 14px; }
+    .feature-card h3 { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* CTA BOTTOM */
+    .cta-section {
+      text-align: center;
+      padding: 96px 24px;
+      background: linear-gradient(to bottom, transparent, rgba(126,230,33,0.04), transparent);
+    }
+    .cta-section h2 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900; color: #fff; margin-bottom: 16px; }
+    .cta-section p { color: var(--muted); font-size: 1.05rem; margin-bottom: 40px; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 16px; max-width: 1080px; margin: 0 auto;
+    }
+    .footer-logo { font-size: 1.1rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { color: var(--muted); font-size: 0.88rem; text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-copy { color: var(--muted); font-size: 0.82rem; width: 100%; text-align: center; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .stats { flex-direction: column; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat:last-child { border-bottom: none; }
+      .steps::before { left: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">FLOWLY</a>
+    <a class="nav-link" href="#descargar">Descargar</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">🇦🇷 Disponible en Argentina</div>
+    <h1>Moverse<br/>ahora <span>paga</span>.</h1>
+    <p class="hero-sub">Caminá, completá desafíos y acumulá puntos MOVE que podés cobrar en tu Mercado Pago.</p>
+    <a class="hero-cta" href="https://play.google.com/store/apps/details?id=com.flowly.move&pcampaignid=web_share" id="hero-btn" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.3.17.64.24.98.24.43 0 .85-.12 1.22-.35l15.4-8.89c.74-.43 1.22-1.22 1.22-2.1 0-.87-.48-1.67-1.22-2.1L5.38.57C4.64.14 3.73.1 2.95.49 2.17.88 1.68 1.68 1.68 2.56v18.88c0 .88.49 1.68 1.5 2.32z"/></svg>
+      Descargar gratis
+    </a>
+    <p class="hero-note">Disponible para Android • Gratis</p>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Gratis para descargar</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">MOVE</div>
+      <div class="stat-label">Puntos que valen dinero real</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">MP</div>
+      <div class="stat-label">Cobros vía Mercado Pago</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">24/7</div>
+      <div class="stat-label">Tu actividad siempre activa</div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section>
+    <div class="section-label">¿Cómo funciona?</div>
+    <div class="section-title">Tres pasos para empezar a ganar</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Descargá FLOWLY y creá tu cuenta</h3>
+          <p>Iniciá sesión con Google en segundos. Sin formularios largos, sin complicaciones.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Moverse y ganar puntos MOVE</h3>
+          <p>Caminá, corré y completá desafíos diarios. Cada paso cuenta. También podés ganar puntos mirando videos y por referidos.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Canjeá tus puntos por dinero real</h3>
+          <p>Cuando acumulás suficientes puntos MOVE, los canjeás directamente a tu cuenta de Mercado Pago.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section>
+    <div class="section-label">Funciones</div>
+    <div class="section-title">Todo lo que trae FLOWLY</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🏃</div>
+        <h3>Tracking de actividad</h3>
+        <p>Registrá tus pasos y sesiones de movimiento en tiempo real. Tu esfuerzo se traduce en puntos automáticamente.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💸</div>
+        <h3>Cobros en Mercado Pago</h3>
+        <p>Canjeá tus puntos MOVE directamente en tu cuenta MP. Sin intermediarios, sin demoras.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <h3>Rankings y niveles</h3>
+        <p>Competí con otros usuarios, subí de nivel y desbloqueá beneficios exclusivos a medida que avanzás.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <h3>Videos con recompensa</h3>
+        <p>Mirá videos cortos y ganá puntos MOVE extra. Una forma simple de sumar sin moverte.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎁</div>
+        <h3>Sistema de referidos</h3>
+        <p>Invitá amigos y ganá bonos cada vez que alguien se registra con tu link. Más amigos, más puntos.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗺️</div>
+        <h3>Mapa comunitario</h3>
+        <p>Ves en tiempo real dónde está moviéndose la comunidad FLOWLY en tu ciudad.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BOTTOM -->
+  <div class="cta-section" id="descargar">
+    <h2>¿Listo para <span style="color:var(--accent)">ganar</span> moviéndote?</h2>
+    <p>Descargá FLOWLY gratis y empezá a convertir tus pasos en dinero real hoy.</p>
+    <a class="hero-cta" href="https://play.google.com/store/apps/details?id=com.flowly.move&pcampaignid=web_share" id="play-store-btn" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px"><path d="M3.18 23.76c.3.17.64.24.98.24.43 0 .85-.12 1.22-.35l15.4-8.89c.74-.43 1.22-1.22 1.22-2.1 0-.87-.48-1.67-1.22-2.1L5.38.57C4.64.14 3.73.1 2.95.49 2.17.88 1.68 1.68 1.68 2.56v18.88c0 .88.49 1.68 1.5 2.32z"/></svg>
+      Descargar en Google Play
+    </a>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">FLOWLY</div>
+    <div class="footer-links">
+      <a href="/privacidad">Privacidad</a>
+      <a href="/privacidad#eliminacion">Eliminar cuenta</a>
+      <a href="mailto:flowlyandmove@gmail.com">Contacto</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 FLOWLY. Todos los derechos reservados.</div>
+  </footer>
+
+</body>
+</html>
