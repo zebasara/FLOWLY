@@ -80,6 +80,11 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
                         flowlyRepository.garantizarBadgeBienvenida(uid)
                         finalUser = u.copy(badges = listOf("soy_move"))
                     }
+                    // Verificar y ejecutar reset diario al abrir la app
+                    if (u != null) {
+                        val resetUser = flowlyRepository.ensureDailyReset(uid).getOrNull()
+                        if (resetUser != null) finalUser = resetUser
+                    }
                     // Verificar subida de nivel automática al abrir la app
                     if (u != null) {
                         val subio = flowlyRepository.verificarYSubirNivel(uid)
