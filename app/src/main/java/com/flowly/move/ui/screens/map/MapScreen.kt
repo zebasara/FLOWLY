@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.flowly.move.data.model.iniciales
 import com.flowly.move.services.TrackingController
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes

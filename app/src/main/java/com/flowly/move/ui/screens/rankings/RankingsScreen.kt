@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.flowly.move.data.model.iniciales
 import com.flowly.move.data.model.CampeonSemanal
 import com.flowly.move.data.model.User
 import com.flowly.move.ui.components.*

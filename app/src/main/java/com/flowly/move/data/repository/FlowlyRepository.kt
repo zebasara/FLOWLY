@@ -71,6 +71,8 @@ class FlowlyRepository(private val context: Context) {
             "misionesReclamadasHoy" to emptyList<String>()
         )
         if (reset30) updates["move30Dias"] = 0
+        // Limpiar campo obsoleto "iniciales" de documentos viejos
+        updates["iniciales"] = FieldValue.delete()
 
         userRef(uid).update(updates).await()
         return user.copy(
