@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +50,8 @@ fun CanjesScreen(navController: NavController) {
     val nivelUsuario = user?.nivel          ?: 1
     val aliasMP      = user?.aliasMercadoPago ?: ""
 
+    var showAliasDialog by remember { mutableStateOf(false) }
+
     // Construir opciones desde la config dinámica de Firestore
     val options = canjesConfig.opciones
         .filter { it.activo }
@@ -62,6 +66,34 @@ fun CanjesScreen(navController: NavController) {
                 nivelBloqueado = cumpleMove && !cumpleNivel
             )
         }
+
+    // Dialog cuando el alias de MP está vacío
+    if (showAliasDialog) {
+        AlertDialog(
+            onDismissRequest = { showAliasDialog = false },
+            containerColor   = FlowlyCard2,
+            title = { Text("Alias requerido", color = FlowlyText, fontWeight = FontWeight.Bold) },
+            text  = {
+                Text(
+                    "Para canjear necesitás configurar tu alias de Mercado Pago en tu perfil.",
+                    color = FlowlyMuted, fontSize = 14.sp, lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAliasDialog = false
+                    navController.navigate(Routes.PROFILE)
+                }) {
+                    Text("Ir al perfil", color = FlowlyAccent, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAliasDialog = false }) {
+                    Text("Cancelar", color = FlowlyMuted)
+                }
+            }
+        )
+    }
 
     FlowlyScaffold(navController = navController, currentRoute = Routes.CANJES) { padding ->
         if (isLoading) {
@@ -106,7 +138,15 @@ fun CanjesScreen(navController: NavController) {
             }
 
             // ── Alias MP ─────────────────────────────────────────────────────
-            FlowlyCard2(modifier = Modifier.padding(horizontal = 16.dp)) {
+            FlowlyCard2(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .then(
+                        if (aliasMP.isBlank())
+                            Modifier.clickable { navController.navigate(Routes.PROFILE) }
+                        else Modifier
+                    )
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -115,7 +155,7 @@ fun CanjesScreen(navController: NavController) {
                     Text("Alias Mercado Pago", fontSize = 12.sp, color = FlowlyMuted)
                     if (aliasMP.isBlank()) {
                         Text(
-                            "⚠ Configurar en perfil",
+                            "⚠ Tocar para configurar →",
                             fontSize = 12.sp,
                             color = FlowlyWarn
                         )
@@ -176,7 +216,11 @@ fun CanjesScreen(navController: NavController) {
                         modifier       = Modifier.padding(horizontal = 16.dp)
                     ) {
                         if (opt.available) {
-                            navController.navigate(Routes.confirmCanje(opt.label, opt.move.toString()))
+                            if (aliasMP.isBlank()) {
+                                showAliasDialog = true
+                            } else {
+                                navController.navigate(Routes.confirmCanje(opt.label, opt.move.toString()))
+                            }
                         }
                     }
                     Spacer(Modifier.height(6.dp))

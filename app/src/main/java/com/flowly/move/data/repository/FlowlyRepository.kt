@@ -763,9 +763,17 @@ class FlowlyRepository(private val context: Context) {
     suspend fun checkAndAssignCampeon(): Result<Boolean> = runCatching {
         val cal = Calendar.getInstance()
 
-        // Solo ejecutar los lunes a las 15:00 o después
-        if (cal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) return@runCatching false
-        if (cal.get(Calendar.HOUR_OF_DAY) < 15) return@runCatching false
+        // Calcular el lunes 15:00 de esta semana (momento de asignación)
+        val assignmentDeadline = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            set(Calendar.HOUR_OF_DAY, 15)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        // No ejecutar si todavía no llegó el lunes 15:00 de esta semana
+        if (cal.before(assignmentDeadline)) return@runCatching false
 
         // Calcular la semana ISO actual, ej. "2026-W12"
         val weekYear = SimpleDateFormat("YYYY-'W'ww", Locale.ROOT).format(cal.time)
