@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.flowly.move.data.model.User
 import com.flowly.move.data.repository.FlowlyRepository
+import com.flowly.move.data.repository.FlowlyRepository.Companion.VIDEO_REWARD_AMOUNT
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,7 @@ data class DailyMision(
 
 fun getMisionesDelDia(user: User): List<DailyMision> {
     val kmHoy      = user.kmHoy
-    val videosHoy  = if (user.tokenVideosHoy > 0) (user.tokenVideosHoy / 50).coerceAtLeast(1) else 0
+    val videosHoy  = if (user.tokenVideosHoy > 0) (user.tokenVideosHoy / VIDEO_REWARD_AMOUNT).coerceAtLeast(1) else 0
     val racha      = user.diasConsecutivosVideos
     val reclamadas = user.misionesReclamadasHoy
 

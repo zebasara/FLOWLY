@@ -2,868 +2,309 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MOVE · Panel de Administración</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="FLOWLY – Caminá, ganá puntos MOVE y cobrálos en Mercado Pago. La app que convierte tu actividad física en dinero real." />
+  <title>FLOWLY – Move. Earn. Repeat.</title>
+  <meta property="og:title" content="FLOWLY – Move. Earn. Repeat." />
+  <meta property="og:description" content="Caminá, ganá puntos MOVE y cobrálos en Mercado Pago. ¡Descargá gratis!" />
+  <meta property="og:image" content="https://flowly-move.web.app/og-image.png" />
+  <meta property="og:url" content="https://flowly-move.web.app" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://flowly-move.web.app/og-image.png" />
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:      #0A120A;
-      --card:    #111A11;
-      --card2:   #182018;
-      --accent:  #7EE621;
-      --accent2: #E6A021;
-      --text:    #E8F0E8;
-      --muted:   #6B8A6B;
-      --border:  #243024;
-      --danger:  #E65C5C;
-      --success: #4CAF50;
+      --bg: #0A120A;
+      --bg2: #0f1a0f;
+      --accent: #7EE621;
+      --accent2: #5ab81a;
+      --text: #e8e8e8;
+      --muted: #7a8a7a;
+      --card: #111c11;
+      --border: #1e2e1e;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-           background: var(--bg); color: var(--text); min-height: 100vh; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; overflow-x: hidden; }
 
-    #auth-screen { display: flex; flex-direction: column; align-items: center;
-                   justify-content: center; min-height: 100vh; padding: 24px; }
-    #auth-screen h1 { font-size: 28px; color: var(--accent); margin-bottom: 8px; }
-    #auth-screen p  { color: var(--muted); margin-bottom: 32px; text-align: center; }
-    #btn-google { background: var(--accent); color: #000; font-size: 15px; font-weight: 700;
-                  border: none; border-radius: 10px; padding: 14px 32px; cursor: pointer; }
-    #btn-google:hover { opacity: 0.9; }
-
-    #app { display: none; }
-    nav  { background: var(--card); border-bottom: 1px solid var(--border);
-           padding: 0 24px; display: flex; align-items: center;
-           justify-content: space-between; height: 56px; }
-    nav .logo { color: var(--accent); font-size: 18px; font-weight: 700; }
-    nav .user  { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 12px; }
-    #btn-signout { background: var(--card2); color: var(--danger);
-                   border: 1px solid var(--border); border-radius: 8px;
-                   padding: 6px 12px; cursor: pointer; font-size: 13px; }
-
-    main { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
-    h2   { font-size: 20px; color: var(--text); margin-bottom: 20px; }
-    .section { margin-bottom: 40px; }
-    .section-title { font-size: 11px; font-weight: 600; letter-spacing: 1px;
-                     color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
-    .card  { background: var(--card); border: 1px solid var(--border);
-             border-radius: 14px; padding: 20px; margin-bottom: 12px; }
-    .card-row { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-    label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px; }
-    input, select, textarea {
-      background: var(--card2); border: 1px solid var(--border); color: var(--text);
-      border-radius: 8px; padding: 10px 12px; font-size: 14px; width: 100%; outline: none; }
-    input:focus, select:focus { border-color: var(--accent); }
-    .field { flex: 1; min-width: 140px; }
-    .btn { padding: 10px 20px; border-radius: 10px; border: none;
-           font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    .btn-primary   { background: var(--accent); color: #000; }
-    .btn-danger    { background: var(--danger); color: #fff; }
-    .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-    .btn-small     { padding: 6px 12px; font-size: 12px; }
-    .btn:hover { opacity: 0.88; }
-
-    .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .tag-green { background: rgba(126,230,33,.12); color: var(--accent); }
-    .tag-amber { background: rgba(230,160,33,.12); color: var(--accent2); }
-    .tag-red   { background: rgba(230,92,92,.12);  color: var(--danger); }
-
-    /* Productos */
-    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-    .product-card  {
-      background: var(--card2); border: 1px solid var(--border); border-radius: 14px;
-      overflow: hidden; display: flex; flex-direction: column;
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(10,18,10,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
     }
-    .product-img  { width: 100%; height: 120px; object-fit: cover; background: var(--card);
-                    display: flex; align-items: center; justify-content: center; font-size: 40px; }
-    .product-img img { width: 100%; height: 100%; object-fit: cover; }
-    .product-body  { padding: 14px; flex: 1; }
-    .product-name  { font-size: 14px; font-weight: 600; color: var(--text); }
-    .product-detail { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .product-price  { font-size: 16px; font-weight: 700; color: var(--accent); margin-top: 8px; }
-    .product-actions { padding: 10px 14px; display: flex; gap: 8px; border-top: 1px solid var(--border); }
+    .nav-logo { font-size: 1.4rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; text-decoration: none; }
+    .nav-link {
+      background: var(--accent); color: #0A120A; font-weight: 800; font-size: 0.9rem;
+      padding: 10px 22px; border-radius: 50px; text-decoration: none;
+      transition: opacity .2s;
+    }
+    .nav-link:hover { opacity: 0.85; }
 
-    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-    .loading { color: var(--muted); text-align: center; padding: 40px; font-size: 14px; }
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(126,230,33,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(126,230,33,0.1); border: 1px solid rgba(126,230,33,0.3);
+      color: var(--accent); font-size: 0.82rem; font-weight: 700; letter-spacing: 1px;
+      padding: 6px 16px; border-radius: 50px; margin-bottom: 28px;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 8vw, 5rem);
+      font-weight: 900; line-height: 1.05;
+      color: #fff; margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero-sub {
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      color: var(--muted); max-width: 520px; margin: 0 auto 40px;
+    }
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--accent); color: #0A120A;
+      font-size: 1.05rem; font-weight: 900;
+      padding: 18px 40px; border-radius: 50px; text-decoration: none;
+      box-shadow: 0 8px 32px rgba(126,230,33,0.35);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(126,230,33,0.45); }
+    .hero-cta svg { width: 22px; height: 22px; }
+    .hero-note { margin-top: 16px; font-size: 0.82rem; color: var(--muted); }
 
-    /* Upload progress */
-    .upload-progress { margin-top: 8px; height: 4px; background: var(--border);
-                       border-radius: 2px; overflow: hidden; display: none; }
-    .upload-progress-bar { height: 100%; background: var(--accent); transition: width .2s; }
+    /* STATS */
+    .stats {
+      display: flex; justify-content: center; gap: 0;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 24px;
+    }
+    .stat {
+      flex: 1; min-width: 160px;
+      text-align: center; padding: 36px 24px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-size: 2.2rem; font-weight: 900; color: var(--accent); }
+    .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
 
-    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-             background: var(--card); border: 1px solid var(--accent); color: var(--accent);
-             padding: 12px 24px; border-radius: 10px; font-size: 14px;
-             display: none; z-index: 999; }
+    /* HOW IT WORKS */
+    section { padding: 96px 24px; max-width: 1080px; margin: 0 auto; }
+    .section-label {
+      text-align: center; font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+    }
+    .section-title { text-align: center; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 900; color: #fff; margin-bottom: 56px; }
+
+    .steps { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; left: 28px; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(to bottom, var(--accent), transparent);
+    }
+    .step { display: flex; gap: 28px; align-items: flex-start; padding: 0 0 48px 0; }
+    .step-num {
+      width: 56px; height: 56px; flex-shrink: 0;
+      background: var(--accent); color: #0A120A;
+      font-size: 1.2rem; font-weight: 900; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .step-content h3 { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .step-content p { color: var(--muted); font-size: 0.97rem; }
+
+    /* FEATURES */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 28px;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover { border-color: rgba(126,230,33,0.4); transform: translateY(-3px); }
+    .feature-icon { font-size: 2rem; margin-bottom: 14px; }
+    .feature-card h3 { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* CTA BOTTOM */
+    .cta-section {
+      text-align: center;
+      padding: 96px 24px;
+      background: linear-gradient(to bottom, transparent, rgba(126,230,33,0.04), transparent);
+    }
+    .cta-section h2 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900; color: #fff; margin-bottom: 16px; }
+    .cta-section p { color: var(--muted); font-size: 1.05rem; margin-bottom: 40px; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 16px; max-width: 1080px; margin: 0 auto;
+    }
+    .footer-logo { font-size: 1.1rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { color: var(--muted); font-size: 0.88rem; text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-copy { color: var(--muted); font-size: 0.82rem; width: 100%; text-align: center; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .stats { flex-direction: column; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat:last-child { border-bottom: none; }
+      .steps::before { left: 24px; }
+    }
   </style>
 </head>
 <body>
 
-<div id="auth-screen">
-  <h1>🌿 MOVE Admin</h1>
-  <p>Panel de administración. Iniciá sesión con tu cuenta de Google autorizada.</p>
-  <button id="btn-google">Iniciar sesión con Google</button>
-</div>
-
-<div id="app">
+  <!-- NAV -->
   <nav>
-    <span class="logo">🌿 MOVE Admin</span>
-    <span class="user">
-      <span id="user-email"></span>
-      <button id="btn-signout" class="btn btn-secondary btn-small">Cerrar sesión</button>
-    </span>
+    <a class="nav-logo" href="#">FLOWLY</a>
+    <a class="nav-link" href="#descargar">Descargar</a>
   </nav>
 
-  <main>
-    <h2>Panel de administración</h2>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">🇦🇷 Disponible en Argentina</div>
+    <h1>Moverse<br/>ahora <span>paga</span>.</h1>
+    <p class="hero-sub">Caminá, completá desafíos y acumulá puntos MOVE que podés cobrar en tu Mercado Pago.</p>
+    <a class="hero-cta" href="https://play.google.com/store/apps/details?id=com.flowly.move&pcampaignid=web_share" id="hero-btn" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.3.17.64.24.98.24.43 0 .85-.12 1.22-.35l15.4-8.89c.74-.43 1.22-1.22 1.22-2.1 0-.87-.48-1.67-1.22-2.1L5.38.57C4.64.14 3.73.1 2.95.49 2.17.88 1.68 1.68 1.68 2.56v18.88c0 .88.49 1.68 1.5 2.32z"/></svg>
+      Descargar gratis
+    </a>
+    <p class="hero-note">Disponible para Android • Gratis</p>
+  </section>
 
-    <!-- Configuración general -->
-    <div class="section">
-      <div class="section-title">configuración general</div>
-      <div class="card">
-        <!-- Umbral de usuarios -->
-        <div class="card-row">
-          <div class="field">
-            <label>Umbral de usuarios para abrir la tienda</label>
-            <input type="number" id="umbral" min="1" placeholder="500" />
-          </div>
-          <div style="padding-top:22px">
-            <button class="btn btn-primary" onclick="saveUmbral()">Guardar</button>
-          </div>
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Gratis para descargar</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">MOVE</div>
+      <div class="stat-label">Puntos que valen dinero real</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">MP</div>
+      <div class="stat-label">Cobros vía Mercado Pago</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">24/7</div>
+      <div class="stat-label">Tu actividad siempre activa</div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section>
+    <div class="section-label">¿Cómo funciona?</div>
+    <div class="section-title">Tres pasos para empezar a ganar</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Descargá FLOWLY y creá tu cuenta</h3>
+          <p>Iniciá sesión con Google en segundos. Sin formularios largos, sin complicaciones.</p>
         </div>
-        <hr/>
-        <p style="font-size:12px; color:var(--muted)">
-          Usuarios actuales: <strong id="user-count" style="color:var(--accent)">…</strong>
-        </p>
-
-        <hr/>
-
-        <!-- URL base de referidos -->
-        <div class="card-row" style="align-items:flex-end">
-          <div class="field" style="flex:2">
-            <label>URL base del link de referidos</label>
-            <input type="text" id="referral-base-url"
-                   placeholder="https://flowly.app/r"
-                   style="font-family:monospace" />
-            <p style="font-size:11px;color:var(--muted);margin-top:4px">
-              El link completo del usuario será: <span id="referral-preview" style="color:var(--accent)">URL/CODIGO</span>
-            </p>
-          </div>
-          <div style="padding-bottom:22px; margin-left:12px">
-            <button class="btn btn-primary" onclick="saveReferralUrl()">Guardar</button>
-          </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Moverse y ganar puntos MOVE</h3>
+          <p>Caminá, corré y completá desafíos diarios. Cada paso cuenta. También podés ganar puntos mirando videos y por referidos.</p>
         </div>
-
-        <hr/>
-
-        <!-- URL de Mercado Pago -->
-        <div class="card-row" style="align-items:flex-end">
-          <div class="field" style="flex:2">
-            <label>Link de descarga Mercado Pago <span style="color:var(--accent)">💳</span></label>
-            <input type="url" id="mp-url"
-                   placeholder="https://mpago.la/tu-link"
-                   style="font-family:monospace" />
-            <p style="font-size:11px;color:var(--muted);margin-top:4px">
-              Se mostrará en la pantalla de Canjes para que los usuarios descarguen MP.
-              Dejá vacío para ocultar el botón.
-            </p>
-          </div>
-          <div style="padding-bottom:22px; margin-left:12px">
-            <button class="btn btn-primary" onclick="saveMercadoPagoUrl()">Guardar</button>
-          </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Canjeá tus puntos por dinero real</h3>
+          <p>Cuando acumulás suficientes puntos MOVE, los canjeás directamente a tu cuenta de Mercado Pago.</p>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- ── Blockchain ──────────────────────────────────────────────────── -->
-    <div class="section">
-      <div class="section-title">configuración blockchain</div>
-      <div class="card">
-
-        <!-- Fila 1: habilitado + red + ticker -->
-        <div class="card-row">
-          <div class="field" style="max-width:160px">
-            <label>Estado</label>
-            <select id="bc-enabled">
-              <option value="false">🔒 Bloqueado</option>
-              <option value="true">✅ Activo</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Nombre de la red</label>
-            <input type="text" id="bc-red" placeholder="BNB Smart Chain" />
-          </div>
-          <div class="field" style="max-width:120px">
-            <label>Ticker</label>
-            <input type="text" id="bc-ticker" placeholder="BNB" />
-          </div>
-        </div>
-
-        <div class="card-row" style="margin-top:12px">
-          <div class="field" style="max-width:120px">
-            <label>Fee % (comisión)</label>
-            <input type="number" id="bc-fee" min="0" max="100" step="0.5" placeholder="3" />
-          </div>
-          <div class="field">
-            <label>Wallet que recibe el fee (la tuya)</label>
-            <input type="text" id="bc-fee-wallet" placeholder="0x…" style="font-family:monospace" />
-          </div>
-        </div>
-
-        <div class="card-row" style="margin-top:12px">
-          <div class="field" style="max-width:150px">
-            <label>Mínimo retiro (MOVE)</label>
-            <input type="number" id="bc-min" min="1" placeholder="1000" />
-          </div>
-          <div class="field" style="max-width:150px">
-            <label>Máximo retiro (MOVE)</label>
-            <input type="number" id="bc-max" min="1" placeholder="100000" />
-          </div>
-          <div class="field" style="max-width:150px">
-            <label>Meta usuarios (para activar)</label>
-            <input type="number" id="bc-meta" min="1" placeholder="5000" />
-          </div>
-        </div>
-
-        <div style="margin-top:12px">
-          <label>Info de tasa de cambio (opcional, visible para el usuario)</label>
-          <input type="text" id="bc-tasa" placeholder="1 MOVE ≈ 0.0001 BNB (referencia)" />
-        </div>
-
-        <div style="margin-top:10px">
-          <label>Mensaje cuando está bloqueado</label>
-          <textarea id="bc-mensaje" rows="2"
-            style="resize:vertical"
-            placeholder="Llevamos el token MOVE a BNB Chain. Cuando lleguemos a nuestra meta podés retirar tus MOVE a tu wallet."></textarea>
-        </div>
-
-        <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
-          <button class="btn btn-primary" onclick="saveBlockchainConfig()">Guardar configuración blockchain</button>
-          <span id="bc-status" style="font-size:12px; color:var(--muted)"></span>
-        </div>
+  <!-- FEATURES -->
+  <section>
+    <div class="section-label">Funciones</div>
+    <div class="section-title">Todo lo que trae FLOWLY</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🏃</div>
+        <h3>Tracking de actividad</h3>
+        <p>Registrá tus pasos y sesiones de movimiento en tiempo real. Tu esfuerzo se traduce en puntos automáticamente.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💸</div>
+        <h3>Cobros en Mercado Pago</h3>
+        <p>Canjeá tus puntos MOVE directamente en tu cuenta MP. Sin intermediarios, sin demoras.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <h3>Rankings y niveles</h3>
+        <p>Competí con otros usuarios, subí de nivel y desbloqueá beneficios exclusivos a medida que avanzás.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <h3>Videos con recompensa</h3>
+        <p>Mirá videos cortos y ganá puntos MOVE extra. Una forma simple de sumar sin moverte.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎁</div>
+        <h3>Sistema de referidos</h3>
+        <p>Invitá amigos y ganá bonos cada vez que alguien se registra con tu link. Más amigos, más puntos.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗺️</div>
+        <h3>Mapa comunitario</h3>
+        <p>Ves en tiempo real dónde está moviéndose la comunidad FLOWLY en tu ciudad.</p>
       </div>
     </div>
+  </section>
 
-    <!-- ── Retiros pendientes ─────────────────────────────────────────────── -->
-    <div class="section">
-      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-        <span>retiros blockchain pendientes</span>
-        <button class="btn btn-secondary btn-small" onclick="loadRetiros()">↺ Actualizar</button>
-      </div>
-      <div id="retiros-list">
-        <div class="loading">Cargando retiros…</div>
-      </div>
+  <!-- CTA BOTTOM -->
+  <div class="cta-section" id="descargar">
+    <h2>¿Listo para <span style="color:var(--accent)">ganar</span> moviéndote?</h2>
+    <p>Descargá FLOWLY gratis y empezá a convertir tus pasos en dinero real hoy.</p>
+    <a class="hero-cta" href="https://play.google.com/store/apps/details?id=com.flowly.move&pcampaignid=web_share" id="play-store-btn" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px"><path d="M3.18 23.76c.3.17.64.24.98.24.43 0 .85-.12 1.22-.35l15.4-8.89c.74-.43 1.22-1.22 1.22-2.1 0-.87-.48-1.67-1.22-2.1L5.38.57C4.64.14 3.73.1 2.95.49 2.17.88 1.68 1.68 1.68 2.56v18.88c0 .88.49 1.68 1.5 2.32z"/></svg>
+      Descargar en Google Play
+    </a>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">FLOWLY</div>
+    <div class="footer-links">
+      <a href="/privacidad">Privacidad</a>
+      <a href="/privacidad#eliminacion">Eliminar cuenta</a>
+      <a href="mailto:flowlyandmove@gmail.com">Contacto</a>
     </div>
+    <div class="footer-copy">&copy; 2026 FLOWLY. Todos los derechos reservados.</div>
+  </footer>
 
-    <!-- ── Canjes pendientes ─────────────────────────────────────────────── -->
-    <div class="section">
-      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-        <span>canjes pendientes (tienda)</span>
-        <button class="btn btn-secondary btn-small" onclick="loadCanjes()">↺ Actualizar</button>
-      </div>
-      <div id="canjes-list">
-        <div class="loading">Cargando canjes…</div>
-      </div>
-    </div>
-
-    <!-- Formulario Producto -->
-    <div class="section">
-      <div class="section-title">agregar / editar producto</div>
-      <div class="card">
-        <div class="card-row">
-          <div class="field">
-            <label>ID del producto *</label>
-            <input type="text" id="prod-id" placeholder="cash_500" />
-          </div>
-          <div class="field">
-            <label>Nombre *</label>
-            <input type="text" id="prod-nombre" placeholder="$500 ARS" />
-          </div>
-        </div>
-        <div class="card-row" style="margin-top:10px">
-          <div class="field">
-            <label>Descripción</label>
-            <input type="text" id="prod-desc" placeholder="Transferencia Mercado Pago" />
-          </div>
-          <div class="field">
-            <label>Label del monto</label>
-            <input type="text" id="prod-monto-label" placeholder="$500" />
-          </div>
-        </div>
-        <div class="card-row" style="margin-top:10px">
-          <div class="field">
-            <label>MOVE requerido</label>
-            <input type="number" id="prod-move" placeholder="5000" min="0" />
-          </div>
-          <div class="field">
-            <label>Categoría</label>
-            <select id="prod-cat">
-              <option value="cash">💸 cash (dinero)</option>
-              <option value="gift">🎁 gift (regalo)</option>
-              <option value="promo">🏷️ promo (descuento)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Activo</label>
-            <select id="prod-activo">
-              <option value="true">✅ Sí</option>
-              <option value="false">❌ No</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Imagen del producto -->
-        <div style="margin-top:12px">
-          <label>Imagen del producto</label>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-            <input type="file" id="prod-imagen" accept="image/*"
-                   style="flex:1; min-width:200px" onchange="previewImage(event)" />
-            <div id="prod-imagen-preview"
-                 style="width:80px;height:60px;border-radius:8px;overflow:hidden;
-                        background:var(--card);display:flex;align-items:center;
-                        justify-content:center;font-size:24px;border:1px solid var(--border)">
-              📦
-            </div>
-          </div>
-          <div class="upload-progress" id="upload-progress">
-            <div class="upload-progress-bar" id="upload-bar"></div>
-          </div>
-          <p id="current-imagen-url" style="font-size:11px;color:var(--muted);margin-top:4px"></p>
-        </div>
-
-        <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="saveProduct()">Guardar producto</button>
-          <button class="btn btn-secondary" onclick="clearProductForm()">Limpiar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Lista de productos -->
-    <div class="section">
-      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-        <span>productos guardados</span>
-        <button class="btn btn-secondary btn-small" onclick="loadConfig()">↺ Actualizar</button>
-      </div>
-      <div class="products-grid" id="products-list">
-        <div class="loading">Cargando…</div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<div id="toast"></div>
-
-<script type="module">
-  import { initializeApp }
-    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, collectionGroup, query, orderBy, where, getDocs, getDocsFromServer, limit }
-    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-  import { getCountFromServer }
-    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-  import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL }
-    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyD-zYJ2d4RH10VLx9Ws3c4fQBdRuOMVAY0",
-    authDomain: "flowly-move.firebaseapp.com",
-    projectId: "flowly-move",
-    storageBucket: "flowly-move.firebasestorage.app",
-    messagingSenderId: "353360357334",
-    appId: "1:353360357334:web:140938bb47940e19d52677",
-    measurementId: "G-746LV8GZYR"
-  };
-
-  const app          = initializeApp(firebaseConfig);
-  const auth         = getAuth(app);
-  const db           = getFirestore(app);
-  const storage      = getStorage(app);
-  const storeRef     = doc(db, 'config', 'store');
-  const blockchainRef = doc(db, 'config', 'blockchain');
-
-  // ── Productos por defecto ──────────────────────────────────────────────
-  const DEFAULT_PRODUCTS = [
-    { id:'cash_500',     nombre:'$500 ARS',    descripcion:'Transferencia vía Mercado Pago', moveRequerido:5000,  montoLabel:'$500',   categoria:'cash',  activo:true,  imagenUrl:'' },
-    { id:'cash_1000',    nombre:'$1.000 ARS',  descripcion:'Transferencia vía Mercado Pago', moveRequerido:9500,  montoLabel:'$1.000', categoria:'cash',  activo:true,  imagenUrl:'' },
-    { id:'cash_2000',    nombre:'$2.000 ARS',  descripcion:'Transferencia vía Mercado Pago', moveRequerido:18000, montoLabel:'$2.000', categoria:'cash',  activo:true,  imagenUrl:'' },
-    { id:'gift_cafe',    nombre:'Café gratis',  descripcion:'Voucher en locales adheridos',   moveRequerido:3000,  montoLabel:'Voucher', categoria:'gift', activo:true,  imagenUrl:'' },
-    { id:'gift_desc',    nombre:'10% descuento',descripcion:'En comercios adheridos a MOVE', moveRequerido:1500,  montoLabel:'Promo',  categoria:'promo', activo:true,  imagenUrl:'' },
-  ];
-
-  // ── Auth ───────────────────────────────────────────────────────────────
-  document.getElementById('btn-google').onclick = async () => {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-    catch(e) { alert('Error al iniciar sesión: ' + e.message); }
-  };
-  document.getElementById('btn-signout').onclick = () => signOut(auth);
-
-  onAuthStateChanged(auth, async user => {
-    document.getElementById('auth-screen').style.display = user ? 'none' : 'flex';
-    document.getElementById('app').style.display         = user ? 'block' : 'none';
-    if (user) {
-      document.getElementById('user-email').textContent = user.email;
-      await loadConfig();
-      await loadUserCount();
-      await loadBlockchainConfig();
-      await loadRetiros();
-      await loadCanjes();
-    }
-  });
-
-  // ── Config ─────────────────────────────────────────────────────────────
-  let currentConfig = { umbralUsuarios: 500, productos: [] };
-
-  window.loadConfig = async function() {
-    try {
-      const snap = await getDoc(storeRef);
-      if (snap.exists()) {
-        currentConfig = snap.data();
-        if (!currentConfig.productos || currentConfig.productos.length === 0) {
-          currentConfig.productos = DEFAULT_PRODUCTS;
-          await setDoc(storeRef, currentConfig);
-          showToast('Productos inicializados con valores por defecto ✓');
-        }
-      } else {
-        currentConfig = { umbralUsuarios: 500, productos: DEFAULT_PRODUCTS, referralBaseUrl: 'https://flowly.app/r' };
-        await setDoc(storeRef, currentConfig);
-        showToast('Configuración creada con valores por defecto ✓');
-      }
-      document.getElementById('umbral').value = currentConfig.umbralUsuarios || 500;
-      const urlInput = document.getElementById('referral-base-url');
-      urlInput.value = currentConfig.referralBaseUrl || 'https://flowly.app/r';
-      updateReferralPreview();
-      document.getElementById('mp-url').value = currentConfig.mercadoPagoUrl || '';
-      renderProducts(currentConfig.productos || []);
-    } catch(e) {
-      showToast('Error al cargar config: ' + e.message, true);
-    }
-  };
-
-  function updateReferralPreview() {
-    const base = document.getElementById('referral-base-url').value.trim().replace(/\/$/, '');
-    document.getElementById('referral-preview').textContent = base ? base + '/CODIGO_USUARIO' : 'URL/CODIGO';
-  }
-  document.getElementById('referral-base-url').addEventListener('input', updateReferralPreview);
-
-  window.saveReferralUrl = async function() {
-    const url = document.getElementById('referral-base-url').value.trim().replace(/\/$/, '');
-    if (!url) { showToast('Ingresá una URL válida', true); return; }
-    try {
-      await setDoc(storeRef, { ...currentConfig, referralBaseUrl: url });
-      currentConfig.referralBaseUrl = url;
-      showToast('URL de referidos guardada ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  window.saveMercadoPagoUrl = async function() {
-    const url = document.getElementById('mp-url').value.trim();
-    try {
-      await setDoc(storeRef, { ...currentConfig, mercadoPagoUrl: url });
-      currentConfig.mercadoPagoUrl = url;
-      showToast(url ? 'Link de Mercado Pago guardado ✓' : 'Botón de Mercado Pago ocultado ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  async function loadUserCount() {
-    try {
-      const snap = await getCountFromServer(query(collection(db, 'usuarios')));
-      document.getElementById('user-count').textContent = snap.data().count;
-    } catch(e) {
-      document.getElementById('user-count').textContent = '–';
-    }
-  }
-
-  // ── Umbral ─────────────────────────────────────────────────────────────
-  window.saveUmbral = async function() {
-    const val = parseInt(document.getElementById('umbral').value) || 500;
-    try {
-      await setDoc(storeRef, { ...currentConfig, umbralUsuarios: val });
-      currentConfig.umbralUsuarios = val;
-      showToast('Umbral guardado ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  // ── Imagen preview ─────────────────────────────────────────────────────
-  window.previewImage = function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const preview = document.getElementById('prod-imagen-preview');
-    const reader  = new FileReader();
-    reader.onload = e => {
-      preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover"/>`;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // ── Guardar producto ───────────────────────────────────────────────────
-  window.saveProduct = async function() {
-    const id     = document.getElementById('prod-id').value.trim();
-    const nombre = document.getElementById('prod-nombre').value.trim();
-    if (!id || !nombre) { showToast('ID y nombre son obligatorios', true); return; }
-
-    const desc       = document.getElementById('prod-desc').value.trim();
-    const label      = document.getElementById('prod-monto-label').value.trim();
-    const move       = parseInt(document.getElementById('prod-move').value) || 0;
-    const cat        = document.getElementById('prod-cat').value;
-    const activo     = document.getElementById('prod-activo').value === 'true';
-    const fileInput  = document.getElementById('prod-imagen');
-    const file       = fileInput.files[0];
-    const currentUrl = document.getElementById('current-imagen-url').dataset.url || '';
-
-    let imagenUrl = currentUrl;
-
-    // Subir imagen si seleccionaron una nueva
-    if (file) {
-      try {
-        imagenUrl = await uploadProductImage(id, file);
-      } catch(e) {
-        showToast('Error al subir imagen: ' + e.message, true);
-        return;
-      }
-    }
-
-    const nuevo = { id, nombre, descripcion: desc, montoLabel: label,
-                    moveRequerido: move, categoria: cat, activo, imagenUrl };
-    const prods = [...(currentConfig.productos || [])];
-    const idx   = prods.findIndex(p => p.id === id);
-    if (idx >= 0) prods[idx] = nuevo; else prods.push(nuevo);
-
-    try {
-      await setDoc(storeRef, { ...currentConfig, productos: prods });
-      currentConfig.productos = prods;
-      renderProducts(prods);
-      clearProductForm();
-      showToast('Producto guardado ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  async function uploadProductImage(prodId, file) {
-    return new Promise((resolve, reject) => {
-      const ref      = storageRef(storage, `store_products/${prodId}.jpg`);
-      const task     = uploadBytesResumable(ref, file);
-      const bar      = document.getElementById('upload-bar');
-      const progress = document.getElementById('upload-progress');
-      progress.style.display = 'block';
-
-      task.on('state_changed',
-        snap => {
-          const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
-          bar.style.width = pct + '%';
-        },
-        err => { progress.style.display = 'none'; reject(err); },
-        async () => {
-          progress.style.display = 'none';
-          const url = await getDownloadURL(task.snapshot.ref);
-          resolve(url);
-        }
-      );
-    });
-  }
-
-  // ── Render productos ───────────────────────────────────────────────────
-  function renderProducts(products) {
-    const list = document.getElementById('products-list');
-    if (!products || products.length === 0) {
-      list.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px 0">No hay productos guardados.</p>';
-      return;
-    }
-    list.innerHTML = products.map((p, i) => {
-      const catIcon = p.categoria === 'cash' ? '💸' : p.categoria === 'gift' ? '🎁' : '🏷️';
-      const imgHtml = p.imagenUrl
-        ? `<img src="${p.imagenUrl}" style="width:100%;height:120px;object-fit:cover"/>`
-        : `<div style="width:100%;height:120px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:40px">${catIcon}</div>`;
-      return `
-        <div class="product-card">
-          ${imgHtml}
-          <div class="product-body">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span class="product-name">${p.nombre}</span>
-              <span class="tag ${p.activo ? 'tag-green' : 'tag-red'}">${p.activo ? 'Activo' : 'Inactivo'}</span>
-            </div>
-            <div class="product-detail">${p.descripcion || ''}</div>
-            <div class="product-price">${(p.moveRequerido || 0).toLocaleString()} MOVE</div>
-            <div class="product-detail" style="margin-top:4px">ID: ${p.id} · ${p.categoria}</div>
-          </div>
-          <div class="product-actions">
-            <button class="btn btn-secondary btn-small" style="flex:1" onclick="editProduct(${i})">✏️ Editar</button>
-            <button class="btn btn-danger btn-small" onclick="deleteProduct(${i})">🗑️</button>
-          </div>
-        </div>`;
-    }).join('');
-  }
-
-  window.editProduct = function(i) {
-    const p = currentConfig.productos[i];
-    document.getElementById('prod-id').value          = p.id || '';
-    document.getElementById('prod-nombre').value      = p.nombre || '';
-    document.getElementById('prod-desc').value        = p.descripcion || '';
-    document.getElementById('prod-monto-label').value = p.montoLabel || '';
-    document.getElementById('prod-move').value        = p.moveRequerido || 0;
-    document.getElementById('prod-cat').value         = p.categoria || 'cash';
-    document.getElementById('prod-activo').value      = String(p.activo !== false);
-    // Mostrar imagen actual
-    const urlEl = document.getElementById('current-imagen-url');
-    urlEl.dataset.url = p.imagenUrl || '';
-    if (p.imagenUrl) {
-      urlEl.textContent = '📎 Imagen actual guardada';
-      document.getElementById('prod-imagen-preview').innerHTML =
-        `<img src="${p.imagenUrl}" style="width:100%;height:100%;object-fit:cover"/>`;
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  window.deleteProduct = async function(i) {
-    const p = currentConfig.productos[i];
-    if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
-    const prods = [...(currentConfig.productos || [])];
-    prods.splice(i, 1);
-    try {
-      await setDoc(storeRef, { ...currentConfig, productos: prods });
-      currentConfig.productos = prods;
-      renderProducts(prods);
-      showToast('Producto eliminado');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  window.clearProductForm = function() {
-    ['prod-id','prod-nombre','prod-desc','prod-monto-label','prod-move']
-      .forEach(id => document.getElementById(id).value = '');
-    document.getElementById('prod-cat').value    = 'cash';
-    document.getElementById('prod-activo').value = 'true';
-    document.getElementById('prod-imagen').value = '';
-    document.getElementById('prod-imagen-preview').innerHTML = '📦';
-    const urlEl = document.getElementById('current-imagen-url');
-    urlEl.textContent = ''; urlEl.dataset.url = '';
-  };
-
-  // ── Blockchain config ──────────────────────────────────────────────────
-  const BC_DEFAULTS = {
-    enabled: false,
-    red: 'BNB Smart Chain',
-    redTicker: 'BNB',
-    feePercent: 3.0,
-    feeWalletAddress: '',
-    minRetiro: 1000,
-    maxRetiro: 100000,
-    tasaCambioInfo: '',
-    metaUsuarios: 5000,
-    mensajeBloqueado: 'Llevamos el token MOVE a BNB Chain. Cuando lleguemos a nuestra meta podés retirar tus MOVE a tu wallet y tradearlos.'
-  };
-
-  window.loadBlockchainConfig = async function() {
-    try {
-      const snap = await getDoc(blockchainRef);
-      const cfg  = snap.exists() ? { ...BC_DEFAULTS, ...snap.data() } : BC_DEFAULTS;
-      document.getElementById('bc-enabled').value    = String(cfg.enabled);
-      document.getElementById('bc-red').value        = cfg.red;
-      document.getElementById('bc-ticker').value     = cfg.redTicker;
-      document.getElementById('bc-fee').value        = cfg.feePercent;
-      document.getElementById('bc-fee-wallet').value = cfg.feeWalletAddress;
-      document.getElementById('bc-min').value        = cfg.minRetiro;
-      document.getElementById('bc-max').value        = cfg.maxRetiro;
-      document.getElementById('bc-meta').value       = cfg.metaUsuarios;
-      document.getElementById('bc-tasa').value       = cfg.tasaCambioInfo;
-      document.getElementById('bc-mensaje').value    = cfg.mensajeBloqueado;
-    } catch(e) {
-      document.getElementById('bc-status').textContent = 'Error al cargar: ' + e.message;
-    }
-  };
-
-  window.saveBlockchainConfig = async function() {
-    const enabled     = document.getElementById('bc-enabled').value === 'true';
-    const red         = document.getElementById('bc-red').value.trim();
-    const redTicker   = document.getElementById('bc-ticker').value.trim();
-    const feePercent  = parseFloat(document.getElementById('bc-fee').value) || 3;
-    const feeWallet   = document.getElementById('bc-fee-wallet').value.trim();
-    const minRetiro   = parseInt(document.getElementById('bc-min').value) || 1000;
-    const maxRetiro   = parseInt(document.getElementById('bc-max').value) || 100000;
-    const metaUsuarios= parseInt(document.getElementById('bc-meta').value) || 5000;
-    const tasaInfo    = document.getElementById('bc-tasa').value.trim();
-    const mensaje     = document.getElementById('bc-mensaje').value.trim();
-
-    if (!red) { showToast('Ingresá el nombre de la red', true); return; }
-    if (feePercent < 0 || feePercent > 100) { showToast('Fee debe estar entre 0 y 100', true); return; }
-    if (minRetiro >= maxRetiro) { showToast('El mínimo debe ser menor al máximo', true); return; }
-
-    const cfg = {
-      enabled, red, redTicker, feePercent, feeWalletAddress: feeWallet,
-      minRetiro, maxRetiro, metaUsuarios,
-      tasaCambioInfo: tasaInfo,
-      mensajeBloqueado: mensaje || BC_DEFAULTS.mensajeBloqueado
-    };
-
-    const statusEl = document.getElementById('bc-status');
-    statusEl.textContent = 'Guardando…';
-    try {
-      await setDoc(blockchainRef, cfg);
-      statusEl.textContent = '';
-      showToast(`Blockchain ${enabled ? '✅ activado' : '🔒 desactivado'} · Configuración guardada`);
-    } catch(e) {
-      statusEl.textContent = 'Error: ' + e.message;
-      showToast('Error al guardar: ' + e.message, true);
-    }
-  };
-
-  // ── Retiros blockchain ──────────────────────────────────────────────────
-  window.loadRetiros = async function() {
-    const listEl = document.getElementById('retiros-list');
-    listEl.innerHTML = '<div class="loading">Cargando…</div>';
-    try {
-      // collectionGroup query: todos los retirosBlockchain donde estado = 'pendiente'
-      const q    = query(collectionGroup(db, 'retirosBlockchain'), where('estado', '==', 'pendiente'), orderBy('createdAt', 'desc'), limit(50));
-      const snap = await getDocsFromServer(q);
-      if (snap.empty) {
-        listEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No hay retiros pendientes. ✅</p>';
-        return;
-      }
-      listEl.innerHTML = snap.docs.map(d => {
-        const r   = d.data();
-        const uid = r.uid || d.ref.parent.parent?.id || '?';
-        const fecha = r.createdAt ? new Date(r.createdAt).toLocaleString('es-AR') : '—';
-        return `
-          <div class="card" style="margin-bottom:10px" id="retiro-${d.id}">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-              <div>
-                <div style="font-size:15px;font-weight:700;color:var(--text)">${(r.moveNeto||0).toLocaleString()} MOVE → usuario</div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px">UID: ${uid}</div>
-                <div style="font-size:12px;color:var(--muted)">Wallet: <span style="font-family:monospace;color:var(--text)">${r.walletDestino || '—'}</span></div>
-                <div style="font-size:12px;color:var(--muted)">Total: ${(r.moveTotal||0).toLocaleString()} · Fee: ${(r.moveFee||0).toLocaleString()} (${r.feePercent||0}%) · Red: ${r.red||'—'}</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px">${fecha}</div>
-              </div>
-              <span class="tag tag-amber">⏳ Pendiente</span>
-            </div>
-            <hr style="margin:12px 0"/>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-              <div class="field" style="flex:2;min-width:220px">
-                <label>TX Hash (obligatorio para marcar como procesado)</label>
-                <input type="text" id="tx-${d.id}" placeholder="0x…" style="font-family:monospace" />
-              </div>
-              <button class="btn btn-primary btn-small" onclick="procesarRetiro('${uid}','${d.id}')">✅ Marcar procesado</button>
-              <button class="btn btn-danger btn-small" onclick="rechazarRetiro('${uid}','${d.id}',${r.moveTotal||0})">❌ Rechazar</button>
-            </div>
-          </div>`;
-      }).join('');
-    } catch(e) {
-      listEl.innerHTML = `<p style="color:var(--danger);font-size:13px">Error: ${e.message}<br/><small>Asegurate de tener el índice de collectionGroup en Firestore.</small></p>`;
-    }
-  };
-
-  window.procesarRetiro = async function(uid, retiroId) {
-    const txHash = document.getElementById('tx-' + retiroId).value.trim();
-    if (!txHash) { showToast('Ingresá el TX Hash antes de marcar como procesado', true); return; }
-    try {
-      const retiroDoc = doc(db, 'usuarios', uid, 'retirosBlockchain', retiroId);
-      await updateDoc(retiroDoc, { estado: 'procesado', txHash });
-      document.getElementById('retiro-' + retiroId)?.remove();
-      showToast('Retiro marcado como procesado ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  window.rechazarRetiro = async function(uid, retiroId, moveTotal) {
-    const nota = prompt('Motivo del rechazo (opcional):') ?? '';
-    try {
-      const retiroDoc = doc(db, 'usuarios', uid, 'retirosBlockchain', retiroId);
-      await updateDoc(retiroDoc, { estado: 'rechazado', notaAdmin: nota });
-      // Devolver MOVE al usuario
-      const userDocRef  = doc(db, 'usuarios', uid);
-      const userSnap    = await getDoc(userDocRef);
-      const currentTokens = (userSnap.data()?.tokensActuales || 0);
-      await updateDoc(userDocRef, { tokensActuales: currentTokens + moveTotal });
-      document.getElementById('retiro-' + retiroId)?.remove();
-      showToast('Retiro rechazado y MOVE devueltos al usuario ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  // ── Canjes ─────────────────────────────────────────────────────────────
-  window.loadCanjes = async function() {
-    const listEl = document.getElementById('canjes-list');
-    listEl.innerHTML = '<div class="loading">Cargando…</div>';
-    try {
-      const q    = query(collectionGroup(db, 'canjes'), where('estado', '==', 'pendiente'), orderBy('createdAt', 'desc'), limit(50));
-      const snap = await getDocsFromServer(q);
-      if (snap.empty) {
-        listEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No hay canjes pendientes. ✅</p>';
-        return;
-      }
-      listEl.innerHTML = snap.docs.map(d => {
-        const c     = d.data();
-        const uid   = c.uid || d.ref.parent.parent?.id || '?';
-        const fecha = c.createdAt ? new Date(c.createdAt).toLocaleString('es-AR') : '—';
-        const catIcon = c.categoria === 'cash' ? '💸' : c.categoria === 'gift' ? '🎁' : '🏷️';
-        return `
-          <div class="card" style="margin-bottom:10px" id="canje-${d.id}">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-              <div>
-                <div style="font-size:15px;font-weight:700;color:var(--text)">${catIcon} ${c.nombre || '—'} · ${c.montoLabel || ''}</div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px">UID: ${uid}</div>
-                <div style="font-size:12px;color:var(--muted)">
-                  Alias MP: <strong style="color:var(--text)">${c.aliasDestino || '—'}</strong>
-                  · ${(c.moveDescontado||0).toLocaleString()} MOVE descontados
-                </div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px">${fecha}</div>
-              </div>
-              <span class="tag tag-amber">⏳ Pendiente</span>
-            </div>
-            <hr style="margin:10px 0"/>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-primary btn-small" onclick="completarCanje('${uid}','${d.id}')">✅ Marcar completado</button>
-              <button class="btn btn-danger btn-small" onclick="rechazarCanje('${uid}','${d.id}',${c.moveDescontado||0})">❌ Rechazar</button>
-            </div>
-          </div>`;
-      }).join('');
-    } catch(e) {
-      listEl.innerHTML = `<p style="color:var(--danger);font-size:13px">Error: ${e.message}<br/><small>Necesitás un índice collectionGroup para 'canjes': estado ASC + createdAt DESC.</small></p>`;
-    }
-  };
-
-  window.completarCanje = async function(uid, canjeId) {
-    if (!confirm('¿Marcar canje como completado?')) return;
-    try {
-      await updateDoc(doc(db, 'usuarios', uid, 'canjes', canjeId), { estado: 'completado' });
-      // Notificación al usuario
-      const notifRef = doc(db, 'usuarios', uid, 'notificaciones', canjeId + '_ok');
-      await setDoc(notifRef, {
-        uid, titulo: '¡Canje completado! ✅',
-        cuerpo: 'Tu canje fue procesado y enviado.',
-        tipo: 'pago', leida: false,
-        createdAt: Date.now()
-      });
-      document.getElementById('canje-' + canjeId)?.remove();
-      showToast('Canje marcado como completado ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  window.rechazarCanje = async function(uid, canjeId, moveDescontado) {
-    const nota = prompt('Motivo del rechazo (opcional):') ?? '';
-    try {
-      await updateDoc(doc(db, 'usuarios', uid, 'canjes', canjeId), { estado: 'rechazado', notaAdmin: nota });
-      // Devolver MOVE
-      const userDocRef = doc(db, 'usuarios', uid);
-      const userSnap   = await getDoc(userDocRef);
-      await updateDoc(userDocRef, { tokensActuales: (userSnap.data()?.tokensActuales || 0) + moveDescontado });
-      // Notificación
-      const notifRef = doc(db, 'usuarios', uid, 'notificaciones', canjeId + '_rej');
-      await setDoc(notifRef, {
-        uid, titulo: 'Canje rechazado ❌',
-        cuerpo: nota || 'Tu canje fue rechazado. Los MOVE fueron devueltos.',
-        tipo: 'pago', leida: false,
-        createdAt: Date.now()
-      });
-      document.getElementById('canje-' + canjeId)?.remove();
-      showToast('Canje rechazado y MOVE devueltos ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  // ── Toast ──────────────────────────────────────────────────────────────
-  function showToast(msg, error = false) {
-    const t = document.getElementById('toast');
-    t.textContent       = msg;
-    t.style.display     = 'block';
-    t.style.borderColor = error ? 'var(--danger)' : 'var(--accent)';
-    t.style.color       = error ? 'var(--danger)' : 'var(--accent)';
-    setTimeout(() => { t.style.display = 'none'; }, 3500);
-  }
-
-  window.showToast = showToast;
-</script>
+  <script>
+  </script>
 </body>
 </html>

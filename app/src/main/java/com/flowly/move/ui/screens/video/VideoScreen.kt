@@ -26,9 +26,9 @@ import com.flowly.move.BuildConfig
 import com.flowly.move.ui.components.FlowlyPrimaryButton
 import com.flowly.move.ui.theme.*
 import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 
@@ -45,13 +45,21 @@ fun VideoScreen(navController: NavController) {
 
     val snackbar = remember { SnackbarHostState() }
 
+    // En DEBUG: ID de prueba oficial de Google (siempre sirve ads).
+    // En RELEASE: ID real de AdMob desde secrets.properties.
+    val rewardedAdUnitId = if (BuildConfig.DEBUG) {
+        "ca-app-pub-3940256099942544/5224354917"
+    } else {
+        BuildConfig.ADMOB_REWARDED_AD_UNIT_ID
+    }
+
     // Cargar el ad al entrar a la pantalla
     LaunchedEffect(Unit) {
         adLoading = true
         RewardedAd.load(
             context,
-            BuildConfig.ADMOB_REWARDED_AD_UNIT_ID,
-            AdManagerAdRequest.Builder().build(),
+            rewardedAdUnitId,
+            AdRequest.Builder().build(),
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
                     rewardedAd = ad

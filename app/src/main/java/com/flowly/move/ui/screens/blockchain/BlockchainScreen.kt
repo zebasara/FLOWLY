@@ -352,7 +352,7 @@ private fun ActiveBlockchainView(
                     Spacer(Modifier.height(4.dp))
                     ConfirmRow("Comisión (${cfg.feePercent.toInt()}%)", "− %,d MOVE".format(fee), FlowlyWarn)
                     Spacer(Modifier.height(4.dp))
-                    Divider(color = Color(0xFF2A4A2A), thickness = 0.5.dp)
+                    HorizontalDivider(color = Color(0xFF2A4A2A), thickness = 0.5.dp)
                     Spacer(Modifier.height(4.dp))
                     ConfirmRow("Recibirás",     "%,d MOVE".format(neto),       FlowlyAccent)
                 }

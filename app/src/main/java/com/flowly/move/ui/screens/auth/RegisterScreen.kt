@@ -34,13 +34,15 @@ fun RegisterScreen(navController: NavController) {
     var provincia by remember { mutableStateOf("") }
     var ciudad    by remember { mutableStateOf("") }
 
-    // After email registration → go to CompleteProfile with data already filled
-    // We register with email/pass, then save profile with all data at once
+    // Flujo de registro en dos pasos:
+    // 1. register() → Success(isNewUser=true)  → guarda perfil automáticamente
+    // 2. saveProfile() → Success(isNewUser=false) → navega a HOME
+    // Para Google: signInWithGoogle() ya retorna isNewUser según Firebase
     LaunchedEffect(uiState) {
         when (val s = uiState) {
             is AuthUiState.Success -> {
                 if (s.isNewUser) {
-                    // Save profile immediately after registration
+                    // Paso 1: guardar perfil con los datos ya ingresados
                     viewModel.saveProfile(
                         uid       = s.uid,
                         nombre    = nombre,
@@ -49,22 +51,13 @@ fun RegisterScreen(navController: NavController) {
                         ciudad    = ciudad
                     )
                 } else {
+                    // Paso 2: perfil guardado (o usuario existente) → ir a HOME
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                     }
                 }
             }
             else -> Unit
-        }
-    }
-
-    // After saveProfile completes (isNewUser = false → success)
-    LaunchedEffect(uiState) {
-        val s = uiState
-        if (s is AuthUiState.Success && !s.isNewUser && nombre.isNotBlank()) {
-            navController.navigate(Routes.HOME) {
-                popUpTo(Routes.REGISTER) { inclusive = true }
-            }
         }
     }
 
@@ -92,7 +85,7 @@ fun RegisterScreen(navController: NavController) {
                 )
                 Column {
                     Text("Crear cuenta", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
-                    Text("com.flowly.move", fontSize = 12.sp, color = FlowlyMuted)
+                    Text("Empezá a ganar MOVE hoy", fontSize = 12.sp, color = FlowlyMuted)
                 }
             }
 

@@ -25,14 +25,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.flowly.move.data.model.PROVINCIAS_ARGENTINA
+import com.flowly.move.data.model.ciudadesDe
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.theme.*
 
 @Composable
 fun EditProfileScreen(navController: NavController) {
     val vm: EditProfileViewModel = viewModel()
-    val user            by vm.user.collectAsStateWithLifecycle()
-    val uiState         by vm.uiState.collectAsStateWithLifecycle()
+    val user             by vm.user.collectAsStateWithLifecycle()
+    val uiState          by vm.uiState.collectAsStateWithLifecycle()
     val isUploadingPhoto by vm.isUploadingPhoto.collectAsStateWithLifecycle()
 
     val snackbar = remember { SnackbarHostState() }
@@ -43,6 +45,15 @@ fun EditProfileScreen(navController: NavController) {
     var provincia by remember(user) { mutableStateOf(user?.provincia ?: "") }
     var ciudad    by remember(user) { mutableStateOf(user?.ciudad    ?: "") }
     var aliasMP   by remember(user) { mutableStateOf(user?.aliasMercadoPago ?: "") }
+
+    // Ciudades disponibles según la provincia seleccionada
+    val ciudadesDisponibles = remember(provincia) { ciudadesDe(provincia) }
+
+    // Al cambiar provincia, limpiar ciudad si ya no pertenece a la nueva lista
+    LaunchedEffect(provincia) {
+        val nuevasCiudades = ciudadesDe(provincia)
+        if (ciudad.isNotBlank() && ciudad !in nuevasCiudades) ciudad = ""
+    }
 
     // Foto seleccionada localmente (preview antes de subir)
     var localPhotoUri by remember { mutableStateOf<Uri?>(null) }
@@ -88,22 +99,26 @@ fun EditProfileScreen(navController: NavController) {
                 Text(
                     "←",
                     fontSize = 20.sp,
-                    color = FlowlyMuted,
+                    color    = FlowlyMuted,
                     modifier = Modifier
                         .clickable { navController.popBackStack() }
                         .padding(end = 12.dp, top = 4.dp, bottom = 4.dp)
                 )
-                Text("Editar perfil", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                Text(
+                    "Editar perfil",
+                    fontSize   = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = FlowlyText
+                )
             }
 
             Spacer(Modifier.height(24.dp))
 
-            // Foto de perfil
+            // ── Foto de perfil ───────────────────────────────────────────
             Box(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier         = Modifier.align(Alignment.CenterHorizontally),
                 contentAlignment = Alignment.BottomEnd
             ) {
-                // Avatar / foto
                 Box(
                     modifier = Modifier
                         .size(96.dp)
@@ -116,10 +131,10 @@ fun EditProfileScreen(navController: NavController) {
                     val photoUrl = localPhotoUri?.toString() ?: user?.profilePhotoUrl ?: ""
                     if (photoUrl.isNotBlank()) {
                         AsyncImage(
-                            model             = photoUrl,
+                            model              = photoUrl,
                             contentDescription = "Foto de perfil",
-                            modifier          = Modifier.fillMaxSize(),
-                            contentScale      = ContentScale.Crop
+                            modifier           = Modifier.fillMaxSize(),
+                            contentScale       = ContentScale.Crop
                         )
                     } else {
                         Text(
@@ -131,10 +146,15 @@ fun EditProfileScreen(navController: NavController) {
                     }
                     if (isUploadingPhoto) {
                         Box(
-                            modifier           = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
-                            contentAlignment   = Alignment.Center
+                            modifier         = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(color = FlowlyAccent, modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(
+                                color    = FlowlyAccent,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }
@@ -160,19 +180,37 @@ fun EditProfileScreen(navController: NavController) {
                     .padding(top = 6.dp, bottom = 20.dp)
             )
 
-            // Campos del perfil
-            FlowlyInput(nombre,    { nombre = it },    "Nombre completo *",         "Ej: Martín González")
-            FlowlyInput(telefono,  { telefono = it },  "Teléfono",                  "+54 9 11 1234-5678")
-            FlowlyInput(provincia, { provincia = it }, "Provincia",                 "Buenos Aires")
-            FlowlyInput(ciudad,    { ciudad = it },    "Ciudad",                    "Tandil")
-            FlowlyInput(aliasMP,   { aliasMP = it },   "Alias Mercado Pago",        "martin.gonzalez.mp")
+            // ── Campos del perfil ────────────────────────────────────────
+            FlowlyInput(nombre,   { nombre = it },   "Nombre completo *", "Ej: Martín González")
+            FlowlyInput(telefono, { telefono = it }, "Teléfono",          "+54 9 11 1234-5678")
+
+            // ── Selector de Provincia ────────────────────────────────────
+            LocationDropdown(
+                selectedValue = provincia,
+                onValueChange = { provincia = it },
+                label         = "Provincia",
+                options       = PROVINCIAS_ARGENTINA,
+                placeholder   = "Seleccioná tu provincia"
+            )
+
+            // ── Selector de Ciudad ───────────────────────────────────────
+            LocationDropdown(
+                selectedValue = ciudad,
+                onValueChange = { ciudad = it },
+                label         = "Ciudad",
+                options       = ciudadesDisponibles,
+                enabled       = provincia.isNotBlank(),
+                placeholder   = if (provincia.isBlank()) "Primero elegí la provincia" else "Seleccioná tu ciudad"
+            )
+
+            FlowlyInput(aliasMP, { aliasMP = it }, "Alias Mercado Pago", "martin.gonzalez.mp")
 
             Spacer(Modifier.height(24.dp))
 
             FlowlyPrimaryButton(
                 text    = "Guardar cambios",
                 enabled = uiState !is EditProfileUiState.Loading && !isUploadingPhoto,
-                onClick  = { vm.saveProfile(nombre, telefono, provincia, ciudad, aliasMP) }
+                onClick = { vm.saveProfile(nombre, telefono, provincia, ciudad, aliasMP) }
             )
 
             Spacer(Modifier.height(8.dp))
@@ -187,8 +225,10 @@ fun EditProfileScreen(navController: NavController) {
 
         if (uiState is EditProfileUiState.Loading) {
             Box(
-                modifier           = Modifier.fillMaxSize().background(FlowlyBg.copy(alpha = 0.7f)),
-                contentAlignment   = Alignment.Center
+                modifier         = Modifier
+                    .fillMaxSize()
+                    .background(FlowlyBg.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
             ) { CircularProgressIndicator(color = FlowlyAccent) }
         }
     }

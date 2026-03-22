@@ -12,18 +12,23 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -31,7 +36,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.ImageLoader
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.flowly.move.services.TrackingController
 import com.flowly.move.ui.components.*
@@ -42,7 +47,6 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
@@ -112,59 +116,43 @@ fun MapScreen(navController: NavController) {
         }
     }
 
-    // ── Avatares de otros usuarios ────────────────────────────────────────
-    val avatarBitmaps = remember { mutableStateMapOf<String, Bitmap>() }
+    // avatarBitmaps solo necesario para overlay propio — otros usuarios van en lista UI
 
-    LaunchedEffect(activeSessions) {
-        val activeUids = activeSessions.map { it.uid }.toSet()
-        activeSessions
-            .filter { it.uid != currentUid && !avatarBitmaps.containsKey(it.uid) }
-            .forEach { sesion ->
-                avatarBitmaps[sesion.uid] = makeInitialsBitmap(context, sesion.iniciales)
-                if (sesion.profilePhotoUrl.isNotBlank()) {
-                    runCatching {
-                        val loader = ImageLoader(context)
-                        val req = ImageRequest.Builder(context)
-                            .data(sesion.profilePhotoUrl)
-                            .allowHardware(false)
-                            .build()
-                        val result = loader.execute(req)
-                        val bmp = (result.drawable as? BitmapDrawable)?.bitmap
-                        if (bmp != null) avatarBitmaps[sesion.uid] = makeCircularBitmap(context, bmp)
-                    }
-                }
-            }
-        avatarBitmaps.keys.toList().forEach { uid ->
-            if (uid !in activeUids) avatarBitmaps.remove(uid)
-        }
-    }
+    // ── Referencias al MapView y overlay ─────────────────────────────────
+    val mapViewRef   = remember { mutableStateOf<MapView?>(null) }
+    val myOverlayRef = remember { mutableStateOf<MyLocationNewOverlay?>(null) }
 
     // ── Foto de perfil propia ─────────────────────────────────────────────
     var ownAvatarBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    val myOverlayRef    = remember { mutableStateOf<MyLocationNewOverlay?>(null) }
 
     LaunchedEffect(currentUser?.profilePhotoUrl) {
-        val photoUrl = currentUser?.profilePhotoUrl ?: ""
+        val photoUrl  = currentUser?.profilePhotoUrl ?: ""
         val iniciales = currentUser?.iniciales ?: "??"
         val base = if (photoUrl.isNotBlank()) {
             runCatching {
-                val loader = ImageLoader(context)
                 val req = ImageRequest.Builder(context)
                     .data(photoUrl)
                     .allowHardware(false)
                     .build()
-                val result = loader.execute(req)
+                val result = coil.Coil.imageLoader(context).execute(req)
                 val bmp = (result.drawable as? BitmapDrawable)?.bitmap
                 if (bmp != null) makeCircularBitmap(context, bmp) else null
             }.getOrNull()
         } else null
         ownAvatarBitmap = base ?: makeInitialsBitmap(context, iniciales)
-        myOverlayRef.value?.setPersonIcon(ownAvatarBitmap)
     }
 
-    // ── Referencias al MapView y markers ─────────────────────────────────
-    val mapViewRef  = remember { mutableStateOf<MapView?>(null) }
-    val userMarkers = remember { mutableMapOf<String, Marker>() }
+    // ── Sincronizar avatar → overlay cuando cualquiera de los dos cambie ─
+    // Necesario porque el factory de AndroidView y el LaunchedEffect de carga
+    // pueden terminar en cualquier orden; este efecto garantiza que el ícono
+    // se aplique siempre que ambos estén listos.
+    LaunchedEffect(ownAvatarBitmap, myOverlayRef.value) {
+        val bmp     = ownAvatarBitmap ?: return@LaunchedEffect
+        val overlay = myOverlayRef.value ?: return@LaunchedEffect
+        overlay.setPersonIcon(bmp)
+        overlay.setDirectionArrow(bmp, bmp) // mismo bitmap → nunca muestra el triángulo
+        mapViewRef.value?.invalidate()
+    }
 
     DisposableEffect(Unit) {
         onDispose { mapViewRef.value?.onDetach() }
@@ -179,12 +167,13 @@ fun MapScreen(navController: NavController) {
             containerColor   = FlowlyCard2,
             titleContentColor = FlowlyText,
             textContentColor  = FlowlyMuted,
-            title = { Text("📍 Tu ubicación será visible", fontWeight = FontWeight.Bold) },
+            title = { Text("📍 Activar MOVErme", fontWeight = FontWeight.Bold) },
             text  = {
                 Text(
-                    "Mientras MOVErme esté activo, tu nombre y posición en el mapa serán " +
-                    "visibles para otros usuarios de MOVE.\n\n" +
-                    "Al detener la sesión, tu ubicación desaparece del mapa.\n\n" +
+                    "Mientras MOVErme esté activo, tu ubicación será usada para registrar " +
+                    "tu actividad y acreditarte puntos MOVE.\n\n" +
+                    "Tu posición exacta no es visible para otros usuarios.\n\n" +
+                    "Al detener la sesión, el registro se detiene automáticamente.\n\n" +
                     "Podés revisar nuestra Política de Privacidad en flowly.app/privacidad",
                     lineHeight = 20.sp
                 )
@@ -242,58 +231,57 @@ fun MapScreen(navController: NavController) {
                 modifier = Modifier.fillMaxSize(),
                 factory  = { ctx ->
                     Configuration.getInstance().apply {
-                        userAgentValue = ctx.packageName
+                        userAgentValue    = ctx.packageName
                         osmdroidTileCache = ctx.cacheDir
+                        // Cache generoso para evitar re-descargar tiles
+                        tileDownloadThreads       = 4
+                        tileDownloadMaxQueueSize  = 40
+                        expirationOverrideDuration = 1000L * 60 * 60 * 24 * 7 // 7 días
                     }
                     MapView(ctx).also { map ->
                         mapViewRef.value = map
                         map.setTileSource(CARTO_DARK)
                         map.setMultiTouchControls(true)
-                        map.controller.setZoom(16.0)
+
+                        // ── Fix cuadros blancos ──────────────────────────────
+                        // Pintamos el fondo y los tiles en carga con el mismo
+                        // color oscuro de la app para que no se vean cuadros blancos
+                        val darkBg = 0xFF0A120A.toInt()
+                        map.setBackgroundColor(darkBg)
+                        map.overlayManager.tilesOverlay.apply {
+                            loadingBackgroundColor = darkBg
+                            loadingLineColor       = darkBg
+                        }
+
+                        // Zoom inicial moderado centrado en Argentina (no en una ciudad)
+                        // La overlay MyLocation hará zoom/follow cuando obtenga el GPS
+                        map.controller.setZoom(5.5)
+                        map.controller.setCenter(GeoPoint(-38.4, -63.6)) // centro geográfico AR
 
                         val myLocationOverlay = MyLocationNewOverlay(
                             GpsMyLocationProvider(ctx), map
                         ).apply {
                             enableMyLocation()
-                            enableFollowLocation()
-                            ownAvatarBitmap?.let { setPersonIcon(it) }
+                            // runOnFirstFix: hace zoom al usuario cuando se obtiene el primer fix GPS
+                            runOnFirstFix {
+                                ctx.mainExecutor.execute {
+                                    map.controller.setZoom(16.0)
+                                    myLocation?.let { map.controller.setCenter(it) }
+                                }
+                            }
+                            ownAvatarBitmap?.let {
+                                setPersonIcon(it)
+                                setDirectionArrow(it, it) // reemplaza el triángulo cuando se mueve
+                            }
                         }
                         myOverlayRef.value = myLocationOverlay
                         map.overlays.add(myLocationOverlay)
-                        map.controller.setCenter(GeoPoint(-34.6037, -58.3816))
                     }
                 },
                 update = { mapView ->
-                    ownAvatarBitmap?.let { myOverlayRef.value?.setPersonIcon(it) }
-
-                    val otherSessions = activeSessions.filter { it.uid != currentUid }
-                    val activeUids    = otherSessions.map { it.uid }.toSet()
-
-                    val staleUids = userMarkers.keys.filter { it !in activeUids }
-                    staleUids.forEach { uid ->
-                        userMarkers[uid]?.let { mapView.overlays.remove(it) }
-                        userMarkers.remove(uid)
-                    }
-
-                    otherSessions.forEach { sesion ->
-                        val avatar = avatarBitmaps[sesion.uid]
-                            ?: makeInitialsBitmap(context, sesion.iniciales)
-                        val geoPoint = GeoPoint(sesion.lat, sesion.lng)
-                        val existing = userMarkers[sesion.uid]
-                        if (existing != null) {
-                            existing.position = geoPoint
-                            existing.icon = BitmapDrawable(context.resources, avatar)
-                        } else {
-                            val marker = Marker(mapView).apply {
-                                position = geoPoint
-                                icon = BitmapDrawable(context.resources, avatar)
-                                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                                title = sesion.nombre
-                                snippet = "🌿 MOVErme activo"
-                            }
-                            mapView.overlays.add(marker)
-                            userMarkers[sesion.uid] = marker
-                        }
+                    ownAvatarBitmap?.let {
+                        myOverlayRef.value?.setPersonIcon(it)
+                        myOverlayRef.value?.setDirectionArrow(it, it)
                     }
                     mapView.invalidate()
                 }
@@ -343,22 +331,77 @@ fun MapScreen(navController: NavController) {
                 }
             }
 
-            // ── Contador usuarios activos (top-center) ────────────────────
-            val otrosActivos = activeSessions.count { it.uid != currentUid }
-            if (otrosActivos > 0) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 12.dp)
-                        .background(Color(0xCC1A1A1A), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
+            // ── Lista de usuarios online (top-right, siempre visible) ────────
+            val otrosSesiones = activeSessions.filter { it.uid != currentUid }
+            val topPad        = if (stats.isTracking) 50.dp else 12.dp
+            val halfScreen    = (LocalConfiguration.current.screenHeightDp / 2).dp
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = topPad, end = 10.dp)
+                    .background(Color(0xBB0A120A), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .widthIn(min = 50.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Contador — siempre visible
+                Text(
+                    "🌿 ${otrosSesiones.size}",
+                    fontSize   = 10.sp,
+                    color      = FlowlyAccent,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (otrosSesiones.isEmpty()) {
+                    // Estado vacío
                     Text(
-                        "🌿 $otrosActivos activo${if (otrosActivos > 1) "s" else ""} cerca",
-                        fontSize   = 11.sp,
-                        color      = FlowlyAccent,
-                        fontWeight = FontWeight.SemiBold
+                        "Sin otros\nonline",
+                        fontSize   = 9.sp,
+                        color      = FlowlyMuted,
+                        textAlign  = TextAlign.Center,
+                        lineHeight = 13.sp
                     )
+                } else {
+                    // Lista scrolleable — crece hasta mitad de pantalla
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = halfScreen - 60.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        otrosSesiones.forEach { sesion ->
+                            if (sesion.profilePhotoUrl.isNotBlank()) {
+                                AsyncImage(
+                                    model              = sesion.profilePhotoUrl,
+                                    contentDescription = sesion.nombre,
+                                    contentScale       = androidx.compose.ui.layout.ContentScale.Crop,
+                                    modifier           = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .border(1.5.dp, FlowlyAccent, CircleShape)
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF182018))
+                                        .border(1.5.dp, FlowlyAccent, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        sesion.iniciales.take(2),
+                                        fontSize   = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color      = FlowlyAccent
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

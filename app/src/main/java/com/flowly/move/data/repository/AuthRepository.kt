@@ -79,6 +79,12 @@ class AuthRepository(private val context: Context) {
         user != null && user.nombre.isNotBlank() && user.telefono.isNotBlank()
     }.getOrDefault(false)
 
+    // ── Password Reset ──────────────────────────────────────────
+
+    suspend fun sendPasswordReset(email: String): Result<Unit> = runCatching {
+        auth.sendPasswordResetEmail(email.trim()).await()
+    }
+
     // ── Sign Out ────────────────────────────────────────────────
 
     fun signOut() = auth.signOut()

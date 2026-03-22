@@ -25,11 +25,14 @@ import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
 
+/** UI-only model: combina la oferta de Firestore con el estado del usuario. */
 private data class CanjeOption(
     val label: String,
     val move: Int,
     val available: Boolean,
-    val missing: Int = 0
+    val missing: Int = 0,
+    /** true si el usuario no cumple el nivel mínimo (y tiene suficiente MOVE) */
+    val nivelBloqueado: Boolean = false
 )
 
 @Composable
@@ -38,17 +41,27 @@ fun CanjesScreen(navController: NavController) {
     val user           by vm.user.collectAsStateWithLifecycle()
     val isLoading      by vm.isLoading.collectAsStateWithLifecycle()
     val mercadoPagoUrl by vm.mercadoPagoUrl.collectAsStateWithLifecycle()
+    val canjesConfig   by vm.canjesConfig.collectAsStateWithLifecycle()
     val uriHandler      = LocalUriHandler.current
 
     val tokensLibres = user?.tokensActuales ?: 0
+    val nivelUsuario = user?.nivel          ?: 1
     val aliasMP      = user?.aliasMercadoPago ?: ""
 
-    val options = listOf(
-        CanjeOption("\$2.000 ARS",  33_600,  tokensLibres >= 33_600,  maxOf(0, 33_600  - tokensLibres)),
-        CanjeOption("\$5.000 ARS",  84_000,  tokensLibres >= 84_000,  maxOf(0, 84_000  - tokensLibres)),
-        CanjeOption("\$10.000 ARS", 168_000, tokensLibres >= 168_000, maxOf(0, 168_000 - tokensLibres)),
-        CanjeOption("\$20.000 ARS", 336_000, tokensLibres >= 336_000, maxOf(0, 336_000 - tokensLibres))
-    )
+    // Construir opciones desde la config dinámica de Firestore
+    val options = canjesConfig.opciones
+        .filter { it.activo }
+        .map { oferta ->
+            val cumpleMove  = tokensLibres >= oferta.move
+            val cumpleNivel = nivelUsuario >= canjesConfig.nivelMinimo
+            CanjeOption(
+                label          = oferta.label,
+                move           = oferta.move,
+                available      = cumpleMove && cumpleNivel,
+                missing        = if (!cumpleMove) maxOf(0, oferta.move - tokensLibres) else 0,
+                nivelBloqueado = cumpleMove && !cumpleNivel
+            )
+        }
 
     FlowlyScaffold(navController = navController, currentRoute = Routes.CANJES) { padding ->
         if (isLoading) {
@@ -65,7 +78,7 @@ fun CanjesScreen(navController: NavController) {
         ) {
             Spacer(Modifier.height(8.dp))
 
-            // Top bar
+            // ── Top bar ──────────────────────────────────────────────────────
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -77,9 +90,22 @@ fun CanjesScreen(navController: NavController) {
                     Text("Canjes", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
                     Text("saldo libre: %,d MOVE".format(tokensLibres), fontSize = 12.sp, color = FlowlyMuted)
                 }
+                // Badge de nivel
+                Box(
+                    modifier = Modifier
+                        .background(FlowlyCard2, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        "Nivel $nivelUsuario",
+                        fontSize   = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = FlowlyAccent
+                    )
+                }
             }
 
-            // Alias MP
+            // ── Alias MP ─────────────────────────────────────────────────────
             FlowlyCard2(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -87,39 +113,89 @@ fun CanjesScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Alias Mercado Pago", fontSize = 12.sp, color = FlowlyMuted)
-                    Text(aliasMP, fontSize = 12.sp, color = FlowlyAccent)
+                    if (aliasMP.isBlank()) {
+                        Text(
+                            "⚠ Configurar en perfil",
+                            fontSize = 12.sp,
+                            color = FlowlyWarn
+                        )
+                    } else {
+                        Text(aliasMP, fontSize = 12.sp, color = FlowlyAccent)
+                    }
+                }
+            }
+
+            // ── Aviso de nivel mínimo ─────────────────────────────────────────
+            if (canjesConfig.nivelMinimo > 1 && nivelUsuario < canjesConfig.nivelMinimo) {
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .background(FlowlyWarn.copy(alpha = 0.10f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("🔒", fontSize = 16.sp)
+                    Text(
+                        "Necesitás alcanzar el Nivel ${canjesConfig.nivelMinimo} para canjear. Seguí viendo videos y moviéndote.",
+                        fontSize   = 12.sp,
+                        color      = FlowlyWarn,
+                        lineHeight = 17.sp,
+                        modifier   = Modifier.weight(1f)
+                    )
                 }
             }
 
             SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "transferencia a mercado pago")
 
-            options.forEach { opt ->
-                CanjeItem(
-                    label     = opt.label,
-                    move      = opt.move,
-                    available = opt.available,
-                    missing   = opt.missing,
-                    modifier  = Modifier.padding(horizontal = 16.dp)
+            // ── Opciones dinámicas desde Firestore ───────────────────────────
+            if (options.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 24.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (opt.available) {
-                        navController.navigate(Routes.confirmCanje(opt.label, opt.move.toString()))
-                    }
+                    Text(
+                        "No hay opciones de canje disponibles en este momento.",
+                        fontSize = 13.sp,
+                        color = FlowlyMuted
+                    )
                 }
-                Spacer(Modifier.height(6.dp))
+            } else {
+                options.forEach { opt ->
+                    CanjeItem(
+                        label          = opt.label,
+                        move           = opt.move,
+                        available      = opt.available,
+                        missing        = opt.missing,
+                        nivelBloqueado = opt.nivelBloqueado,
+                        nivelMinimo    = canjesConfig.nivelMinimo,
+                        modifier       = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        if (opt.available) {
+                            navController.navigate(Routes.confirmCanje(opt.label, opt.move.toString()))
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                }
             }
 
             Spacer(Modifier.height(8.dp))
 
+            // ── Nota dinámica desde Firestore ────────────────────────────────
             FlowlyCard2(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
-                    "Un canje por mes · procesado en menos de 48hs hábiles",
-                    fontSize = 12.sp,
-                    color = FlowlyMuted,
+                    canjesConfig.notaMensaje,
+                    fontSize   = 12.sp,
+                    color      = FlowlyMuted,
                     lineHeight = 18.sp
                 )
             }
 
-            // Botón Mercado Pago (solo si hay URL configurada desde el admin)
+            // ── Botón Mercado Pago (solo si hay URL configurada desde admin) ─
             if (mercadoPagoUrl.isNotBlank()) {
                 SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "mercado pago")
 
@@ -135,7 +211,7 @@ fun CanjesScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment    = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text("💳", fontSize = 26.sp)
@@ -206,12 +282,16 @@ fun CanjesScreen(navController: NavController) {
     }
 }
 
+// ── Composables privados ──────────────────────────────────────────────────────
+
 @Composable
 private fun CanjeItem(
     label: String,
     move: Int,
     available: Boolean,
     missing: Int,
+    nivelBloqueado: Boolean,
+    nivelMinimo: Int,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -231,20 +311,24 @@ private fun CanjeItem(
             .clickable(enabled = available, onClick = onClick)
             .padding(14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment     = Alignment.CenterVertically
     ) {
         Column {
             Text(
                 label,
-                fontSize = 16.sp,
+                fontSize   = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (available) FlowlyText else FlowlyMuted
+                color      = if (available) FlowlyText else FlowlyMuted
             )
+            val subtitle = when {
+                available      -> "%,d MOVE · disponible".format(move)
+                nivelBloqueado -> "%,d MOVE · requiere Nivel $nivelMinimo".format(move)
+                else           -> "%,d MOVE · te faltan %,d".format(move, missing)
+            }
             Text(
-                if (available) "%,d MOVE · disponible".format(move)
-                else "%,d MOVE · te faltan %,d".format(move, missing),
+                subtitle,
                 fontSize = 12.sp,
-                color = FlowlyMuted,
+                color    = FlowlyMuted,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
@@ -263,7 +347,11 @@ private fun CanjeItem(
                     .border(1.dp, FlowlyBorder, RoundedCornerShape(10.dp))
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
-                Text("Bloqueado", fontSize = 12.sp, color = FlowlyMuted)
+                Text(
+                    if (nivelBloqueado) "Nivel $nivelMinimo" else "Bloqueado",
+                    fontSize = 12.sp,
+                    color    = FlowlyMuted
+                )
             }
         }
     }
@@ -273,10 +361,10 @@ private fun CanjeItem(
 private fun SectionTitle(modifier: Modifier = Modifier, text: String) {
     Text(
         text.uppercase(),
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = Color(0xFF4B6B4B),
+        fontSize     = 11.sp,
+        fontWeight   = FontWeight.SemiBold,
+        color        = Color(0xFF4B6B4B),
         letterSpacing = 1.sp,
-        modifier = modifier.padding(top = 14.dp, bottom = 8.dp)
+        modifier     = modifier.padding(top = 14.dp, bottom = 8.dp)
     )
 }

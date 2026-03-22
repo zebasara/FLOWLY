@@ -1,6 +1,10 @@
 package com.flowly.move.ui.screens.home
 
 import android.app.Application
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.flowly.move.data.local.UserPreferences
@@ -25,6 +29,10 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // ── Error de red ──────────────────────────────────────────────────────
+    private val _networkError = MutableStateFlow<String?>(null)
+    val networkError: StateFlow<String?> = _networkError.asStateFlow()
+
     // ── Diálogos ──────────────────────────────────────────────────────────
     // La secuencia es: primero welcome (si aplica), luego badge uno por uno.
     // pendingBadge solo se activa DESPUÉS de que se cierre el welcome dialog.
@@ -39,10 +47,30 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
         loadUser()
     }
 
+    /** Devuelve true si hay conexión a internet activa */
+    private fun isConnected(): Boolean {
+        val cm = getApplication<Application>()
+            .getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } else {
+            @Suppress("DEPRECATION")
+            cm.activeNetworkInfo?.isConnected == true
+        }
+    }
+
     private fun loadUser() {
         viewModelScope.launch {
             val uid = prefs.userId.first()
             if (uid.isBlank()) { _isLoading.value = false; return@launch }
+
+            if (!isConnected()) {
+                _isLoading.value = false
+                _networkError.value = "Sin conexión. Revisá tu internet y volvé a intentar."
+                return@launch
+            }
 
             repository.getUser(uid).fold(
                 onSuccess = { u ->
@@ -50,13 +78,30 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
                     // Para usuarios existentes sin badges, otorgar soy_move
                     if (u != null && u.badges.isEmpty()) {
                         flowlyRepository.garantizarBadgeBienvenida(uid)
-                        // Actualizar local sin re-fetch para no tardar
                         finalUser = u.copy(badges = listOf("soy_move"))
+                    }
+                    // Verificar subida de nivel automática al abrir la app
+                    if (u != null) {
+                        val subio = flowlyRepository.verificarYSubirNivel(uid)
+                        if (subio) {
+                            // Recargar usuario con el nivel actualizado
+                            finalUser = flowlyRepository.getUser(uid).getOrNull() ?: finalUser
+                        }
                     }
                     _user.value = finalUser
                     finalUser?.let { checkDialogs(it) }
+                    // Verificar y asignar campeón semanal (solo lunes >= 15:00)
+                    flowlyRepository.checkAndAssignCampeon()
                 },
-                onFailure = { /* sin red: dejar null */ }
+                onFailure = { e ->
+                    // Fallo de red: mostrar aviso no bloqueante
+                    val msg = e.message?.lowercase() ?: ""
+                    if (msg.contains("network") || msg.contains("timeout") ||
+                        msg.contains("unable to resolve") || !isConnected()
+                    ) {
+                        _networkError.value = "Sin conexión. Verificá tu internet."
+                    }
+                }
             )
             _isLoading.value = false
         }
@@ -96,6 +141,8 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
             _pendingBadge.value = pending
         }
     }
+
+    fun dismissNetworkError() { _networkError.value = null }
 
     fun refresh() = loadUser()
 

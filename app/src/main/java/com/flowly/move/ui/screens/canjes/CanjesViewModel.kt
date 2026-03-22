@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.flowly.move.data.local.UserPreferences
 import com.flowly.move.data.model.Canje
+import com.flowly.move.data.model.CanjesConfig
 import com.flowly.move.data.model.User
 import com.flowly.move.data.repository.FlowlyRepository
 import kotlinx.coroutines.flow.*
@@ -37,14 +38,19 @@ class CanjesViewModel(app: Application) : AndroidViewModel(app) {
     private val _mercadoPagoUrl = MutableStateFlow("")
     val mercadoPagoUrl: StateFlow<String> = _mercadoPagoUrl.asStateFlow()
 
+    private val _canjesConfig = MutableStateFlow(CanjesConfig())
+    val canjesConfig: StateFlow<CanjesConfig> = _canjesConfig.asStateFlow()
+
     private var uid = ""
 
     init {
         viewModelScope.launch {
             uid = prefs.userId.first()
-            loadUser()
-            loadCanjes()
-            repo.getStoreConfig().onSuccess { _mercadoPagoUrl.value = it.mercadoPagoUrl }
+            // Cargar usuario, historial y configs en paralelo
+            launch { loadUser() }
+            launch { loadCanjes() }
+            launch { repo.getStoreConfig().onSuccess { _mercadoPagoUrl.value = it.mercadoPagoUrl } }
+            launch { repo.getCanjesConfig().onSuccess { _canjesConfig.value = it } }
             _isLoading.value = false
         }
     }

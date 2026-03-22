@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,12 +27,91 @@ import com.flowly.move.ui.theme.*
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    val context   = LocalContext.current
-    val viewModel = viewModel<AuthViewModel>()
-    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
+    val context    = LocalContext.current
+    val viewModel  = viewModel<AuthViewModel>()
+    val uiState    by viewModel.uiState.collectAsStateWithLifecycle()
+    val resetState by viewModel.resetState.collectAsStateWithLifecycle()
 
     var email    by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    // ── Dialog recuperar contraseña ───────────────────────────────
+    var showResetDialog by remember { mutableStateOf(false) }
+    var resetEmail      by remember { mutableStateOf("") }
+    var resetFeedback   by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(resetState) {
+        when {
+            resetState == "ok" -> {
+                resetFeedback = "✅ Revisá tu email para restablecer la contraseña"
+                viewModel.clearResetState()
+            }
+            resetState?.startsWith("error:") == true -> {
+                resetFeedback = resetState?.removePrefix("error:")
+                viewModel.clearResetState()
+            }
+        }
+    }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false; resetEmail = ""; resetFeedback = null },
+            containerColor   = com.flowly.move.ui.theme.FlowlyCard,
+            title = {
+                Text(
+                    "Recuperar contraseña",
+                    fontSize   = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = com.flowly.move.ui.theme.FlowlyText
+                )
+            },
+            text = {
+                Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Ingresá tu email y te enviamos un link para restablecer tu contraseña.",
+                        fontSize = 13.sp,
+                        color    = com.flowly.move.ui.theme.FlowlyMuted
+                    )
+                    OutlinedTextField(
+                        value         = resetEmail,
+                        onValueChange = { resetEmail = it; resetFeedback = null },
+                        label         = { Text("Email", fontSize = 13.sp) },
+                        singleLine    = true,
+                        colors        = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor   = com.flowly.move.ui.theme.FlowlyAccent,
+                            unfocusedBorderColor = com.flowly.move.ui.theme.FlowlyBorder,
+                            focusedLabelColor    = com.flowly.move.ui.theme.FlowlyAccent,
+                            unfocusedLabelColor  = com.flowly.move.ui.theme.FlowlyMuted,
+                            cursorColor          = com.flowly.move.ui.theme.FlowlyAccent,
+                            focusedTextColor     = com.flowly.move.ui.theme.FlowlyText,
+                            unfocusedTextColor   = com.flowly.move.ui.theme.FlowlyText
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (!resetFeedback.isNullOrBlank()) {
+                        Text(
+                            resetFeedback!!,
+                            fontSize = 12.sp,
+                            color    = if (resetFeedback!!.startsWith("✅"))
+                                com.flowly.move.ui.theme.FlowlySuccess
+                            else
+                                com.flowly.move.ui.theme.FlowlyDanger
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.sendPasswordReset(resetEmail) }) {
+                    Text("Enviar", color = com.flowly.move.ui.theme.FlowlyAccent, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false; resetEmail = ""; resetFeedback = null }) {
+                    Text("Cancelar", color = com.flowly.move.ui.theme.FlowlyMuted)
+                }
+            }
+        )
+    }
 
     LaunchedEffect(uiState) {
         when (val s = uiState) {
@@ -101,7 +181,7 @@ fun LoginScreen(navController: NavController) {
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .padding(bottom = 16.dp)
-                        .clickable { /* TODO: password reset */ }
+                        .clickable { showResetDialog = true; resetEmail = email }
                 )
             }
 

@@ -4,14 +4,28 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import coil.Coil
+import coil.ImageLoader
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.firebase.FirebaseApp
+import okhttp3.Cache
+import okhttp3.OkHttpClient
+import java.io.File
 
 class FlowlyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
-        // Inicializar AdMob
+        initCoil()
+        // Inicializar AdMob con dispositivo de prueba registrado
+        val testDeviceIds = listOf("D4CD646FEBDFD16F08459FEAD0EE09A1")
+        val requestConfiguration = RequestConfiguration.Builder()
+            .setTestDeviceIds(testDeviceIds)
+            .build()
+        MobileAds.setRequestConfiguration(requestConfiguration)
         MobileAds.initialize(this)
         // Canal de notificaciones para el servicio GPS
         createNotificationChannels()
@@ -46,6 +60,45 @@ class FlowlyApp : Application() {
                 }
             )
         }
+    }
+
+    // ── Coil — cache de 7 días para imágenes de Firebase Storage ─────────
+    private fun initCoil() {
+        val httpCache = Cache(File(cacheDir, "http_cache"), 50L * 1024 * 1024) // 50 MB HTTP
+
+        val okHttp = OkHttpClient.Builder()
+            .cache(httpCache)
+            .addNetworkInterceptor { chain ->
+                val response = chain.proceed(chain.request())
+                // Firebase Storage devuelve max-age=0 → lo sobreescribimos a 7 días
+                val host = chain.request().url.host
+                if (host.contains("firebasestorage") || host.contains("googleapis")) {
+                    response.newBuilder()
+                        .header("Cache-Control", "public, max-age=${7 * 24 * 60 * 60}")
+                        .removeHeader("Pragma")
+                        .build()
+                } else {
+                    response
+                }
+            }
+            .build()
+
+        Coil.setImageLoader(
+            ImageLoader.Builder(this)
+                .okHttpClient(okHttp)
+                .memoryCache {
+                    MemoryCache.Builder(this)
+                        .maxSizePercent(0.25) // 25% de la RAM disponible
+                        .build()
+                }
+                .diskCache {
+                    DiskCache.Builder()
+                        .directory(File(cacheDir, "coil_disk"))
+                        .maxSizeBytes(50L * 1024 * 1024) // 50 MB imágenes
+                        .build()
+                }
+                .build()
+        )
     }
 
     companion object {

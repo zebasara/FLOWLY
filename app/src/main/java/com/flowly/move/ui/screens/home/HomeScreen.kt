@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +36,33 @@ fun HomeScreen(navController: NavController) {
     val isLoading         by vm.isLoading.collectAsStateWithLifecycle()
     val showWelcome       by vm.showWelcomeDialog.collectAsStateWithLifecycle()
     val pendingBadge      by vm.pendingBadge.collectAsStateWithLifecycle()
+    val networkError      by vm.networkError.collectAsStateWithLifecycle()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Mostrar snackbar si hay error de red
+    LaunchedEffect(networkError) {
+        if (!networkError.isNullOrBlank()) {
+            snackbarHostState.showSnackbar(networkError!!)
+            vm.dismissNetworkError()
+        }
+    }
+
+    // ── Contrarreloj misiones ──────────────────────────────────────────────
+    var misionesCountdown by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val cal      = java.util.Calendar.getInstance()
+            val h        = cal.get(java.util.Calendar.HOUR_OF_DAY)
+            val m        = cal.get(java.util.Calendar.MINUTE)
+            val s        = cal.get(java.util.Calendar.SECOND)
+            val secsLeft = (23 - h) * 3600L + (59 - m) * 60L + (60 - s)
+            misionesCountdown = "%02d:%02d:%02d".format(
+                secsLeft / 3600, (secsLeft % 3600) / 60, secsLeft % 60
+            )
+            kotlinx.coroutines.delay(1000L)
+        }
+    }
 
     val nombre         = user?.nombre?.substringBefore(" ") ?: ""
     val ciudad         = listOfNotNull(
@@ -94,12 +122,18 @@ fun HomeScreen(navController: NavController) {
             return@FlowlyScaffold
         }
 
+        Box(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
         ) {
+            // Contenido desplazable — ocupa todo el espacio disponible
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
             Spacer(Modifier.height(8.dp))
 
             // Top bar
@@ -247,6 +281,13 @@ fun HomeScreen(navController: NavController) {
                                 color    = if (misionesComp == misionesTotal && misionesTotal > 0)
                                     FlowlyAccent else FlowlyMuted
                             )
+                            if (misionesCountdown.isNotBlank()) {
+                                Text(
+                                    "⏱ Reinicio en $misionesCountdown",
+                                    fontSize = 10.sp,
+                                    color    = FlowlyMuted.copy(alpha = 0.7f)
+                                )
+                            }
                         }
                     }
                     Text("→", fontSize = 18.sp, color = FlowlyMuted)
@@ -318,8 +359,19 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
-        }
+                Spacer(Modifier.height(20.dp))
+            } // fin columna scrolleable
+
+            // Banner siempre visible — fijo en la parte inferior
+            FlowlyBannerAd()
+        } // fin columna principal
+
+        // Snackbar de error de red — se muestra sobre el contenido
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier  = Modifier.align(Alignment.BottomCenter)
+        )
+        } // fin Box
     }
 }
 

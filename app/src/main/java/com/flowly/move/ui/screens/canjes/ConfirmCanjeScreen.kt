@@ -14,6 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,8 +29,10 @@ import com.flowly.move.ui.theme.*
 @Composable
 fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash", navController: NavController) {
     val vm: CanjesViewModel = viewModel()
-    val user     by vm.user.collectAsStateWithLifecycle()
-    val uiState  by vm.uiState.collectAsStateWithLifecycle()
+    val user          by vm.user.collectAsStateWithLifecycle()
+    val uiState       by vm.uiState.collectAsStateWithLifecycle()
+    val mercadoPagoUrl by vm.mercadoPagoUrl.collectAsStateWithLifecycle()
+    val uriHandler     = LocalUriHandler.current
 
     val moveInt       = move.toIntOrNull() ?: 0
     val tokensActuales = user?.tokensActuales ?: 0
@@ -134,6 +138,39 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                 } else {
                     Text(aliasMP, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = FlowlyText, modifier = Modifier.padding(top = 4.dp))
                     Text("Mercado Pago · alias registrado", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+
+            // ── Tarjeta de descarga de Mercado Pago (solo si no tiene alias) ──
+            if (aliasMP.isBlank() && mercadoPagoUrl.isNotBlank()) {
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF003087).copy(alpha = 0.18f), RoundedCornerShape(14.dp))
+                        .clickable { uriHandler.openUri(mercadoPagoUrl) }
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("💳", fontSize = 28.sp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "¿No tenés Mercado Pago?",
+                                fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                color = Color(0xFF5AB4E5)
+                            )
+                            Text(
+                                "Necesitás MP para cobrar tus premios. Tocá para descargarlo y ganar bonos de bienvenida.",
+                                fontSize = 11.sp, color = FlowlyMuted,
+                                lineHeight = 16.sp,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                        Text("→", fontSize = 18.sp, color = Color(0xFF5AB4E5))
+                    }
                 }
             }
 

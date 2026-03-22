@@ -24,6 +24,7 @@ import com.flowly.move.ui.screens.profile.EditProfileScreen
 import com.flowly.move.ui.screens.profile.ProfileScreen
 import com.flowly.move.ui.screens.rankings.RankingsScreen
 import com.flowly.move.ui.screens.referrals.ReferralsScreen
+import com.flowly.move.ui.screens.admin.AdminCanjesScreen
 import com.flowly.move.ui.screens.misiones.MisionesScreen
 import com.flowly.move.ui.screens.store.StoreScreen
 import com.flowly.move.ui.screens.video.VideoScreen
@@ -180,6 +181,10 @@ fun FlowlyNavGraph() {
 
         composable(Routes.MISIONES) {
             MisionesScreen(navController = navController)
+        }
+
+        composable(Routes.ADMIN_CANJES) {
+            AdminCanjesScreen(navController = navController)
         }
     }
 }

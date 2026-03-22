@@ -21,8 +21,8 @@ android {
         applicationId = "com.flowly.move"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 4
+        versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -119,6 +119,7 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
 
@@ -138,6 +139,9 @@ dependencies {
 
     // AdMob
     implementation(libs.play.services.ads)
+
+    // Material Icons Extended (SystemUpdate, Download, etc.)
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Firebase Storage (foto de perfil)
     implementation(libs.firebase.storage)

@@ -3,6 +3,7 @@ package com.flowly.move.ui.screens.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +16,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.flowly.move.data.model.PROVINCIAS_ARGENTINA
+import com.flowly.move.data.model.ciudadesDe
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
@@ -40,6 +43,9 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
     var aliasMP      by remember { mutableStateOf("") }
     var referralCode by remember { mutableStateOf("") }
 
+    // Ciudades disponibles según la provincia seleccionada
+    val ciudadesDisponibles = remember(provincia) { ciudadesDe(provincia) }
+
     // Cargar perfil existente desde Firestore al iniciar
     LaunchedEffect(uid) {
         viewModel.loadExistingProfile(uid)
@@ -64,7 +70,12 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
         }
     }
 
-    // Determinar si es reinstalación (ya tiene datos) o usuario nuevo
+    // Al cambiar provincia, limpiar ciudad si ya no pertenece a la nueva lista
+    LaunchedEffect(provincia) {
+        val nuevosCiudades = ciudadesDe(provincia)
+        if (ciudad.isNotBlank() && ciudad !in nuevosCiudades) ciudad = ""
+    }
+
     val isReinstall = existingUser != null
 
     Box(
@@ -84,7 +95,7 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .background(FlowlyCard2, androidx.compose.foundation.shape.RoundedCornerShape(20.dp)),
+                    .background(FlowlyCard2, RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(if (isReinstall) "🔄" else "✏️", fontSize = 28.sp)
@@ -94,41 +105,64 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
 
             Text(
                 if (isReinstall) "Confirmá tus datos" else "Completar perfil",
-                fontSize = 22.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = FlowlyText
+                color      = FlowlyText
             )
             Text(
                 if (isReinstall)
                     "Detectamos que ya tenés una cuenta. Confirmá o actualizá tus datos. Tus MOVE y nivel están guardados."
                 else
                     "Solo tarda un minuto. Necesitamos estos datos para tu cuenta.",
-                fontSize = 13.sp,
-                color = FlowlyMuted,
+                fontSize   = 13.sp,
+                color      = FlowlyMuted,
                 lineHeight = 19.sp,
-                modifier = Modifier.padding(top = 6.dp, bottom = 24.dp)
+                modifier   = Modifier.padding(top = 6.dp, bottom = 24.dp)
             )
 
             if (isReinstall) {
                 FlowlyCard2(modifier = Modifier.padding(bottom = 16.dp)) {
                     Text(
                         "✅ Tu saldo de MOVE, nivel y todo tu historial se mantienen intactos.",
-                        fontSize = 12.sp,
-                        color = FlowlySuccess,
+                        fontSize   = 12.sp,
+                        color      = FlowlySuccess,
                         lineHeight = 18.sp
                     )
                 }
             }
 
-            FlowlyInput(nombre,    { nombre = it },    "Nombre completo *",             "Ej: Martín González")
-            FlowlyInput(telefono,  { telefono = it },  "Teléfono *",                    "+54 9 11 1234-5678")
-            FlowlyInput(provincia, { provincia = it }, "Provincia *",                   "Buenos Aires")
-            FlowlyInput(ciudad,    { ciudad = it },    "Ciudad *",                      "Tandil")
-            FlowlyInput(aliasMP,   { aliasMP = it },   "Alias Mercado Pago (opcional)", "martin.gonzalez.mp")
+            FlowlyInput(nombre,   { nombre = it },   "Nombre completo *", "Ej: Martín González")
+            FlowlyInput(telefono, { telefono = it }, "Teléfono *",        "+54 9 11 1234-5678")
+
+            // ── Selector de Provincia ─────────────────────────────────────
+            LocationDropdown(
+                selectedValue = provincia,
+                onValueChange = { provincia = it },
+                label         = "Provincia *",
+                options       = PROVINCIAS_ARGENTINA,
+                placeholder   = "Seleccioná tu provincia"
+            )
+
+            // ── Selector de Ciudad (habilitado solo si hay provincia) ─────
+            LocationDropdown(
+                selectedValue = ciudad,
+                onValueChange = { ciudad = it },
+                label         = "Ciudad *",
+                options       = ciudadesDisponibles,
+                enabled       = provincia.isNotBlank(),
+                placeholder   = if (provincia.isBlank()) "Primero elegí la provincia" else "Seleccioná tu ciudad"
+            )
+
+            FlowlyInput(aliasMP, { aliasMP = it }, "Alias Mercado Pago (opcional)", "martin.gonzalez.mp")
 
             // Código de referido solo para usuarios nuevos
             if (!isReinstall) {
-                FlowlyInput(referralCode, { referralCode = it }, "Código de referido (opcional)", "Ej: abc12345")
+                FlowlyInput(
+                    value         = referralCode,
+                    onValueChange = { referralCode = it },
+                    label         = "Código de referido (opcional)",
+                    placeholder   = "Pegá el link o los 8 caracteres"
+                )
             }
 
             FlowlySeparator()
@@ -136,8 +170,8 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
             FlowlyCard2 {
                 Text(
                     "💡 El alias de Mercado Pago es necesario para recibir tus canjes. Podés agregarlo ahora o más tarde desde tu perfil.",
-                    fontSize = 12.sp,
-                    color = FlowlyMuted,
+                    fontSize   = 12.sp,
+                    color      = FlowlyMuted,
                     lineHeight = 18.sp
                 )
             }
@@ -165,7 +199,7 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
 
         if (uiState is AuthUiState.Loading) {
             Box(
-                modifier = Modifier
+                modifier         = Modifier
                     .fillMaxSize()
                     .background(FlowlyBg.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center

@@ -1,6 +1,5 @@
 package com.flowly.move.ui.screens.misiones
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -38,6 +37,22 @@ fun MisionesScreen(navController: NavController) {
     val completadas = misiones.count { it.completada }
     val reclamadas  = misiones.count { it.reclamada }
     val totalMove   = misiones.filter { it.reclamada }.sumOf { it.recompensaMove }
+
+    // ── Contrarreloj hasta medianoche ──────────────────────────────────────
+    var countdownText by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val cal      = java.util.Calendar.getInstance()
+            val h        = cal.get(java.util.Calendar.HOUR_OF_DAY)
+            val m        = cal.get(java.util.Calendar.MINUTE)
+            val s        = cal.get(java.util.Calendar.SECOND)
+            val secsLeft = (23 - h) * 3600L + (59 - m) * 60L + (60 - s)
+            countdownText = "%02d:%02d:%02d".format(
+                secsLeft / 3600, (secsLeft % 3600) / 60, secsLeft % 60
+            )
+            kotlinx.coroutines.delay(1000L)
+        }
+    }
 
     // Snackbar host
     val snackbarHostState = remember { SnackbarHostState() }
@@ -101,7 +116,18 @@ fun MisionesScreen(navController: NavController) {
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Se reinician mañana a medianoche", fontSize = 12.sp, color = FlowlyMuted)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
+                    Text("⏱ Se reinician en ", fontSize = 12.sp, color = FlowlyMuted)
+                    Text(
+                        countdownText,
+                        fontSize   = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = FlowlyAccent
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -198,6 +224,7 @@ private fun MisionCard(mision: DailyMision, onClamar: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
+                modifier = Modifier.weight(1f).padding(end = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

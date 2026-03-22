@@ -7,14 +7,38 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "/app-ads.txt",
+        "headers": [
+          { "key": "Content-Type", "value": "text/plain" }
+        ]
+      }
+    ],
+    "redirects": [
+      {
+        "source": "/app",
+        "destination": "https://play.google.com/store/apps/details?id=com.flowly.move",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/index.html"
+        "source": "/privacidad",
+        "destination": "/privacidad.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/panel.html"
+      },
+      {
+        "source": "/r/**",
+        "destination": "/referral.html"
       }
     ]
   },
   "firestore": {
-    "indexes": "firestore.indexes.json"
+    "indexes": "firestore.indexes.json",
+    "rules": "firestore.rules"
   }
 }

@@ -192,14 +192,22 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
                 onSuccess = {
                     prefs.setProfileComplete(nombre.trim())
                     // Código de referido: solo para usuarios nuevos
+                    // Acepta tanto código corto (8 chars) como URL completa
                     if (existingInFirestore == null && referralCode.isNotBlank()) {
-                        flowlyRepository.findUidByReferralCode(referralCode)
-                            .getOrNull()
-                            ?.let { referidorUid ->
-                                if (referidorUid != uid) {
-                                    flowlyRepository.registrarReferido(referidorUid)
-                                }
+                        val cleanCode = referralCode.trim().substringAfterLast("/").trim()
+                        if (cleanCode.isNotBlank()) {
+                            val referidorUid = flowlyRepository
+                                .findUidByReferralCode(cleanCode)
+                                .getOrNull()
+                            if (referidorUid != null && referidorUid != uid) {
+                                // +200 MOVE al referidor + insignias + notificación
+                                flowlyRepository.registrarReferido(referidorUid)
+                                    .onFailure { android.util.Log.e("Referral", "Error referidor: ${it.message}") }
+                                // +100 MOVE al nuevo usuario por usar código válido
+                                flowlyRepository.otorgarBonoReferido(uid)
+                                    .onFailure { android.util.Log.e("Referral", "Error bono nuevo: ${it.message}") }
                             }
+                        }
                     }
                     _uiState.value = AuthUiState.Success(uid, isNewUser = false)
                 },
@@ -207,6 +215,26 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             )
         }
     }
+
+    // ── Recuperar contraseña ─────────────────────────────────────
+
+    private val _resetState = MutableStateFlow<String?>(null)
+    val resetState: StateFlow<String?> = _resetState.asStateFlow()
+
+    fun sendPasswordReset(email: String) {
+        if (email.isBlank()) {
+            _resetState.value = "error:Ingresá tu email"
+            return
+        }
+        viewModelScope.launch {
+            repository.sendPasswordReset(email).fold(
+                onSuccess = { _resetState.value = "ok" },
+                onFailure = { _resetState.value = "error:${friendlyError(it.message)}" }
+            )
+        }
+    }
+
+    fun clearResetState() { _resetState.value = null }
 
     fun clearError() { _uiState.value = AuthUiState.Idle }
 

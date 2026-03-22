@@ -37,11 +37,16 @@ private fun formatRelativeTime(timestamp: Long): String {
 }
 
 private fun dotColorForTipo(tipo: String): Color = when (tipo) {
-    "video"    -> Color(0xFF7EE621) // FlowlyAccent
-    "pago"     -> Color(0xFF4ADE80) // FlowlySuccess
-    "logro"    -> Color(0xFF818CF8) // FlowlyAccent3
-    "referido" -> Color(0xFFA855F7) // FlowlyPurple
-    else       -> Color(0xFF6B7280) // FlowlyMuted
+    "video"      -> Color(0xFF7EE621) // FlowlyAccent  – verde
+    "pago"       -> Color(0xFF4ADE80) // FlowlySuccess – verde claro
+    "logro"      -> Color(0xFF818CF8) // FlowlyAccent3 – violeta
+    "referido"   -> Color(0xFFA855F7) // FlowlyPurple
+    "movimiento" -> Color(0xFFFB923C) // naranja  – actividad física
+    "mision"     -> Color(0xFFFACC15) // amarillo – misiones diarias
+    "nivel"      -> Color(0xFF38BDF8) // celeste  – subida de nivel
+    "campeon"    -> Color(0xFFFBBF24) // dorado   – campeón semanal
+    "blockchain" -> Color(0xFF22D3EE) // cian     – retiro blockchain
+    else         -> Color(0xFF6B7280) // FlowlyMuted
 }
 
 @Composable
@@ -50,7 +55,7 @@ fun NotificationsScreen(navController: NavController) {
     val notifs    by vm.notifs.collectAsStateWithLifecycle()
     val isLoading by vm.isLoading.collectAsStateWithLifecycle()
 
-    FlowlyScaffold(navController = navController, currentRoute = Routes.HOME) { padding ->
+    FlowlyScaffold(navController = navController, currentRoute = Routes.NOTIFICATIONS) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

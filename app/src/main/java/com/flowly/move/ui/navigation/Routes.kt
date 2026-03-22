@@ -22,6 +22,7 @@ object Routes {
     const val REFERRALS        = "referrals"
     const val EDIT_PROFILE     = "edit_profile"
     const val MISIONES         = "misiones"
+    const val ADMIN_CANJES     = "admin_canjes"
 
     fun completeProfile(uid: String) = "complete_profile/$uid"
     fun confirmCanje(amount: String, move: String, categoria: String = "cash") = "confirm_canje/$amount/$move/$categoria"

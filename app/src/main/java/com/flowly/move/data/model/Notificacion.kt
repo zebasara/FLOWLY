@@ -5,7 +5,7 @@ data class Notificacion(
     val uid: String = "",
     val titulo: String = "",
     val cuerpo: String = "",
-    val tipo: String = "info",  // info | logro | pago | video | referido
+    val tipo: String = "info",  // info | logro | pago | video | referido | movimiento | mision | nivel | campeon | blockchain
     val leida: Boolean = false,
     val createdAt: Long = 0L
 )

@@ -1,5 +1,8 @@
 package com.flowly.move.data.model
 
+import com.google.firebase.firestore.Exclude
+import com.google.firebase.firestore.PropertyName
+
 /**
  * Límites de tokens por nivel. Índice 0 = Nivel 1, índice 9 = Nivel 10.
  * Esta es la fuente de verdad — ignorar el campo limiteTokens guardado en Firestore.
@@ -43,6 +46,7 @@ data class User(
     val kmTotales: Float = 0f,
     // Videos
     val videosCompletadosTotales: Int = 0,
+    val lastVideoDate: String = "",    // "yyyy-MM-dd" último día que completó un video
     // Holding
     val moveEnHolding: Int = 0,
     // Referidos
@@ -54,11 +58,15 @@ data class User(
     val misionesReclamadasHoy: List<String> = emptyList(),
     // Blockchain / Web3
     val walletAddress: String = "",        // dirección 0x… guardada por el usuario
+    // Campeón semanal
+    val campeonSemanalRacha: Int = 0,      // semanas consecutivas como campeón (0 = nunca)
+    // Admin — campo en Firestore se llama "admin"
+    @get:PropertyName("admin") @set:PropertyName("admin") var isAdmin: Boolean = false,
     // Metadata
     val createdAt: Long = 0L,
     val profilePhotoUrl: String = ""
 ) {
-    val iniciales: String get() {
+    @get:Exclude val iniciales: String get() {
         val parts = nombre.trim().split(" ")
         return when {
             parts.size >= 2 -> "${parts[0].first()}${parts[1].first()}".uppercase()

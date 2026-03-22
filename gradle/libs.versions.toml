@@ -27,6 +27,8 @@ osmdroid = "6.1.18"
 coil = "2.7.0"
 # AdMob
 playServicesAds = "23.5.0"
+# In-App Updates
+appUpdate = "2.1.0"
 
 [libraries]
 # AndroidX base
@@ -66,7 +68,10 @@ osmdroid = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "o
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 # AdMob
 play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
+# In-App Updates
+play-app-update = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "appUpdate" }
 # Firebase Storage (under BOM)
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage-ktx" }
 # Test
 junit = { group = "junit", name = "junit", version.ref = "junit" }
