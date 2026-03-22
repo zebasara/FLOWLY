@@ -20,12 +20,13 @@ class FlowlyApp : Application() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
         initCoil()
-        // Inicializar AdMob con dispositivo de prueba registrado
-        val testDeviceIds = listOf("D4CD646FEBDFD16F08459FEAD0EE09A1")
-        val requestConfiguration = RequestConfiguration.Builder()
-            .setTestDeviceIds(testDeviceIds)
-            .build()
-        MobileAds.setRequestConfiguration(requestConfiguration)
+        // Dispositivos de prueba solo en debug
+        if (BuildConfig.DEBUG) {
+            val requestConfiguration = RequestConfiguration.Builder()
+                .setTestDeviceIds(listOf("D4CD646FEBDFD16F08459FEAD0EE09A1"))
+                .build()
+            MobileAds.setRequestConfiguration(requestConfiguration)
+        }
         MobileAds.initialize(this)
         // Canal de notificaciones para el servicio GPS
         createNotificationChannels()

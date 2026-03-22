@@ -1,21 +1,53 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ── Stack traces legibles ────────────────────────────────────────────────────
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── Firebase Auth + Firestore ────────────────────────────────────────────────
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-keepnames class com.google.firebase.firestore.** { *; }
+# Mantener todos los data classes mapeados desde Firestore
+-keep class com.flowly.move.data.model.** { *; }
+-keepclassmembers class com.flowly.move.data.model.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── Kotlin / Coroutines ──────────────────────────────────────────────────────
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepclassmembers class kotlinx.coroutines.** {
+    volatile <fields>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Coil ─────────────────────────────────────────────────────────────────────
+-keep class coil.** { *; }
+-dontwarn coil.**
+
+# ── OkHttp ───────────────────────────────────────────────────────────────────
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** { *; }
+
+# ── OSMDroid ─────────────────────────────────────────────────────────────────
+-keep class org.osmdroid.** { *; }
+-dontwarn org.osmdroid.**
+
+# ── AdMob / Google Mobile Ads ────────────────────────────────────────────────
+-keep class com.google.android.gms.ads.** { *; }
+
+# ── Credential Manager / Google Sign-In ─────────────────────────────────────
+-keep class androidx.credentials.** { *; }
+-keep class com.google.android.libraries.identity.** { *; }
+
+# ── Compose ──────────────────────────────────────────────────────────────────
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+
+# ── Web3j / BNB (si se usa reflexión) ───────────────────────────────────────
+-dontwarn org.web3j.**
+-keep class org.web3j.** { *; }
+
+# ── Enums ────────────────────────────────────────────────────────────────────
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
