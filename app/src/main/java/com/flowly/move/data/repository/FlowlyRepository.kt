@@ -83,6 +83,15 @@ class FlowlyRepository(private val context: Context) {
         )
     }
 
+    /**
+     * Verifica y ejecuta el reset diario si el día cambió.
+     * Llamar al abrir la pantalla de misiones o al iniciar la app.
+     */
+    suspend fun ensureDailyReset(uid: String): Result<User?> = runCatching {
+        val user = getUser(uid).getOrNull() ?: return@runCatching null
+        checkAndResetDaily(uid, user)
+    }
+
     private fun userRef(uid: String) = db.collection("usuarios").document(uid)
     private fun canjesRef(uid: String) = userRef(uid).collection("canjes")
     private fun holdingsRef(uid: String) = userRef(uid).collection("holdings")

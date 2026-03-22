@@ -86,7 +86,8 @@ class MisionesViewModel(app: Application) : AndroidViewModel(app) {
     private fun load() {
         viewModelScope.launch {
             _isLoading.value = true
-            repo.getUser(uid).onSuccess { _user.value = it }
+            // ensureDailyReset verifica el cambio de día y resetea misiones si corresponde
+            repo.ensureDailyReset(uid).onSuccess { _user.value = it }
             _isLoading.value = false
         }
     }
