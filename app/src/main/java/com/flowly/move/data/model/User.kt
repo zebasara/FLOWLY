@@ -1,6 +1,5 @@
 package com.flowly.move.data.model
 
-import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.PropertyName
 
 /**
@@ -65,13 +64,14 @@ data class User(
     // Metadata
     val createdAt: Long = 0L,
     val profilePhotoUrl: String = ""
-) {
-    @get:Exclude val iniciales: String get() {
-        val parts = nombre.trim().split(" ")
-        return when {
-            parts.size >= 2 -> "${parts[0].first()}${parts[1].first()}".uppercase()
-            parts.size == 1 && parts[0].isNotEmpty() -> parts[0].take(2).uppercase()
-            else -> "??"
-        }
+)
+
+/** Iniciales del usuario — calculadas en cliente, no se almacenan en Firestore. */
+val User.iniciales: String get() {
+    val parts = nombre.trim().split(" ")
+    return when {
+        parts.size >= 2 -> "${parts[0].first()}${parts[1].first()}".uppercase()
+        parts.size == 1 && parts[0].isNotEmpty() -> parts[0].take(2).uppercase()
+        else -> "??"
     }
 }
