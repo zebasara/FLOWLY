@@ -51,16 +51,22 @@ class FlowlyRepository(private val context: Context) {
      * Verifica si los contadores diarios del usuario necesitan resetearse.
      * Si la fecha guardada ≠ hoy, resetea tokenMovimientoHoy, tokenVideosHoy, kmHoy
      * y misionesReclamadasHoy. También resetea move30Dias si han pasado 30 días.
+     * Si el usuario no vio ningún video ayer (lastVideoDate != ayer), resetea
+     * diasConsecutivosVideos a 0 (racha de videos perdida).
      * Retorna el usuario actualizado (con los contadores ya reseteados si corresponde).
      */
     private suspend fun checkAndResetDaily(uid: String, user: com.flowly.move.data.model.User): com.flowly.move.data.model.User {
-        val todayStr = today()
+        val todayStr   = today()
+        val yesterdayStr = yesterday()
         if (user.lastTokenResetDate == todayStr) return user   // ya está en el día de hoy
 
         // Determinar si también hay que resetear el acumulado de 30 días.
         // Si lastTokenResetDate es anterior a hace 30 días → reset move30Dias.
         val cutoff30 = daysAgo(30)
         val reset30 = user.lastTokenResetDate.isBlank() || user.lastTokenResetDate <= cutoff30
+
+        // Si el último video no fue ayer ni hoy → racha rota → resetear a 0.
+        val rachaRota = user.lastVideoDate != yesterdayStr && user.lastVideoDate != todayStr
 
         // Es un día nuevo → resetear contadores diarios
         val updates = mutableMapOf<String, Any>(
@@ -70,18 +76,20 @@ class FlowlyRepository(private val context: Context) {
             "lastTokenResetDate"    to todayStr,
             "misionesReclamadasHoy" to emptyList<String>()
         )
-        if (reset30) updates["move30Dias"] = 0
+        if (reset30)   updates["move30Dias"]             = 0
+        if (rachaRota) updates["diasConsecutivosVideos"] = 0
         // Limpiar campo obsoleto "iniciales" de documentos viejos
         updates["iniciales"] = FieldValue.delete()
 
         userRef(uid).update(updates).await()
         return user.copy(
-            tokenMovimientoHoy    = 0,
-            tokenVideosHoy        = 0,
-            kmHoy                 = 0f,
-            lastTokenResetDate    = todayStr,
-            misionesReclamadasHoy = emptyList(),
-            move30Dias            = if (reset30) 0 else user.move30Dias
+            tokenMovimientoHoy      = 0,
+            tokenVideosHoy          = 0,
+            kmHoy                   = 0f,
+            lastTokenResetDate      = todayStr,
+            misionesReclamadasHoy   = emptyList(),
+            move30Dias              = if (reset30) 0 else user.move30Dias,
+            diasConsecutivosVideos  = if (rachaRota) 0 else user.diasConsecutivosVideos
         )
     }
 
@@ -111,7 +119,8 @@ class FlowlyRepository(private val context: Context) {
         userRef(uid).update(
             mapOf(
                 "tokensActuales" to FieldValue.increment(amount.toLong()),
-                "tokenVideosHoy" to FieldValue.increment(amount.toLong())
+                "tokenVideosHoy" to FieldValue.increment(amount.toLong()),
+                "move30Dias"     to FieldValue.increment(amount.toLong())
             )
         ).await()
         // Crear notificación de video
@@ -263,7 +272,8 @@ class FlowlyRepository(private val context: Context) {
         userRef(uidReferidor).update(
             mapOf(
                 "totalReferidos" to FieldValue.increment(1),
-                "tokensActuales" to FieldValue.increment(200L)
+                "tokensActuales" to FieldValue.increment(200L),
+                "move30Dias"     to FieldValue.increment(200L)
             )
         ).await()
 
@@ -292,7 +302,10 @@ class FlowlyRepository(private val context: Context) {
      * Otorga +100 MOVE al USUARIO NUEVO por haber usado un código de referido válido.
      */
     suspend fun otorgarBonoReferido(uid: String): Result<Unit> = runCatching {
-        userRef(uid).update("tokensActuales", FieldValue.increment(100L)).await()
+        userRef(uid).update(mapOf(
+            "tokensActuales" to FieldValue.increment(100L),
+            "move30Dias"     to FieldValue.increment(100L)
+        )).await()
         crearNotificacion(uid, Notificacion(
             uid       = uid,
             titulo    = "¡Código de referido válido! 🎉",
@@ -542,6 +555,7 @@ class FlowlyRepository(private val context: Context) {
             mapOf(
                 "tokensActuales"           to FieldValue.increment(amount.toLong()),
                 "tokenVideosHoy"           to FieldValue.increment(amount.toLong()),
+                "move30Dias"               to FieldValue.increment(amount.toLong()),
                 "videosCompletadosTotales" to FieldValue.increment(1L),
                 "diasConsecutivosVideos"   to newStreak,
                 "lastVideoDate"            to todayStr
@@ -633,59 +647,7 @@ class FlowlyRepository(private val context: Context) {
         true
     }.getOrDefault(false)
 
-    // ── Blockchain ───────────────────────────────────────────────────
-
-    private fun retirosRef(uid: String) = userRef(uid).collection("retirosBlockchain")
-
-    /** Lee la configuración blockchain desde config/blockchain */
-    suspend fun getBlockchainConfig(): Result<BlockchainConfig> = runCatching {
-        val snap = db.collection("config").document("blockchain").get().await()
-        if (!snap.exists()) return@runCatching BlockchainConfig()
-        BlockchainConfig(
-            enabled          = snap.getBoolean("enabled") ?: false,
-            red              = snap.getString("red") ?: "BNB Smart Chain",
-            redTicker        = snap.getString("redTicker") ?: "BNB",
-            feePercent       = (snap.getDouble("feePercent") ?: 3.0).toFloat(),
-            feeWalletAddress = snap.getString("feeWalletAddress") ?: "",
-            minRetiro        = (snap.getLong("minRetiro") ?: 1_000L).toInt(),
-            maxRetiro        = (snap.getLong("maxRetiro") ?: 100_000L).toInt(),
-            tasaCambioInfo   = snap.getString("tasaCambioInfo") ?: "",
-            metaUsuarios     = (snap.getLong("metaUsuarios") ?: 5_000L).toInt(),
-            mensajeBloqueado = snap.getString("mensajeBloqueado") ?: BlockchainConfig().mensajeBloqueado
-        )
-    }
-
-    /** Guarda la wallet address del usuario en su perfil */
-    suspend fun saveWalletAddress(uid: String, address: String): Result<Unit> = runCatching {
-        userRef(uid).update("walletAddress", address.trim()).await()
-    }
-
-    /** Crea una solicitud de retiro y descuenta MOVE del saldo */
-    suspend fun solicitarRetiro(uid: String, retiro: RetiroBlockchain): Result<Unit> = runCatching {
-        val ref   = retirosRef(uid).document()
-        val final = retiro.copy(id = ref.id, uid = uid, createdAt = System.currentTimeMillis())
-        val batch = db.batch()
-        batch.set(ref, final)
-        batch.update(userRef(uid), "tokensActuales", FieldValue.increment(-retiro.moveTotal.toLong()))
-        batch.commit().await()
-        crearNotificacion(uid, Notificacion(
-            uid       = uid,
-            titulo    = "Retiro blockchain solicitado 📤",
-            cuerpo    = "${retiro.moveNeto} MOVE → ${retiro.walletDestino.take(12)}… · pendiente",
-            tipo      = "blockchain",
-            createdAt = System.currentTimeMillis()
-        ))
-    }
-
-    /** Historial de retiros del usuario */
-    suspend fun getRetiros(uid: String): Result<List<RetiroBlockchain>> = runCatching {
-        retirosRef(uid)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .get().await()
-            .toObjects(RetiroBlockchain::class.java)
-    }
-
-    // ── Misiones diarias ─────────────────────────────────────────────
+// ── Misiones diarias ─────────────────────────────────────────────
 
     /**
      * Reclama la recompensa de una misión diaria.
@@ -703,6 +665,7 @@ class FlowlyRepository(private val context: Context) {
         userRef(uid).update(
             mapOf(
                 "tokensActuales"        to FieldValue.increment(recompensa.toLong()),
+                "move30Dias"            to FieldValue.increment(recompensa.toLong()),
                 "misionesReclamadasHoy" to FieldValue.arrayUnion(misionId)
             )
         ).await()
@@ -723,6 +686,32 @@ class FlowlyRepository(private val context: Context) {
         if (user.badges.isEmpty()) {
             otorgarInsignia(uid, "soy_move").getOrThrow()
         }
+    }
+
+    // ── Fondo de Premios Mensual ─────────────────────────────────────────
+
+    private fun fondoPremiosRef() = db.collection("config").document("fondoPremios")
+
+    /** Lee el fondo de premios del mes actual desde config/fondoPremios */
+    suspend fun getFondoPremios(): Result<com.flowly.move.data.model.FondoPremios?> = runCatching {
+        val snap = fondoPremiosRef().get().await()
+        if (!snap.exists()) return@runCatching null
+        com.flowly.move.data.model.FondoPremios(
+            mes             = snap.getString("mes")                         ?: "",
+            montoDolares    = (snap.getDouble("montoDolares") ?: snap.getLong("montoDolares")?.toDouble() ?: 0.0),
+            porcentajeAdmob = (snap.getLong("porcentajeAdmob")              ?: 35L).toInt(),
+            updatedAt       = snap.getLong("updatedAt")                     ?: 0L
+        )
+    }
+
+    /** Top 10 de Argentina por actividad del mes (move30Dias) */
+    suspend fun getRankingMensual(): Result<List<User>> = runCatching {
+        db.collection("usuarios")
+            .orderBy("move30Dias", Query.Direction.DESCENDING)
+            .limit(10)
+            .get().await()
+            .toObjects(User::class.java)
+            .filter { it.uid.isNotBlank() }
     }
 
     // ── Campeón Semanal ──────────────────────────────────────────────────
@@ -792,26 +781,29 @@ class FlowlyRepository(private val context: Context) {
         ref.set(mapOf("semana" to weekYear, "assignedAt" to System.currentTimeMillis()),
             com.google.firebase.firestore.SetOptions.merge()).await()
 
-        // Buscar el usuario con más MOVE en Argentina
-        val topUser = db.collection("usuarios")
+        // Buscar el top 3 de Argentina por MOVE
+        val top3 = db.collection("usuarios")
             .orderBy("tokensActuales", Query.Direction.DESCENDING)
-            .limit(1)
+            .limit(3)
             .get().await()
             .toObjects(User::class.java)
-            .firstOrNull() ?: return@runCatching false
+
+        val topUser    = top3.getOrNull(0) ?: return@runCatching false
+        val segundoUser = top3.getOrNull(1)
+        val terceroUser = top3.getOrNull(2)
 
         // Calcular racha: si el mismo UID ganó la semana anterior, incrementar
         val rachaAnterior = snapInicial.getLong("racha")?.toInt() ?: 0
         val uidAnterior   = snapInicial.getString("uid") ?: ""
-        val nuevaRacha    = if (topUser.uid == uidAnterior) rachaAnterior + 1 else 1
+        val nuevaRacha    = if (topUser.uid.isNotBlank() && topUser.uid == uidAnterior) rachaAnterior + 1 else 1
 
-        // Guardar campeón completo en config/campeon
+        // Guardar campeón en config/campeon con tokens YA incluyendo el premio
         val campeon = CampeonSemanal(
             uid            = topUser.uid,
             nombre         = topUser.nombre,
             provincia      = topUser.provincia,
             ciudad         = topUser.ciudad,
-            tokensActuales = topUser.tokensActuales,
+            tokensActuales = topUser.tokensActuales + 1_000,
             photoUrl       = topUser.profilePhotoUrl,
             racha          = nuevaRacha,
             semana         = weekYear,
@@ -819,13 +811,14 @@ class FlowlyRepository(private val context: Context) {
         )
         ref.set(campeon).await()
 
-        // Actualizar racha en el perfil del usuario
+        // Actualizar racha en el perfil del campeón
         userRef(topUser.uid).update("campeonSemanalRacha", nuevaRacha).await()
 
-        // Acreditar +1.000 MOVE
-        userRef(topUser.uid).update(
-            "tokensActuales", FieldValue.increment(1_000L)
-        ).await()
+        // Acreditar +1.000 MOVE al campeón (#1)
+        userRef(topUser.uid).update(mapOf(
+            "tokensActuales" to FieldValue.increment(1_000L),
+            "move30Dias"     to FieldValue.increment(1_000L)
+        )).await()
 
         // Notificación al campeón
         val rachaMsg = if (nuevaRacha > 1) " Racha: ×$nuevaRacha semanas 🔥" else ""
@@ -836,6 +829,36 @@ class FlowlyRepository(private val context: Context) {
             tipo      = "campeon",
             createdAt = System.currentTimeMillis()
         ))
+
+        // Premio y notificación al #2 (+500 MOVE)
+        if (segundoUser != null && segundoUser.uid.isNotBlank()) {
+            userRef(segundoUser.uid).update(mapOf(
+                "tokensActuales" to FieldValue.increment(500L),
+                "move30Dias"     to FieldValue.increment(500L)
+            )).await()
+            crearNotificacion(segundoUser.uid, Notificacion(
+                uid       = segundoUser.uid,
+                titulo    = "🥈 ¡Quedaste 2do en Argentina!",
+                cuerpo    = "+500 MOVE acreditados por tu posición esta semana.",
+                tipo      = "campeon",
+                createdAt = System.currentTimeMillis()
+            ))
+        }
+
+        // Premio y notificación al #3 (+200 MOVE)
+        if (terceroUser != null && terceroUser.uid.isNotBlank()) {
+            userRef(terceroUser.uid).update(mapOf(
+                "tokensActuales" to FieldValue.increment(200L),
+                "move30Dias"     to FieldValue.increment(200L)
+            )).await()
+            crearNotificacion(terceroUser.uid, Notificacion(
+                uid       = terceroUser.uid,
+                titulo    = "🥉 ¡Quedaste 3ro en Argentina!",
+                cuerpo    = "+200 MOVE acreditados por tu posición esta semana.",
+                tipo      = "campeon",
+                createdAt = System.currentTimeMillis()
+            ))
+        }
 
         true
     }

@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 import com.flowly.move.data.local.UserPreferences
 import com.flowly.move.ui.theme.FlowlyBg
 import com.flowly.move.ui.screens.auth.*
-import com.flowly.move.ui.screens.blockchain.BlockchainScreen
 import com.flowly.move.ui.screens.canjes.*
+import com.flowly.move.ui.screens.fondo.FondoPremiosScreen
 import com.flowly.move.ui.screens.home.HomeScreen
 import com.flowly.move.ui.screens.holding.*
 import com.flowly.move.ui.screens.levels.LevelsScreen
@@ -163,8 +163,8 @@ fun FlowlyNavGraph() {
             )
         }
 
-        composable(Routes.BLOCKCHAIN) {
-            BlockchainScreen(navController = navController)
+        composable(Routes.FONDO_PREMIOS) {
+            FondoPremiosScreen(navController = navController)
         }
 
         composable(Routes.NOTIFICATIONS) {

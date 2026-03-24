@@ -164,8 +164,7 @@
   <div id="tab-bar">
     <button class="tab-btn active" onclick="showTab('general')">⚙️ General</button>
     <button class="tab-btn" onclick="showTab('canjes')">🏦 Canjes</button>
-    <button class="tab-btn" onclick="showTab('blockchain')">⛓️ Blockchain</button>
-    <button class="tab-btn" onclick="showTab('retiros')">↩️ Retiros</button>
+    <button class="tab-btn" onclick="showTab('fondo')">💰 Fondo Premios</button>
     <button class="tab-btn" onclick="showTab('canjes-pendientes')">📦 Canjes Pendientes</button>
     <button class="tab-btn" onclick="showTab('productos')">🛍️ Productos</button>
   </div>
@@ -302,96 +301,56 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════
-         TAB 3 · Blockchain
+<!-- ══════════════════════════════════════════════════════════════
+         TAB · Fondo de Premios Mensual
     ══════════════════════════════════════════════════════════════ -->
-    <div class="tab-panel" id="tab-blockchain">
+    <div class="tab-panel" id="tab-fondo">
       <div class="tab-header">
-        <h2>⛓️ Configuración Blockchain</h2>
+        <h2>💰 Fondo de Premios Mensual</h2>
+        <button class="btn btn-secondary btn-small" onclick="loadFondo()">↺ Actualizar</button>
       </div>
 
       <div class="section">
-        <div class="section-title">configuración blockchain</div>
+        <div class="section-title">configurar monto del mes</div>
         <div class="card">
-
-          <!-- Fila 1: habilitado + red + ticker -->
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+            Revisá tus ingresos en el panel de AdMob y cargá el monto mensual que vas a repartir.<br/>
+            El fondo se muestra en tiempo real en la app. Al cierre del mes, pagás manualmente al top 10.
+          </p>
           <div class="card-row">
+            <div class="field" style="max-width:180px">
+              <label>Ingresos AdMob del mes (USD)</label>
+              <input type="number" id="fondo-monto" placeholder="120.50" min="0" step="0.01" />
+            </div>
+            <div class="field" style="max-width:140px">
+              <label>% destinado al fondo</label>
+              <input type="number" id="fondo-pct" placeholder="35" min="1" max="100" />
+            </div>
             <div class="field" style="max-width:160px">
-              <label>Estado</label>
-              <select id="bc-enabled">
-                <option value="false">🔒 Bloqueado</option>
-                <option value="true">✅ Activo</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Nombre de la red</label>
-              <input type="text" id="bc-red" placeholder="BNB Smart Chain" />
-            </div>
-            <div class="field" style="max-width:120px">
-              <label>Ticker</label>
-              <input type="text" id="bc-ticker" placeholder="BNB" />
+              <label>Dólar blue hoy (ARS)</label>
+              <input type="number" id="fondo-blue" placeholder="0" readonly style="background:var(--card2);cursor:default" />
             </div>
           </div>
-
-          <div class="card-row" style="margin-top:12px">
-            <div class="field" style="max-width:120px">
-              <label>Fee % (comisión)</label>
-              <input type="number" id="bc-fee" min="0" max="100" step="0.5" placeholder="3" />
-            </div>
-            <div class="field">
-              <label>Wallet que recibe el fee (la tuya)</label>
-              <input type="text" id="bc-fee-wallet" placeholder="0x…" style="font-family:monospace" />
-            </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--muted)" id="fondo-calculo">
+            La app calcula el equivalente en ARS automáticamente usando el blue en tiempo real.
           </div>
-
-          <div class="card-row" style="margin-top:12px">
-            <div class="field" style="max-width:150px">
-              <label>Mínimo retiro (MOVE)</label>
-              <input type="number" id="bc-min" min="1" placeholder="1000" />
-            </div>
-            <div class="field" style="max-width:150px">
-              <label>Máximo retiro (MOVE)</label>
-              <input type="number" id="bc-max" min="1" placeholder="100000" />
-            </div>
-            <div class="field" style="max-width:150px">
-              <label>Meta usuarios (para activar)</label>
-              <input type="number" id="bc-meta" min="1" placeholder="5000" />
-            </div>
+          <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveFondo()">Guardar fondo del mes</button>
+            <span id="fondo-status" style="font-size:12px;color:var(--muted)"></span>
           </div>
-
-          <div style="margin-top:12px">
-            <label>Info de tasa de cambio (opcional, visible para el usuario)</label>
-            <input type="text" id="bc-tasa" placeholder="1 MOVE ≈ 0.0001 BNB (referencia)" />
-          </div>
-
-          <div style="margin-top:10px">
-            <label>Mensaje cuando está bloqueado</label>
-            <textarea id="bc-mensaje" rows="2"
-              style="resize:vertical"
-              placeholder="Llevamos el token MOVE a BNB Chain. Cuando lleguemos a nuestra meta podés retirar tus MOVE a tu wallet."></textarea>
-          </div>
-
-          <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
-            <button class="btn btn-primary" onclick="saveBlockchainConfig()">Guardar configuración blockchain</button>
-            <span id="bc-status" style="font-size:12px; color:var(--muted)"></span>
+          <div style="margin-top:18px;padding:12px;background:var(--card2);border-radius:8px">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Distribución fija:</div>
+            <div style="font-size:12px;color:var(--muted);line-height:22px">
+              🥇 1° puesto → 40% &nbsp;|&nbsp; 🥈 2° → 20% &nbsp;|&nbsp; 🥉 3° → 12%<br/>
+              🏅 4° al 10° → 4% c/u
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════════════════════════
-         TAB 4 · Retiros Pendientes
-    ══════════════════════════════════════════════════════════════ -->
-    <div class="tab-panel" id="tab-retiros">
-      <div class="tab-header">
-        <h2>↩️ Retiros Blockchain Pendientes</h2>
-        <button class="btn btn-secondary btn-small" onclick="loadRetiros()">↺ Actualizar</button>
       </div>
 
       <div class="section">
-        <div id="retiros-list">
-          <div class="loading">Cargando retiros…</div>
-        </div>
+        <div class="section-title">top 10 mensual actual · para saber a quién pagarle</div>
+        <div id="fondo-ranking"><div class="loading">Cargando…</div></div>
       </div>
     </div>
 
@@ -510,7 +469,7 @@
 
 <!-- ── Tab switching logic ───────────────────────────────────────────────── -->
 <script>
-  const TAB_IDS = ['general','canjes','blockchain','retiros','canjes-pendientes','productos'];
+  const TAB_IDS = ['general','canjes','fondo','canjes-pendientes','productos'];
 
   function showTab(name) {
     // Panels
@@ -555,8 +514,8 @@
   const db           = getFirestore(app);
   const storage      = getStorage(app);
   const storeRef     = doc(db, 'config', 'store');
-  const blockchainRef = doc(db, 'config', 'blockchain');
   const canjesRef    = doc(db, 'config', 'canjes');
+  const fondoRef     = doc(db, 'config', 'fondoPremios');
 
   // ── Productos por defecto ──────────────────────────────────────────────
   const DEFAULT_PRODUCTS = [
@@ -604,9 +563,8 @@
     await loadConfig();
     await loadUserCount();
     await loadCanjesConfig();
-    await loadBlockchainConfig();
-    await loadRetiros();
     await loadCanjes();
+    await loadFondo();
   });
 
   // ── Config ─────────────────────────────────────────────────────────────
@@ -850,6 +808,102 @@
     return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // ── Fondo de Premios ──────────────────────────────────────────────────
+  const DIST_FONDO = [40, 20, 12, 4, 4, 4, 4, 4, 4, 4];
+  const MEDALS     = ['🥇','🥈','🥉','4°','5°','6°','7°','8°','9°','10°'];
+
+  let _blueRate = 0;
+
+  async function fetchBlueRate() {
+    try {
+      const r    = await fetch('https://api.bluelytics.com.ar/v2/latest');
+      const json = await r.json();
+      _blueRate  = json.blue?.value_avg || 0;
+      document.getElementById('fondo-blue').value = _blueRate.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+    } catch(e) { /* silencioso */ }
+  }
+
+  window.loadFondo = async function() {
+    await fetchBlueRate();
+    try {
+      const snap = await getDoc(fondoRef);
+      if (snap.exists()) {
+        const d = snap.data();
+        document.getElementById('fondo-monto').value = d.montoDolares || 0;
+        document.getElementById('fondo-pct').value   = d.porcentajeAdmob || 35;
+      }
+    } catch(e) { /* silencioso */ }
+    await renderRankingFondo();
+  };
+
+  async function renderRankingFondo() {
+    try {
+      const q    = query(collection(db, 'usuarios'), orderBy('move30Dias', 'desc'), limit(10));
+      const snap = await getDocs(q);
+      const usd    = parseFloat(document.getElementById('fondo-monto').value) || 0;
+      const montoARS = Math.round(usd * _blueRate);
+      if (snap.empty) {
+        document.getElementById('fondo-ranking').innerHTML =
+          '<p style="color:var(--muted);font-size:13px;padding:8px 0">Sin actividad registrada este mes.</p>';
+        return;
+      }
+      const rows = snap.docs.map((d, i) => {
+        const u      = d.data();
+        const pct    = DIST_FONDO[i] || 0;
+        const premio = Math.round(montoARS * pct / 100);
+        const alias  = u.aliasMercadoPago
+          ? `<span style="color:var(--accent2)">💳 ${u.aliasMercadoPago}</span>`
+          : `<span style="color:var(--muted);font-style:italic">sin alias MP</span>`;
+        const tel = u.telefono
+          ? `<span style="color:var(--muted)">📱 ${u.telefono}</span>`
+          : `<span style="color:var(--muted);font-style:italic">sin teléfono</span>`;
+        return `
+          <div class="card" style="margin-bottom:8px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+              <div>
+                <span style="font-size:16px">${MEDALS[i]}</span>
+                <strong style="margin-left:6px;color:var(--text)">${u.nombre || '—'}</strong>
+                &nbsp;<span style="font-size:12px;color:var(--muted)">${(u.move30Dias||0).toLocaleString()} MOVE</span><br/>
+                <span style="font-size:12px">${alias}</span>
+                &nbsp;&nbsp;
+                <span style="font-size:12px">${tel}</span><br/>
+                <span style="font-size:11px;color:var(--muted)">UID: ${d.id}</span>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:15px;font-weight:700;color:var(--accent)">$${premio.toLocaleString('es-AR')}</div>
+                <div style="font-size:11px;color:var(--muted)">${pct}% · USD ${(usd * pct / 100).toFixed(2)}</div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+      document.getElementById('fondo-ranking').innerHTML = rows;
+    } catch(e) {
+      document.getElementById('fondo-ranking').innerHTML =
+        `<p style="color:var(--danger);font-size:13px">Error: ${e.message}</p>`;
+    }
+  }
+
+  window.saveFondo = async function() {
+    const usd = parseFloat(document.getElementById('fondo-monto').value) || 0;
+    const pct = parseInt(document.getElementById('fondo-pct').value)     || 35;
+    if (usd < 0)              { showToast('El monto no puede ser negativo', true); return; }
+    if (pct < 1 || pct > 100){ showToast('El % debe estar entre 1 y 100', true); return; }
+    const now = new Date();
+    const mes = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const statusEl = document.getElementById('fondo-status');
+    statusEl.textContent = 'Guardando…';
+    try {
+      await setDoc(fondoRef, { montoDolares: usd, porcentajeAdmob: pct, mes, blueRateCache: _blueRate, updatedAt: Date.now() });
+      statusEl.textContent = '';
+      const ars = Math.round(usd * _blueRate);
+      showToast(`💰 Fondo guardado: USD ${usd} → $${ars.toLocaleString('es-AR')} ARS · ${mes}`);
+      await renderRankingFondo();
+    } catch(e) {
+      statusEl.textContent = 'Error: ' + e.message;
+      showToast('Error al guardar: ' + e.message, true);
+    }
+  };
+
   window.loadCanjesConfig = async function() {
     try {
       const snap = await getDoc(canjesRef);
@@ -979,143 +1033,6 @@
     }
   };
 
-  // ── Blockchain config ──────────────────────────────────────────────────
-  const BC_DEFAULTS = {
-    enabled: false,
-    red: 'BNB Smart Chain',
-    redTicker: 'BNB',
-    feePercent: 3.0,
-    feeWalletAddress: '',
-    minRetiro: 1000,
-    maxRetiro: 100000,
-    tasaCambioInfo: '',
-    metaUsuarios: 5000,
-    mensajeBloqueado: 'Llevamos el token MOVE a BNB Chain. Cuando lleguemos a nuestra meta podés retirar tus MOVE a tu wallet y tradearlos.'
-  };
-
-  window.loadBlockchainConfig = async function() {
-    try {
-      const snap = await getDoc(blockchainRef);
-      const cfg  = snap.exists() ? { ...BC_DEFAULTS, ...snap.data() } : BC_DEFAULTS;
-      document.getElementById('bc-enabled').value    = String(cfg.enabled);
-      document.getElementById('bc-red').value        = cfg.red;
-      document.getElementById('bc-ticker').value     = cfg.redTicker;
-      document.getElementById('bc-fee').value        = cfg.feePercent;
-      document.getElementById('bc-fee-wallet').value = cfg.feeWalletAddress;
-      document.getElementById('bc-min').value        = cfg.minRetiro;
-      document.getElementById('bc-max').value        = cfg.maxRetiro;
-      document.getElementById('bc-meta').value       = cfg.metaUsuarios;
-      document.getElementById('bc-tasa').value       = cfg.tasaCambioInfo;
-      document.getElementById('bc-mensaje').value    = cfg.mensajeBloqueado;
-    } catch(e) {
-      document.getElementById('bc-status').textContent = 'Error al cargar: ' + e.message;
-    }
-  };
-
-  window.saveBlockchainConfig = async function() {
-    const enabled     = document.getElementById('bc-enabled').value === 'true';
-    const red         = document.getElementById('bc-red').value.trim();
-    const redTicker   = document.getElementById('bc-ticker').value.trim();
-    const feePercent  = parseFloat(document.getElementById('bc-fee').value) || 3;
-    const feeWallet   = document.getElementById('bc-fee-wallet').value.trim();
-    const minRetiro   = parseInt(document.getElementById('bc-min').value) || 1000;
-    const maxRetiro   = parseInt(document.getElementById('bc-max').value) || 100000;
-    const metaUsuarios= parseInt(document.getElementById('bc-meta').value) || 5000;
-    const tasaInfo    = document.getElementById('bc-tasa').value.trim();
-    const mensaje     = document.getElementById('bc-mensaje').value.trim();
-
-    if (!red) { showToast('Ingresá el nombre de la red', true); return; }
-    if (feePercent < 0 || feePercent > 100) { showToast('Fee debe estar entre 0 y 100', true); return; }
-    if (minRetiro >= maxRetiro) { showToast('El mínimo debe ser menor al máximo', true); return; }
-
-    const cfg = {
-      enabled, red, redTicker, feePercent, feeWalletAddress: feeWallet,
-      minRetiro, maxRetiro, metaUsuarios,
-      tasaCambioInfo: tasaInfo,
-      mensajeBloqueado: mensaje || BC_DEFAULTS.mensajeBloqueado
-    };
-
-    const statusEl = document.getElementById('bc-status');
-    statusEl.textContent = 'Guardando…';
-    try {
-      await setDoc(blockchainRef, cfg);
-      statusEl.textContent = '';
-      showToast(`Blockchain ${enabled ? '✅ activado' : '🔒 desactivado'} · Configuración guardada`);
-    } catch(e) {
-      statusEl.textContent = 'Error: ' + e.message;
-      showToast('Error al guardar: ' + e.message, true);
-    }
-  };
-
-  // ── Retiros blockchain ──────────────────────────────────────────────────
-  window.loadRetiros = async function() {
-    const listEl = document.getElementById('retiros-list');
-    listEl.innerHTML = '<div class="loading">Cargando…</div>';
-    try {
-      // collectionGroup query: todos los retirosBlockchain donde estado = 'pendiente'
-      const q    = query(collectionGroup(db, 'retirosBlockchain'), where('estado', '==', 'pendiente'), orderBy('createdAt', 'desc'), limit(50));
-      const snap = await getDocsFromServer(q);
-      if (snap.empty) {
-        listEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">No hay retiros pendientes. ✅</p>';
-        return;
-      }
-      listEl.innerHTML = snap.docs.map(d => {
-        const r   = d.data();
-        const uid = r.uid || d.ref.parent.parent?.id || '?';
-        const fecha = r.createdAt ? new Date(r.createdAt).toLocaleString('es-AR') : '—';
-        return `
-          <div class="card" style="margin-bottom:10px" id="retiro-${d.id}">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-              <div>
-                <div style="font-size:15px;font-weight:700;color:var(--text)">${(r.moveNeto||0).toLocaleString()} MOVE → usuario</div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px">UID: ${uid}</div>
-                <div style="font-size:12px;color:var(--muted)">Wallet: <span style="font-family:monospace;color:var(--text)">${r.walletDestino || '—'}</span></div>
-                <div style="font-size:12px;color:var(--muted)">Total: ${(r.moveTotal||0).toLocaleString()} · Fee: ${(r.moveFee||0).toLocaleString()} (${r.feePercent||0}%) · Red: ${r.red||'—'}</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px">${fecha}</div>
-              </div>
-              <span class="tag tag-amber">⏳ Pendiente</span>
-            </div>
-            <hr style="margin:12px 0"/>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-              <div class="field" style="flex:2;min-width:220px">
-                <label>TX Hash (obligatorio para marcar como procesado)</label>
-                <input type="text" id="tx-${d.id}" placeholder="0x…" style="font-family:monospace" />
-              </div>
-              <button class="btn btn-primary btn-small" onclick="procesarRetiro('${uid}','${d.id}')">✅ Marcar procesado</button>
-              <button class="btn btn-danger btn-small" onclick="rechazarRetiro('${uid}','${d.id}',${r.moveTotal||0})">❌ Rechazar</button>
-            </div>
-          </div>`;
-      }).join('');
-    } catch(e) {
-      listEl.innerHTML = `<p style="color:var(--danger);font-size:13px">Error: ${e.message}<br/><small>Asegurate de tener el índice de collectionGroup en Firestore.</small></p>`;
-    }
-  };
-
-  window.procesarRetiro = async function(uid, retiroId) {
-    const txHash = document.getElementById('tx-' + retiroId).value.trim();
-    if (!txHash) { showToast('Ingresá el TX Hash antes de marcar como procesado', true); return; }
-    try {
-      const retiroDoc = doc(db, 'usuarios', uid, 'retirosBlockchain', retiroId);
-      await updateDoc(retiroDoc, { estado: 'procesado', txHash });
-      document.getElementById('retiro-' + retiroId)?.remove();
-      showToast('Retiro marcado como procesado ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
-
-  window.rechazarRetiro = async function(uid, retiroId, moveTotal) {
-    const nota = prompt('Motivo del rechazo (opcional):') ?? '';
-    try {
-      const retiroDoc = doc(db, 'usuarios', uid, 'retirosBlockchain', retiroId);
-      await updateDoc(retiroDoc, { estado: 'rechazado', notaAdmin: nota });
-      // Devolver MOVE al usuario
-      const userDocRef  = doc(db, 'usuarios', uid);
-      const userSnap    = await getDoc(userDocRef);
-      const currentTokens = (userSnap.data()?.tokensActuales || 0);
-      await updateDoc(userDocRef, { tokensActuales: currentTokens + moveTotal });
-      document.getElementById('retiro-' + retiroId)?.remove();
-      showToast('Retiro rechazado y MOVE devueltos al usuario ✓');
-    } catch(e) { showToast('Error: ' + e.message, true); }
-  };
 
   // ── Canjes ─────────────────────────────────────────────────────────────
   window.loadCanjes = async function() {

@@ -55,9 +55,7 @@ data class User(
     val badges: List<String> = emptyList(),
     // Misiones diarias — se resetea junto con los contadores diarios
     val misionesReclamadasHoy: List<String> = emptyList(),
-    // Blockchain / Web3
-    val walletAddress: String = "",        // dirección 0x… guardada por el usuario
-    // Campeón semanal
+// Campeón semanal
     val campeonSemanalRacha: Int = 0,      // semanas consecutivas como campeón (0 = nunca)
     // Admin — campo en Firestore se llama "admin"
     @get:PropertyName("admin") @set:PropertyName("admin") var isAdmin: Boolean = false,

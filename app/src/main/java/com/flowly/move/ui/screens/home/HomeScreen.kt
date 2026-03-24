@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -319,6 +319,15 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
+            // Banner Fondo de Premios
+            FondoPremiosBanner(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clickable { navController.navigate(Routes.FONDO_PREMIOS) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
             // CTAs
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 FlowlyPrimaryButton(
@@ -354,8 +363,8 @@ fun HomeScreen(navController: NavController) {
                 QuickAccessItem("👥", "Referir", modifier = Modifier.weight(1f)) {
                     navController.navigate(Routes.REFERRALS)
                 }
-                QuickAccessItem("⛓", "Blockchain", modifier = Modifier.weight(1f)) {
-                    navController.navigate(Routes.BLOCKCHAIN)
+                QuickAccessItem("🎯", "Misiones", modifier = Modifier.weight(1f)) {
+                    navController.navigate(Routes.MISIONES)
                 }
             }
 
@@ -372,6 +381,63 @@ fun HomeScreen(navController: NavController) {
             modifier  = Modifier.align(Alignment.BottomCenter)
         )
         } // fin Box
+    }
+}
+
+// ── Banner Fondo de Premios ────────────────────────────────────────
+
+@Composable
+private fun FondoPremiosBanner(modifier: Modifier = Modifier) {
+    val meses = listOf(
+        "enero","febrero","marzo","abril","mayo","junio",
+        "julio","agosto","septiembre","octubre","noviembre","diciembre"
+    )
+    val mesNombre = meses[java.util.Calendar.getInstance().get(java.util.Calendar.MONTH)]
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(androidx.compose.ui.graphics.Color(0xFF2A1A00), androidx.compose.ui.graphics.Color(0xFF0A2010))
+                )
+            )
+            .border(
+                1.dp,
+                Brush.linearGradient(
+                    listOf(androidx.compose.ui.graphics.Color(0xFFF59E0B), FlowlyAccent)
+                ),
+                androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+            )
+            .padding(14.dp)
+    ) {
+        Row(
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier              = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Text("💰", fontSize = 28.sp)
+                Column {
+                    Text(
+                        "Fondo de Premios",
+                        fontSize   = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = androidx.compose.ui.graphics.Color(0xFFF59E0B)
+                    )
+                    Text(
+                        "Competí por ARS reales · $mesNombre",
+                        fontSize = 11.sp,
+                        color    = FlowlyMuted
+                    )
+                }
+            }
+            Text("→", fontSize = 18.sp, color = FlowlyMuted)
+        }
     }
 }
 

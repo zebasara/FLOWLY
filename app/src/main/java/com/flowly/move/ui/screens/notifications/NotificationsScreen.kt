@@ -45,8 +45,7 @@ private fun dotColorForTipo(tipo: String): Color = when (tipo) {
     "mision"     -> Color(0xFFFACC15) // amarillo – misiones diarias
     "nivel"      -> Color(0xFF38BDF8) // celeste  – subida de nivel
     "campeon"    -> Color(0xFFFBBF24) // dorado   – campeón semanal
-    "blockchain" -> Color(0xFF22D3EE) // cian     – retiro blockchain
-    else         -> Color(0xFF6B7280) // FlowlyMuted
+else         -> Color(0xFF6B7280) // FlowlyMuted
 }
 
 @Composable

@@ -17,7 +17,7 @@ object Routes {
     const val PROFILE          = "profile"
     const val HOLDING          = "holding"
     const val CONFIRM_HOLDING  = "confirm_holding/{move}/{months}"
-    const val BLOCKCHAIN       = "blockchain"
+    const val FONDO_PREMIOS    = "fondo_premios"
     const val NOTIFICATIONS    = "notifications"
     const val REFERRALS        = "referrals"
     const val EDIT_PROFILE     = "edit_profile"
