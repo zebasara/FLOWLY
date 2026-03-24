@@ -1,5 +1,9 @@
 package com.flowly.move.ui.screens.home
 
+import android.view.View
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebSettings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,16 +15,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.flowly.move.data.model.NIVEL_LIMITES
 import com.flowly.move.data.model.TODAS_LAS_INSIGNIAS
 import com.flowly.move.data.repository.FlowlyRepository
@@ -37,6 +45,7 @@ fun HomeScreen(navController: NavController) {
     val showWelcome       by vm.showWelcomeDialog.collectAsStateWithLifecycle()
     val pendingBadge      by vm.pendingBadge.collectAsStateWithLifecycle()
     val networkError      by vm.networkError.collectAsStateWithLifecycle()
+    val youtubeUrl        by vm.youtubeUrl.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -328,6 +337,15 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
+            // Banner YouTube (si hay URL configurada)
+            if (youtubeUrl.isNotBlank()) {
+                YouTubeCard(
+                    url      = youtubeUrl,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
             // CTAs
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 FlowlyPrimaryButton(
@@ -567,4 +585,99 @@ private fun SectionTitle(modifier: Modifier = Modifier, text: String) {
         letterSpacing = 1.sp,
         modifier      = modifier.padding(top = 14.dp, bottom = 8.dp)
     )
+}
+
+// ── YouTube Banner ─────────────────────────────────────────────────
+
+private fun extractYouTubeVideoId(url: String): String? {
+    // youtu.be/VIDEO_ID  o  youtube.com/watch?v=VIDEO_ID
+    val shortMatch = Regex("""youtu\.be/([A-Za-z0-9_\-]{11})""").find(url)
+    if (shortMatch != null) return shortMatch.groupValues[1]
+    val longMatch  = Regex("""[?&]v=([A-Za-z0-9_\-]{11})""").find(url)
+    return longMatch?.groupValues?.get(1)
+}
+
+@Composable
+private fun YouTubeCard(url: String, modifier: Modifier = Modifier) {
+    val videoId = remember(url) { extractYouTubeVideoId(url) } ?: return
+    var playing by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, FlowlyBorder, RoundedCornerShape(16.dp))
+            .aspectRatio(16f / 9f)
+    ) {
+        if (playing) {
+            // WebView con iframe de YouTube — inline, sin redirect
+            AndroidView(
+                factory = { ctx ->
+                    WebView(ctx).apply {
+                        setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                        settings.apply {
+                            javaScriptEnabled           = true
+                            domStorageEnabled           = true
+                            loadWithOverviewMode        = true
+                            useWideViewPort             = true
+                            mediaPlaybackRequiresUserGesture = false
+                            mixedContentMode            = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                            allowContentAccess          = true
+                        }
+                        webChromeClient = WebChromeClient()
+                    }
+                },
+                update = { webView ->
+                    val html = """
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <meta name="viewport" content="width=device-width,initial-scale=1">
+                          <style>
+                            * { margin:0; padding:0; background:#000; }
+                            iframe { width:100%; height:100vh; border:none; }
+                          </style>
+                        </head>
+                        <body>
+                          <iframe
+                            src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&rel=0&modestbranding=1"
+                            allow="autoplay; fullscreen"
+                            allowfullscreen>
+                          </iframe>
+                        </body>
+                        </html>
+                    """.trimIndent()
+                    webView.loadDataWithBaseURL(
+                        "https://www.youtube.com", html, "text/html", "UTF-8", null
+                    )
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            // Thumbnail de YouTube con botón play encima
+            AsyncImage(
+                model        = "https://img.youtube.com/vi/$videoId/hqdefault.jpg",
+                contentDescription = "Video",
+                contentScale = ContentScale.Crop,
+                modifier     = Modifier.fillMaxSize()
+            )
+            // Overlay oscuro + ícono play
+            Box(
+                modifier          = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable { playing = true },
+                contentAlignment  = Alignment.Center
+            ) {
+                Box(
+                    modifier         = Modifier
+                        .size(56.dp)
+                        .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(50)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("▶", fontSize = 22.sp, color = Color.Black)
+                }
+            }
+        }
+    }
 }

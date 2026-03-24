@@ -17,7 +17,9 @@ data class StoreConfig(
     // URL base del link de referidos (se concatena el código del usuario al final)
     val referralBaseUrl: String = "https://flowly.app/r/",
     // URL de Mercado Pago del admin (configurable desde el panel)
-    val mercadoPagoUrl: String = ""
+    val mercadoPagoUrl: String = "",
+    // URL de YouTube para mostrar como banner en Home
+    val youtubeUrl: String = ""
 )
 
 // Productos por defecto (se muestran si Firestore no tiene config aún)

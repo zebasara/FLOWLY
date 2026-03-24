@@ -390,11 +390,13 @@ class FlowlyRepository(private val context: Context) {
             )
         }
         val mercadoPagoUrl = snap.getString("mercadoPagoUrl") ?: ""
+        val youtubeUrl     = snap.getString("youtubeUrl") ?: ""
         StoreConfig(
             umbralUsuarios  = umbral,
             productos       = if (productos.isEmpty()) DEFAULT_STORE_PRODUCTS else productos,
             referralBaseUrl = referralBaseUrl,
-            mercadoPagoUrl  = mercadoPagoUrl
+            mercadoPagoUrl  = mercadoPagoUrl,
+            youtubeUrl      = youtubeUrl
         )
     }
 
