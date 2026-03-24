@@ -241,6 +241,27 @@
           </div>
         </div>
       </div>
+      <!-- Video de YouTube en inicio -->
+      <div class="section">
+        <div class="section-title">video destacado en inicio</div>
+        <div class="card">
+          <div class="card-row" style="align-items:flex-end">
+            <div class="field" style="flex:2">
+              <label>URL del video de YouTube <span style="color:var(--accent)">▶️</span></label>
+              <input type="url" id="youtube-url"
+                     placeholder="https://www.youtube.com/watch?v=..."
+                     style="font-family:monospace" />
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">
+                Se mostrará como card en la pantalla de inicio debajo del saldo.
+                Dejá vacío para ocultar el recuadro.
+              </p>
+            </div>
+            <div style="padding-bottom:22px; margin-left:12px">
+              <button class="btn btn-primary" onclick="saveYoutubeUrl()">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -589,7 +610,8 @@
       const urlInput = document.getElementById('referral-base-url');
       urlInput.value = currentConfig.referralBaseUrl || 'https://flowly.app/r';
       updateReferralPreview();
-      document.getElementById('mp-url').value = currentConfig.mercadoPagoUrl || '';
+      document.getElementById('mp-url').value      = currentConfig.mercadoPagoUrl || '';
+      document.getElementById('youtube-url').value = currentConfig.youtubeUrl || '';
       renderProducts(currentConfig.productos || []);
     } catch(e) {
       showToast('Error al cargar config: ' + e.message, true);
@@ -618,6 +640,15 @@
       await setDoc(storeRef, { ...currentConfig, mercadoPagoUrl: url });
       currentConfig.mercadoPagoUrl = url;
       showToast(url ? 'Link de Mercado Pago guardado ✓' : 'Botón de Mercado Pago ocultado ✓');
+    } catch(e) { showToast('Error: ' + e.message, true); }
+  };
+
+  window.saveYoutubeUrl = async function() {
+    const url = document.getElementById('youtube-url').value.trim();
+    try {
+      await setDoc(storeRef, { ...currentConfig, youtubeUrl: url });
+      currentConfig.youtubeUrl = url;
+      showToast(url ? 'Video de YouTube guardado ✓' : 'Video ocultado en inicio ✓');
     } catch(e) { showToast('Error: ' + e.message, true); }
   };
 

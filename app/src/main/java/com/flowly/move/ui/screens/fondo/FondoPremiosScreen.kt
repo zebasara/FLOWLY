@@ -1,5 +1,6 @@
 package com.flowly.move.ui.screens.fondo
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -30,7 +32,9 @@ import com.flowly.move.data.model.DISTRIBUCION_FONDO
 import com.flowly.move.data.model.User
 import com.flowly.move.data.model.iniciales
 import com.flowly.move.ui.components.FlowlyAvatar
+import com.flowly.move.ui.components.FlowlyPrimaryButton
 import com.flowly.move.ui.components.FlowlyScaffold
+import com.flowly.move.ui.screens.store.StoreViewModel
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
 import kotlinx.coroutines.delay
@@ -88,11 +92,17 @@ private fun calcPremio(montoTotal: Long, posIndex: Int): Long {
 @Composable
 fun FondoPremiosScreen(navController: NavController) {
     val vm: FondoPremiosViewModel = viewModel()
+    val storeVm: StoreViewModel   = viewModel()
     val fondo       by vm.fondo.collectAsStateWithLifecycle()
     val montoARS    by vm.montoARS.collectAsStateWithLifecycle()
     val ranking     by vm.ranking.collectAsStateWithLifecycle()
     val currentUser by vm.currentUser.collectAsStateWithLifecycle()
     val isLoading   by vm.isLoading.collectAsStateWithLifecycle()
+    val storeConfig by storeVm.storeConfig.collectAsStateWithLifecycle()
+
+    val baseUrl      = storeConfig?.referralBaseUrl?.trimEnd('/') ?: "https://flowly.app/r"
+    val userCode     = currentUser?.uid?.take(8) ?: ""
+    val referralLink = if (userCode.isNotBlank()) "$baseUrl/$userCode" else ""
 
     var countdown by remember { mutableStateOf(calcCountdown()) }
     LaunchedEffect(Unit) {
@@ -167,6 +177,14 @@ fun FondoPremiosScreen(navController: NavController) {
             ComoFuncionaCard(
                 pct      = fondo?.porcentajeAdmob ?: 35,
                 modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // ── Compartir y sumar al fondo ────────────────────────────────
+            CompartirCard(
+                referralLink = referralLink,
+                modifier     = Modifier.padding(horizontal = 16.dp)
             )
 
             Spacer(Modifier.height(24.dp))
@@ -567,6 +585,58 @@ private fun MiPosicionCard(
     }
 }
 
+// ── Compartir ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CompartirCard(referralLink: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(FlowlyCard)
+            .border(1.dp, FlowlyBorder, RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Text("🚀", fontSize = 22.sp)
+            Column {
+                Text(
+                    "Invitá amigos y crecé juntos",
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = FlowlyText
+                )
+                Text(
+                    "Más usuarios = fondo más grande para todos",
+                    fontSize = 11.sp,
+                    color    = FlowlyMuted
+                )
+            }
+        }
+        FlowlyPrimaryButton(
+            text    = "Compartir Flowly con mi código",
+            onClick = {
+                if (referralLink.isBlank()) return@FlowlyPrimaryButton
+                val texto = "¡Sumate a Flowly y competí por premios en ARS! Ganá MOVE caminando y viendo videos. Registrate con mi código: $referralLink"
+                context.startActivity(
+                    Intent.createChooser(
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, texto)
+                        },
+                        "Compartir Flowly"
+                    )
+                )
+            }
+        )
+    }
+}
+
 // ── Cómo funciona ─────────────────────────────────────────────────────────────
 
 @Composable
@@ -588,10 +658,10 @@ private fun ComoFuncionaCard(pct: Int, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(10.dp))
 
         listOf(
-            "📺" to "Cada vez que ves un ad en la app, generás ingresos publicitarios.",
+            "📺" to "Cada vez que ves un anuncio en la app, generás ingresos para el fondo.",
             "💰" to "Flowly destina el $pct% de esos ingresos a este fondo mensual.",
             "🏆" to "Al cierre del mes, el top 10 de Argentina (por MOVE del mes) recibe su premio en ARS.",
-            "📈" to "Más usuarios = más ads = fondo más grande. ¡Invitá a tus amigos!"
+            "📈" to "Más usuarios = más anuncios = fondo más grande. ¡Invitá a tus amigos!"
         ).forEach { (emoji, texto) ->
             Row(
                 modifier              = Modifier.padding(vertical = 5.dp),

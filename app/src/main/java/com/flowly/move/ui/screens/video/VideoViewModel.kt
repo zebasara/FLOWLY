@@ -23,11 +23,24 @@ class VideoViewModel(app: Application) : AndroidViewModel(app) {
     private val _uiState = MutableStateFlow<VideoUiState>(VideoUiState.Idle)
     val uiState: StateFlow<VideoUiState> = _uiState.asStateFlow()
 
-    fun cobrarRecompensa(amount: Int = 50) {
+    /** true si el usuario ya alcanzó los 200 MOVE del límite diario de videos */
+    private val _limiteAlcanzado = MutableStateFlow(false)
+    val limiteAlcanzado: StateFlow<Boolean> = _limiteAlcanzado.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val uid = prefs.userId.first()
+            val user = repo.getUser(uid).getOrNull()
+            _limiteAlcanzado.value = (user?.tokenVideosHoy ?: 0) >= FlowlyRepository.DAILY_LIMIT_VIDEOS
+        }
+    }
+
+    fun cobrarRecompensa() {
         viewModelScope.launch {
             _uiState.value = VideoUiState.Loading
-            val uid = prefs.userId.first()
-            // cobrarVideoConBadges también otorga insignias y actualiza videosCompletadosTotales
+            val uid    = prefs.userId.first()
+            val amount = if (_limiteAlcanzado.value) FlowlyRepository.VIDEO_BONUS_AMOUNT
+                         else FlowlyRepository.VIDEO_REWARD_AMOUNT
             repo.cobrarVideoConBadges(uid, amount).fold(
                 onSuccess = { _uiState.value = VideoUiState.Success },
                 onFailure = { _uiState.value = VideoUiState.Error(it.message ?: "Error al cobrar recompensa") }

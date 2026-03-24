@@ -35,8 +35,10 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 @Composable
 fun VideoScreen(navController: NavController) {
     val vm: VideoViewModel = viewModel()
-    val uiState by vm.uiState.collectAsStateWithLifecycle()
-    val context  = LocalContext.current
+    val uiState         by vm.uiState.collectAsStateWithLifecycle()
+    val limiteAlcanzado by vm.limiteAlcanzado.collectAsStateWithLifecycle()
+    val context          = LocalContext.current
+    val recompensa       = if (limiteAlcanzado) 20 else 50
 
     var adLoaded    by remember { mutableStateOf(false) }
     var adLoading   by remember { mutableStateOf(true) }
@@ -190,11 +192,28 @@ fun VideoScreen(navController: NavController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("vas a ganar", fontSize = 11.sp, color = Color(0xFF444444))
                     Text(
-                        "+ 50 MOVE",
+                        "+ $recompensa MOVE",
                         fontSize   = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color      = FlowlyAccent
                     )
+                    if (limiteAlcanzado) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Ya ganaste los 50 MOVE × 4 anuncios de hoy.\nCada anuncio extra suma 20 MOVE al fondo mensual.",
+                            fontSize  = 11.sp,
+                            color     = Color(0xFF555555),
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Primeros 4 anuncios: 50 MOVE c/u · Después: 20 MOVE c/u",
+                            fontSize  = 10.sp,
+                            color     = Color(0xFF444444),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
@@ -205,19 +224,16 @@ fun VideoScreen(navController: NavController) {
                     CircularProgressIndicator(color = FlowlyAccent)
                 }
                 adWatched -> {
-                    // El ad fue visto — cobrar recompensa
                     FlowlyPrimaryButton(
-                        text    = "Cobrar 50 MOVE y volver",
-                        onClick = { vm.cobrarRecompensa(50) }
+                        text    = "Cobrar $recompensa MOVE y volver",
+                        onClick = { vm.cobrarRecompensa() }
                     )
                 }
                 adLoaded && !adLoading -> {
-                    // Mostrar el ad real de AdMob
                     FlowlyPrimaryButton(
-                        text  = "Ver anuncio y ganar 50 MOVE",
+                        text  = "Ver anuncio y ganar $recompensa MOVE",
                         onClick = {
-                            rewardedAd?.show(context as Activity) { rewardItem ->
-                                // Sólo se llama si el usuario VIO el video completo
+                            rewardedAd?.show(context as Activity) {
                                 adWatched = true
                             }
                         }

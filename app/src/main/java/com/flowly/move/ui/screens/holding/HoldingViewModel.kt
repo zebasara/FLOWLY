@@ -75,14 +75,28 @@ class HoldingViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun cobrarHolding(holding: Holding) {
+        viewModelScope.launch {
+            _uiState.value = HoldingUiState.Loading
+            repo.cobrarHolding(uid, holding).fold(
+                onSuccess = {
+                    repo.getUser(uid).onSuccess { _user.value = it }
+                    repo.getHoldings(uid).onSuccess { _holdings.value = it }
+                    _uiState.value = HoldingUiState.Success
+                },
+                onFailure = { _uiState.value = HoldingUiState.Error(it.message ?: "Error al cobrar holding") }
+            )
+        }
+    }
+
     fun clearState() { _uiState.value = HoldingUiState.Idle }
 
     companion object {
         fun tasaPorMeses(meses: Int): Float = when (meses) {
-            3    -> 0.08f
-            6    -> 0.12f
-            9    -> 0.18f
-            else -> 0.08f
+            3    -> 0.12f
+            6    -> 0.16f
+            9    -> 0.25f
+            else -> 0.12f
         }
     }
 }

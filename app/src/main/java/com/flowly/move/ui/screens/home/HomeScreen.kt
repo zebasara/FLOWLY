@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,8 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.viewinterop.AndroidView
+import android.webkit.WebView
+import android.webkit.WebChromeClient
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,14 +29,17 @@ import com.flowly.move.data.model.NIVEL_LIMITES
 import com.flowly.move.data.model.TODAS_LAS_INSIGNIAS
 import com.flowly.move.data.repository.FlowlyRepository
 import com.flowly.move.ui.screens.misiones.getMisionesDelDia
+import com.flowly.move.ui.screens.store.StoreViewModel
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
 
 @Composable
 fun HomeScreen(navController: NavController) {
-    val vm: UserViewModel = viewModel()
+    val vm: UserViewModel   = viewModel()
+    val storeVm: StoreViewModel = viewModel()
     val user              by vm.user.collectAsStateWithLifecycle()
+    val storeConfig       by storeVm.storeConfig.collectAsStateWithLifecycle()
     val isLoading         by vm.isLoading.collectAsStateWithLifecycle()
     val showWelcome       by vm.showWelcomeDialog.collectAsStateWithLifecycle()
     val pendingBadge      by vm.pendingBadge.collectAsStateWithLifecycle()
@@ -79,8 +86,13 @@ fun HomeScreen(navController: NavController) {
     val movHoy         = user?.tokenMovimientoHoy ?: 0
     val kmHoy          = user?.kmHoy ?: 0f
     val moveVideos     = user?.tokenVideosHoy ?: 0
-    val videosHoy      = if (moveVideos > 0) (moveVideos / 50).coerceAtLeast(1) else 0
+    val videosHoy      = when {
+        moveVideos <= 0 -> 0
+        moveVideos <= FlowlyRepository.DAILY_LIMIT_VIDEOS -> (moveVideos / FlowlyRepository.VIDEO_REWARD_AMOUNT).coerceAtLeast(1)
+        else -> 4 + ((moveVideos - FlowlyRepository.DAILY_LIMIT_VIDEOS) / FlowlyRepository.VIDEO_BONUS_AMOUNT)
+    }
     val moveEnHolding  = user?.moveEnHolding ?: 0
+    val youtubeUrl     = storeConfig?.youtubeUrl ?: ""
     val iniciales      = (user?.nombre ?: "")
         .split(" ").filter { it.isNotBlank() }.take(2)
         .joinToString("") { it.first().uppercase() }.ifBlank { "?" }
@@ -199,6 +211,15 @@ fun HomeScreen(navController: NavController) {
                         Text("mov. hoy", fontSize = 12.sp, color = FlowlyMuted)
                     }
                 }
+            }
+
+            // Video destacado (solo si hay URL cargada desde el panel admin)
+            if (youtubeUrl.isNotBlank()) {
+                Spacer(Modifier.height(12.dp))
+                YouTubeCard(
+                    url      = youtubeUrl,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
 
             // Hoy
@@ -371,8 +392,6 @@ fun HomeScreen(navController: NavController) {
                 Spacer(Modifier.height(20.dp))
             } // fin columna scrolleable
 
-            // Banner siempre visible — fijo en la parte inferior
-            FlowlyBannerAd()
         } // fin columna principal
 
         // Snackbar de error de red — se muestra sobre el contenido
@@ -554,6 +573,53 @@ private fun QuickAccessItem(icon: String, label: String, modifier: Modifier, onC
     ) {
         Text(icon, fontSize = 22.sp)
         Text(label, fontSize = 11.sp, color = FlowlyMuted)
+    }
+}
+
+// ── YouTube Card ───────────────────────────────────────────────────
+
+private fun extractYouTubeVideoId(url: String): String? = try {
+    val uri = android.net.Uri.parse(url)
+    when {
+        uri.host?.contains("youtu.be") == true -> uri.lastPathSegment
+        else -> uri.getQueryParameter("v")
+    }
+} catch (e: Exception) { null }
+
+@Composable
+private fun YouTubeCard(url: String, modifier: Modifier = Modifier) {
+    val videoId = remember(url) { extractYouTubeVideoId(url) } ?: return
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, FlowlyBorder, RoundedCornerShape(16.dp))
+    ) {
+        AndroidView(
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    settings.javaScriptEnabled       = true
+                    settings.loadWithOverviewMode    = true
+                    settings.useWideViewPort         = true
+                    settings.mediaPlaybackRequiresUserGesture = false
+                    webChromeClient = WebChromeClient()
+                }
+            },
+            update = { webView ->
+                webView.loadDataWithBaseURL(
+                    "https://www.youtube.com",
+                    """<html><body style="margin:0;padding:0;background:#000">
+                       <iframe width="100%" height="100%"
+                       src="https://www.youtube.com/embed/$videoId?playsinline=1&rel=0"
+                       frameborder="0" allowfullscreen></iframe>
+                       </body></html>""",
+                    "text/html", "UTF-8", null
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        )
     }
 }
 

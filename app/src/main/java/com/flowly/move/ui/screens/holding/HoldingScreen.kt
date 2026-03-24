@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +36,20 @@ fun HoldingScreen(navController: NavController) {
     val user      by vm.user.collectAsStateWithLifecycle()
     val holdings  by vm.holdings.collectAsStateWithLifecycle()
     val isLoading by vm.isLoading.collectAsStateWithLifecycle()
+    val uiState   by vm.uiState.collectAsStateWithLifecycle()
+
+    val snackbar  = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is HoldingUiState.Error -> {
+                snackbar.showSnackbar((uiState as HoldingUiState.Error).msg)
+                vm.clearState()
+            }
+            is HoldingUiState.Success -> vm.clearState()
+            else -> {}
+        }
+    }
 
     val saldoLibre = user?.tokensActuales ?: 0
     val enHolding  = user?.moveEnHolding  ?: 0
@@ -45,30 +61,28 @@ fun HoldingScreen(navController: NavController) {
 
     // Interés dinámico según el monto seleccionado
     val plazos = listOf(
-        Triple(3, 8,  "+%,d MOVE".format((montos[selectedMonto] * 0.08).toInt())),
-        Triple(6, 12, "+%,d MOVE".format((montos[selectedMonto] * 0.12).toInt())),
-        Triple(9, 18, "+%,d MOVE".format((montos[selectedMonto] * 0.18).toInt()))
+        Triple(3, 12, "+%,d MOVE".format((montos[selectedMonto] * 0.12).toInt())),
+        Triple(6, 16, "+%,d MOVE".format((montos[selectedMonto] * 0.16).toInt())),
+        Triple(9, 25, "+%,d MOVE".format((montos[selectedMonto] * 0.25).toInt()))
     )
 
     val sdf = remember { SimpleDateFormat("d MMM yyyy", Locale("es", "AR")) }
 
     FlowlyScaffold(navController = navController, currentRoute = Routes.CANJES) { padding ->
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = FlowlyAccent)
+                }
+            } else Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
             ) {
-                CircularProgressIndicator(color = FlowlyAccent)
-            }
-            return@FlowlyScaffold
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
             Spacer(Modifier.height(8.dp))
 
             Row(
@@ -213,19 +227,36 @@ fun HoldingScreen(navController: NavController) {
                 )
 
                 activosHoldings.forEach { holding ->
-                    HoldingCard(holding = holding, sdf = sdf)
+                    HoldingCard(
+                        holding  = holding,
+                        sdf      = sdf,
+                        isCobrando = uiState is HoldingUiState.Loading,
+                        onCobrar = { vm.cobrarHolding(holding) }
+                    )
                     Spacer(Modifier.height(8.dp))
                 }
             }
 
             Spacer(Modifier.height(24.dp))
-        }
+            } // end Column
+
+            SnackbarHost(
+                hostState = snackbar,
+                modifier  = Modifier.align(Alignment.BottomCenter)
+            )
+        } // end Box
     }
 }
 
 @Composable
-private fun HoldingCard(holding: Holding, sdf: SimpleDateFormat) {
+private fun HoldingCard(
+    holding: Holding,
+    sdf: SimpleDateFormat,
+    isCobrando: Boolean = false,
+    onCobrar: () -> Unit = {}
+) {
     val now         = System.currentTimeMillis()
+    val vencido     = now > holding.fechaFin
     val daysLeft    = ((holding.fechaFin - now) / (1000L * 60 * 60 * 24)).coerceAtLeast(0)
     val progress    = if (holding.fechaFin > holding.fechaInicio) {
         ((now - holding.fechaInicio).toFloat() / (holding.fechaFin - holding.fechaInicio)).coerceIn(0f, 1f)
@@ -243,22 +274,30 @@ private fun HoldingCard(holding: Holding, sdf: SimpleDateFormat) {
                     color = FlowlyText
                 )
                 Text(
-                    "Vence el $fechaVenc",
+                    if (vencido) "Venció el $fechaVenc" else "Vence el $fechaVenc",
                     fontSize = 12.sp,
                     color = FlowlyMuted,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            TagAmber("$daysLeft días")
+            if (vencido) TagGreen("Listo") else TagAmber("$daysLeft días")
         }
         Spacer(Modifier.height(8.dp))
-        FlowlyProgressBar(progress = progress, color = FlowlyAccent2)
+        FlowlyProgressBar(progress = progress, color = if (vencido) FlowlyAccent else FlowlyAccent2)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Cobrarás %,d MOVE al vencer · +%,d MOVE".format(totalVencer, holding.interesMove),
+            "Cobrarás %,d MOVE al vencer · +%,d MOVE de interés".format(totalVencer, holding.interesMove),
             fontSize = 12.sp,
             color = FlowlyMuted
         )
+        if (vencido) {
+            Spacer(Modifier.height(12.dp))
+            FlowlyPrimaryButton(
+                text    = if (isCobrando) "Cobrando…" else "Cobrar %,d MOVE".format(totalVencer),
+                enabled = !isCobrando,
+                onClick = onCobrar
+            )
+        }
     }
 }
 

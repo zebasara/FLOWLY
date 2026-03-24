@@ -127,7 +127,7 @@ fun ProfileScreen(navController: NavController) {
         )
     }
 
-    FlowlyScaffold(navController = navController, currentRoute = Routes.PROFILE) { padding ->
+    FlowlyScaffold(navController = navController, currentRoute = Routes.PROFILE, showBanner = false) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = FlowlyAccent)

@@ -63,8 +63,13 @@ class RankingsViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun loadCampeon() {
         repo.getCampeonSemanal().onSuccess { c ->
-            _campeon.value = c
-            if (c == null || c.uid.isBlank() || c.semana.isBlank()) return@onSuccess
+            if (c == null || c.uid.isBlank() || c.semana.isBlank()) {
+                _campeon.value = c
+                return@onSuccess
+            }
+            // Actualizar tokens con el valor real actual del usuario
+            val tokensReales = repo.getUser(c.uid).getOrNull()?.tokensActuales ?: c.tokensActuales
+            _campeon.value = c.copy(tokensActuales = tokensReales)
 
             if (c.uid == uid) {
                 // El usuario logueado es el campeón — mostrar celebración si no la vio

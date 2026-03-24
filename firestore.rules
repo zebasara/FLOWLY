@@ -21,9 +21,10 @@ service cloud.firestore {
       //   - totalReferidos solo puede incrementarse en exactamente +1
       //   - tokensActuales solo puede aumentar (nunca disminuir)
       //   - badges solo puede agregar elementos (nunca quitar)
+      //   - move30Dias solo puede aumentar (nunca disminuir)
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['totalReferidos', 'tokensActuales', 'badges'])
+             .hasOnly(['totalReferidos', 'tokensActuales', 'badges', 'move30Dias'])
         && (
              !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalReferidos'])
              || request.resource.data.totalReferidos == resource.data.totalReferidos + 1
@@ -35,6 +36,10 @@ service cloud.firestore {
         && (
              !request.resource.data.diff(resource.data).affectedKeys().hasAny(['badges'])
              || request.resource.data.badges.hasAll(resource.data.badges)
+           )
+        && (
+             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['move30Dias'])
+             || request.resource.data.move30Dias > resource.data.move30Dias
            );
 
       allow read, write: if isAdmin();

@@ -35,24 +35,28 @@ class FondoPremiosViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading   = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Tipo de cambio blue cacheado — se obtiene una vez y se reutiliza en cada update del fondo
+    private var cachedBlueRate = 0.0
+
     init {
         viewModelScope.launch {
             val uid = prefs.userId.first()
             launch { repo.getUser(uid).onSuccess { _currentUser.value = it } }
-            launch {
-                repo.getFondoPremios().onSuccess { f ->
+            launch { repo.getRankingMensual().onSuccess { _ranking.value = it } }
+
+            // Obtener el blue rate una sola vez al abrir la pantalla
+            cachedBlueRate = fetchBlueRate()
+
+            // Escuchar cambios en tiempo real del fondo
+            repo.fondoPremiosFlow()
+                .onEach { f ->
                     _fondo.value = f
-                    if (f != null && f.montoDolares > 0.0) {
-                        var blueRate = fetchBlueRate()
-                        if (blueRate <= 0.0) blueRate = f.blueRateCache  // fallback si la API falla
-                        if (blueRate > 0.0) {
-                            _montoARS.value = (f.montoDolares * blueRate).toLong()
-                        }
-                    }
+                    val rate = if (cachedBlueRate > 0.0) cachedBlueRate else f?.blueRateCache ?: 0.0
+                    _montoARS.value = if (f != null && f.montoDolares > 0.0 && rate > 0.0)
+                        (f.montoDolares * rate).toLong() else 0L
+                    _isLoading.value = false
                 }
-                repo.getRankingMensual().onSuccess { _ranking.value = it }
-                _isLoading.value = false
-            }
+                .launchIn(viewModelScope)
         }
     }
 

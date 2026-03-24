@@ -332,14 +332,18 @@ fun FlowlyBottomNav(navController: NavController, currentRoute: String?) {
 fun FlowlyScaffold(
     navController: NavController,
     currentRoute: String,
+    showBanner: Boolean = true,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
         containerColor = FlowlyBg,
-        // Solo aplicamos el inset del status bar al contenido.
-        // La navigation bar (back/home/recientes) la maneja el Spacer dentro de FlowlyBottomNav.
         contentWindowInsets = WindowInsets.statusBars,
-        bottomBar = { FlowlyBottomNav(navController, currentRoute) }
+        bottomBar = {
+            Column {
+                if (showBanner) FlowlyBannerAd()
+                FlowlyBottomNav(navController, currentRoute)
+            }
+        }
     ) { paddingValues ->
         content(paddingValues)
     }

@@ -24,8 +24,9 @@ class FlowlyRepository(private val context: Context) {
         // Con 5 km caminados: 50 MOVE; con 10 km: 100 MOVE
         const val METROS_POR_MOVE        = 100   // metros necesarios para ganar 1 MOVE
         const val DAILY_LIMIT_MOVIMIENTO = 500   // MOVE máx por día caminando/corriendo
-        const val DAILY_LIMIT_VIDEOS     = 200   // MOVE máx por día viendo videos (4 videos × 50)
-        const val VIDEO_REWARD_AMOUNT    = 50    // MOVE acreditados por cada video completado
+        const val DAILY_LIMIT_VIDEOS     = 200   // MOVE por los primeros 4 videos (4 × 50)
+        const val VIDEO_REWARD_AMOUNT    = 50    // MOVE por cada uno de los primeros 4 videos
+        const val VIDEO_BONUS_AMOUNT     = 20    // MOVE por cada video adicional (tras el límite)
         // Máximo teórico: 700 MOVE/día → saldo mínimo nivel 1 (15.000) en ~21 días
     }
 
@@ -40,12 +41,6 @@ class FlowlyRepository(private val context: Context) {
         return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
     }
 
-    /** Devuelve "yyyy-MM-dd" de hace N días en zona local */
-    private fun daysAgo(n: Int): String {
-        val cal = Calendar.getInstance()
-        cal.add(Calendar.DAY_OF_YEAR, -n)
-        return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
-    }
 
     /**
      * Verifica si los contadores diarios del usuario necesitan resetearse.
@@ -60,10 +55,11 @@ class FlowlyRepository(private val context: Context) {
         val yesterdayStr = yesterday()
         if (user.lastTokenResetDate == todayStr) return user   // ya está en el día de hoy
 
-        // Determinar si también hay que resetear el acumulado de 30 días.
-        // Si lastTokenResetDate es anterior a hace 30 días → reset move30Dias.
-        val cutoff30 = daysAgo(30)
-        val reset30 = user.lastTokenResetDate.isBlank() || user.lastTokenResetDate <= cutoff30
+        // Resetear move30Dias cuando cambia el mes del calendario.
+        // Así todos los usuarios arrancan en 0 el 1° de cada mes — justo para el Fondo de Premios.
+        val currentMonth = todayStr.substring(0, 7) // "yyyy-MM"
+        val lastMonth    = user.lastTokenResetDate.takeIf { it.length >= 7 }?.substring(0, 7) ?: ""
+        val reset30      = lastMonth.isBlank() || lastMonth < currentMonth
 
         // Si el último video no fue ayer ni hoy → racha rota → resetear a 0.
         val rachaRota = user.lastVideoDate != yesterdayStr && user.lastVideoDate != todayStr
@@ -190,6 +186,31 @@ class FlowlyRepository(private val context: Context) {
             )
         )
         batch.commit().await()
+    }
+
+    suspend fun cobrarHolding(uid: String, holding: Holding): Result<Unit> = runCatching {
+        val total = holding.moveAmount + holding.interesMove
+        val batch = db.batch()
+        batch.update(
+            holdingsRef(uid).document(holding.id),
+            mapOf("estado" to "completado")
+        )
+        batch.update(
+            userRef(uid),
+            mapOf(
+                "tokensActuales" to FieldValue.increment(total.toLong()),
+                "moveEnHolding"  to FieldValue.increment(-holding.moveAmount.toLong()),
+                "move30Dias"     to FieldValue.increment(holding.interesMove.toLong())
+            )
+        )
+        batch.commit().await()
+        crearNotificacion(uid, Notificacion(
+            uid     = uid,
+            titulo  = "Holding cobrado 🔓",
+            cuerpo  = "Recibiste %,d MOVE (+%,d de interés)".format(total, holding.interesMove),
+            tipo    = "pago",
+            createdAt = System.currentTimeMillis()
+        ))
     }
 
     // ── Rankings ─────────────────────────────────────────────────
@@ -390,11 +411,13 @@ class FlowlyRepository(private val context: Context) {
             )
         }
         val mercadoPagoUrl = snap.getString("mercadoPagoUrl") ?: ""
+        val youtubeUrl     = snap.getString("youtubeUrl") ?: ""
         StoreConfig(
             umbralUsuarios  = umbral,
             productos       = if (productos.isEmpty()) DEFAULT_STORE_PRODUCTS else productos,
             referralBaseUrl = referralBaseUrl,
-            mercadoPagoUrl  = mercadoPagoUrl
+            mercadoPagoUrl  = mercadoPagoUrl,
+            youtubeUrl      = youtubeUrl
         )
     }
 
@@ -540,12 +563,22 @@ class FlowlyRepository(private val context: Context) {
         }
 
         if (yaGanado >= DAILY_LIMIT_VIDEOS) {
-            // Límite de MOVE alcanzado: solo contamos el video y actualizamos racha
+            // Límite de 4 videos superado: se acreditan 20 MOVE bonus por seguir viendo
             userRef(uid).update(mapOf(
+                "tokensActuales"           to FieldValue.increment(VIDEO_BONUS_AMOUNT.toLong()),
+                "tokenVideosHoy"           to FieldValue.increment(VIDEO_BONUS_AMOUNT.toLong()),
+                "move30Dias"               to FieldValue.increment(VIDEO_BONUS_AMOUNT.toLong()),
                 "videosCompletadosTotales" to FieldValue.increment(1L),
                 "diasConsecutivosVideos"   to newStreak,
                 "lastVideoDate"            to todayStr
             )).await()
+            crearNotificacion(uid, Notificacion(
+                uid       = uid,
+                titulo    = "Anuncio extra 📺",
+                cuerpo    = "+$VIDEO_BONUS_AMOUNT MOVE · seguís sumando para el fondo",
+                tipo      = "video",
+                createdAt = System.currentTimeMillis()
+            ))
             return@runCatching
         }
 
@@ -700,9 +733,26 @@ class FlowlyRepository(private val context: Context) {
             mes             = snap.getString("mes")                         ?: "",
             montoDolares    = (snap.getDouble("montoDolares") ?: snap.getLong("montoDolares")?.toDouble() ?: 0.0),
             porcentajeAdmob = (snap.getLong("porcentajeAdmob")              ?: 35L).toInt(),
+            blueRateCache   = snap.getDouble("blueRateCache")               ?: 0.0,
             updatedAt       = snap.getLong("updatedAt")                     ?: 0L
         )
     }
+
+    /** Flow en tiempo real — se actualiza automáticamente cuando el admin guarda. */
+    fun fondoPremiosFlow(): kotlinx.coroutines.flow.Flow<com.flowly.move.data.model.FondoPremios?> =
+        kotlinx.coroutines.flow.callbackFlow {
+            val reg = fondoPremiosRef().addSnapshotListener { snap, _ ->
+                if (snap == null || !snap.exists()) { trySend(null); return@addSnapshotListener }
+                trySend(com.flowly.move.data.model.FondoPremios(
+                    mes             = snap.getString("mes")                         ?: "",
+                    montoDolares    = (snap.getDouble("montoDolares") ?: snap.getLong("montoDolares")?.toDouble() ?: 0.0),
+                    porcentajeAdmob = (snap.getLong("porcentajeAdmob")              ?: 35L).toInt(),
+                    blueRateCache   = snap.getDouble("blueRateCache")               ?: 0.0,
+                    updatedAt       = snap.getLong("updatedAt")                     ?: 0L
+                ))
+            }
+            awaitClose { reg.remove() }
+        }
 
     /** Top 10 de Argentina por actividad del mes (move30Dias) */
     suspend fun getRankingMensual(): Result<List<User>> = runCatching {

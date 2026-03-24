@@ -31,7 +31,7 @@ fun ConfirmHoldingScreen(move: Int, months: Int, navController: NavController) {
     val uiState   by vm.uiState.collectAsStateWithLifecycle()
     val isLoading by vm.isLoading.collectAsStateWithLifecycle()
 
-    val tasa          = when (months) { 3 -> 8; 6 -> 12; else -> 18 }
+    val tasa          = when (months) { 3 -> 12; 6 -> 16; else -> 25 }
     val interes       = (move * tasa / 100)
     val totalAlVencer = move + interes
 
