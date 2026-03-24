@@ -18,7 +18,7 @@ data class StoreConfig(
     val referralBaseUrl: String = "https://flowly.app/r/",
     // URL de Mercado Pago del admin (configurable desde el panel)
     val mercadoPagoUrl: String = "",
-    // URL de YouTube para mostrar en inicio (vacío = no mostrar)
+    // URL de YouTube para mostrar como banner en Home
     val youtubeUrl: String = ""
 )
 

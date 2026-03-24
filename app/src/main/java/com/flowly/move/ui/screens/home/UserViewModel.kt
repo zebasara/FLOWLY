@@ -43,8 +43,12 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
     private val _pendingBadge = MutableStateFlow<String?>(null)
     val pendingBadge: StateFlow<String?> = _pendingBadge.asStateFlow()
 
+    private val _youtubeUrl = MutableStateFlow("")
+    val youtubeUrl: StateFlow<String> = _youtubeUrl.asStateFlow()
+
     init {
         loadUser()
+        loadYoutubeUrl()
     }
 
     /** Devuelve true si hay conexión a internet activa */
@@ -161,6 +165,14 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
                 onSuccess = { u -> if (u != null) _user.value = u },
                 onFailure = { }
             )
+        }
+    }
+
+    private fun loadYoutubeUrl() {
+        viewModelScope.launch {
+            flowlyRepository.getStoreConfig().onSuccess { config ->
+                if (config.youtubeUrl.isNotBlank()) _youtubeUrl.value = config.youtubeUrl
+            }
         }
     }
 
