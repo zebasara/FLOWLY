@@ -19,7 +19,17 @@ data class StoreConfig(
     // URL de Mercado Pago del admin (configurable desde el panel)
     val mercadoPagoUrl: String = "",
     // URL de YouTube para mostrar como banner en Home
-    val youtubeUrl: String = ""
+    val youtubeUrl: String = "",
+    // Quiz del video — versión cambia cuando el admin actualiza las preguntas
+    val videoQuizVersion: String = "",
+    val videoQuiz: List<VideoQuestion> = emptyList()
+)
+
+/** Una pregunta del quiz del video con dos opciones. */
+data class VideoQuestion(
+    val pregunta: String = "",
+    val opciones: List<String> = emptyList(),
+    val correcta: Int = 0          // índice de la opción correcta (0 ó 1)
 )
 
 // Productos por defecto (se muestran si Firestore no tiene config aún)

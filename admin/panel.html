@@ -262,6 +262,91 @@
           </div>
         </div>
       </div>
+
+      <!-- Quiz del video -->
+      <div class="section">
+        <div class="section-title">quiz del video · 3 preguntas · recompensa 250 move</div>
+        <div class="card">
+          <p style="font-size:12px;color:var(--muted);margin:0 0 16px">
+            Cada vez que guardás se genera una versión nueva → todos los usuarios pueden responder de nuevo.
+            Dejá todo vacío y guardá para desactivar el quiz.
+          </p>
+
+          <!-- Pregunta 1 -->
+          <div id="quiz-q1" style="margin-bottom:16px">
+            <p style="font-size:12px;font-weight:600;color:var(--accent);margin:0 0 8px">Pregunta 1</p>
+            <div class="field" style="margin-bottom:8px">
+              <label>Enunciado</label>
+              <input type="text" id="q1-pregunta" placeholder="¿Cuál es el objetivo del video?" />
+            </div>
+            <div class="card-row" style="gap:12px;margin-bottom:8px">
+              <div class="field" style="flex:1"><label>Opción A</label><input type="text" id="q1-opcion-a" /></div>
+              <div class="field" style="flex:1"><label>Opción B</label><input type="text" id="q1-opcion-b" /></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:var(--muted)">
+              <span>Respuesta correcta:</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="radio" name="q1-correcta" value="0" checked /> A
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="radio" name="q1-correcta" value="1" /> B
+              </label>
+            </div>
+          </div>
+
+          <hr style="border-color:var(--border);margin:12px 0" />
+
+          <!-- Pregunta 2 -->
+          <div id="quiz-q2" style="margin-bottom:16px">
+            <p style="font-size:12px;font-weight:600;color:var(--accent);margin:0 0 8px">Pregunta 2</p>
+            <div class="field" style="margin-bottom:8px">
+              <label>Enunciado</label>
+              <input type="text" id="q2-pregunta" placeholder="Segunda pregunta sobre el video" />
+            </div>
+            <div class="card-row" style="gap:12px;margin-bottom:8px">
+              <div class="field" style="flex:1"><label>Opción A</label><input type="text" id="q2-opcion-a" /></div>
+              <div class="field" style="flex:1"><label>Opción B</label><input type="text" id="q2-opcion-b" /></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:var(--muted)">
+              <span>Respuesta correcta:</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="radio" name="q2-correcta" value="0" checked /> A
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="radio" name="q2-correcta" value="1" /> B
+              </label>
+            </div>
+          </div>
+
+          <hr style="border-color:var(--border);margin:12px 0" />
+
+          <!-- Pregunta 3 -->
+          <div id="quiz-q3" style="margin-bottom:16px">
+            <p style="font-size:12px;font-weight:600;color:var(--accent);margin:0 0 8px">Pregunta 3</p>
+            <div class="field" style="margin-bottom:8px">
+              <label>Enunciado</label>
+              <input type="text" id="q3-pregunta" placeholder="Tercera pregunta sobre el video" />
+            </div>
+            <div class="card-row" style="gap:12px;margin-bottom:8px">
+              <div class="field" style="flex:1"><label>Opción A</label><input type="text" id="q3-opcion-a" /></div>
+              <div class="field" style="flex:1"><label>Opción B</label><input type="text" id="q3-opcion-b" /></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:var(--muted)">
+              <span>Respuesta correcta:</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="radio" name="q3-correcta" value="0" checked /> A
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="radio" name="q3-correcta" value="1" /> B
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top:4px">
+            <button class="btn btn-primary" onclick="saveQuiz()">💾 Guardar quiz</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -612,6 +697,19 @@
       updateReferralPreview();
       document.getElementById('mp-url').value      = currentConfig.mercadoPagoUrl || '';
       document.getElementById('youtube-url').value = currentConfig.youtubeUrl || '';
+
+      // Cargar quiz
+      const quiz = currentConfig.videoQuiz || [];
+      for (let i = 1; i <= 3; i++) {
+        const q = quiz[i - 1] || {};
+        document.getElementById(`q${i}-pregunta`).value  = q.pregunta || '';
+        document.getElementById(`q${i}-opcion-a`).value  = (q.opciones || [])[0] || '';
+        document.getElementById(`q${i}-opcion-b`).value  = (q.opciones || [])[1] || '';
+        const correcta = q.correcta ?? 0;
+        document.querySelectorAll(`input[name="q${i}-correcta"]`)
+          .forEach(r => { r.checked = parseInt(r.value) === correcta; });
+      }
+
       renderProducts(currentConfig.productos || []);
     } catch(e) {
       showToast('Error al cargar config: ' + e.message, true);
@@ -640,6 +738,35 @@
       await setDoc(storeRef, { ...currentConfig, mercadoPagoUrl: url });
       currentConfig.mercadoPagoUrl = url;
       showToast(url ? 'Link de Mercado Pago guardado ✓' : 'Botón de Mercado Pago ocultado ✓');
+    } catch(e) { showToast('Error: ' + e.message, true); }
+  };
+
+  window.saveQuiz = async function() {
+    const questions = [];
+    for (let i = 1; i <= 3; i++) {
+      const pregunta = document.getElementById(`q${i}-pregunta`).value.trim();
+      const opcionA  = document.getElementById(`q${i}-opcion-a`).value.trim();
+      const opcionB  = document.getElementById(`q${i}-opcion-b`).value.trim();
+      const correcta = parseInt(
+        document.querySelector(`input[name="q${i}-correcta"]:checked`)?.value ?? '0'
+      );
+      questions.push({ pregunta, opciones: [opcionA, opcionB], correcta });
+    }
+
+    const allEmpty     = questions.every(q => !q.pregunta && !q.opciones[0] && !q.opciones[1]);
+    const anyIncomplete = !allEmpty && questions.some(q => !q.pregunta || !q.opciones[0] || !q.opciones[1]);
+    if (anyIncomplete) { showToast('Completá todas las preguntas y opciones antes de guardar', true); return; }
+
+    const version = allEmpty ? '' : Date.now().toString();
+    try {
+      await setDoc(storeRef, {
+        ...currentConfig,
+        videoQuiz:        allEmpty ? [] : questions,
+        videoQuizVersion: version
+      });
+      currentConfig.videoQuiz        = allEmpty ? [] : questions;
+      currentConfig.videoQuizVersion = version;
+      showToast(allEmpty ? 'Quiz desactivado ✓' : '✅ Quiz guardado — todos los usuarios pueden responder de nuevo');
     } catch(e) { showToast('Error: ' + e.message, true); }
   };
 

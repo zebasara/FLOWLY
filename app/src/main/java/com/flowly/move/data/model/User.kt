@@ -59,6 +59,8 @@ data class User(
     val campeonSemanalRacha: Int = 0,      // semanas consecutivas como campeón (0 = nunca)
     // Admin — campo en Firestore se llama "admin"
     @get:PropertyName("admin") @set:PropertyName("admin") var isAdmin: Boolean = false,
+    // Quiz del video — guarda la versión del quiz que ya respondió
+    val videoQuizAnsweredVersion: String = "",
     // Metadata
     val createdAt: Long = 0L,
     val profilePhotoUrl: String = ""

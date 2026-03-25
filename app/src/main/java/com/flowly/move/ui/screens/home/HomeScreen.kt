@@ -1,14 +1,12 @@
 package com.flowly.move.ui.screens.home
 
-import android.view.View
 import android.webkit.WebChromeClient
-import android.webkit.WebView
 import android.webkit.WebSettings
+import android.webkit.WebView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,9 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.viewinterop.AndroidView
-import android.webkit.WebView
-import android.webkit.WebChromeClient
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,6 +30,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.flowly.move.data.model.NIVEL_LIMITES
 import com.flowly.move.data.model.TODAS_LAS_INSIGNIAS
+import com.flowly.move.data.model.VideoQuestion
 import com.flowly.move.data.repository.FlowlyRepository
 import com.flowly.move.ui.screens.misiones.getMisionesDelDia
 import com.flowly.move.ui.screens.store.StoreViewModel
@@ -52,7 +48,6 @@ fun HomeScreen(navController: NavController) {
     val showWelcome       by vm.showWelcomeDialog.collectAsStateWithLifecycle()
     val pendingBadge      by vm.pendingBadge.collectAsStateWithLifecycle()
     val networkError      by vm.networkError.collectAsStateWithLifecycle()
-    val youtubeUrl        by vm.youtubeUrl.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -224,10 +219,17 @@ fun HomeScreen(navController: NavController) {
 
             // Video destacado (solo si hay URL cargada desde el panel admin)
             if (youtubeUrl.isNotBlank()) {
+                val quizQuestions       = storeConfig?.videoQuiz ?: emptyList()
+                val quizVersion         = storeConfig?.videoQuizVersion ?: ""
+                val userAnsweredVersion = user?.videoQuizAnsweredVersion ?: ""
                 Spacer(Modifier.height(12.dp))
                 YouTubeCard(
-                    url      = youtubeUrl,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    url                 = youtubeUrl,
+                    quizQuestions       = quizQuestions,
+                    quizVersion         = quizVersion,
+                    userAnsweredVersion = userAnsweredVersion,
+                    onQuizComplete      = { vm.completeVideoQuiz(quizVersion) },
+                    modifier            = Modifier.padding(horizontal = 16.dp)
                 )
             }
 
@@ -357,15 +359,6 @@ fun HomeScreen(navController: NavController) {
             )
 
             Spacer(Modifier.height(12.dp))
-
-            // Banner YouTube (si hay URL configurada)
-            if (youtubeUrl.isNotBlank()) {
-                YouTubeCard(
-                    url      = youtubeUrl,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Spacer(Modifier.height(12.dp))
-            }
 
             // CTAs
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -605,43 +598,6 @@ private fun extractYouTubeVideoId(url: String): String? = try {
 } catch (e: Exception) { null }
 
 @Composable
-private fun YouTubeCard(url: String, modifier: Modifier = Modifier) {
-    val videoId = remember(url) { extractYouTubeVideoId(url) } ?: return
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, FlowlyBorder, RoundedCornerShape(16.dp))
-    ) {
-        AndroidView(
-            factory = { ctx ->
-                WebView(ctx).apply {
-                    settings.javaScriptEnabled       = true
-                    settings.loadWithOverviewMode    = true
-                    settings.useWideViewPort         = true
-                    settings.mediaPlaybackRequiresUserGesture = false
-                    webChromeClient = WebChromeClient()
-                }
-            },
-            update = { webView ->
-                webView.loadDataWithBaseURL(
-                    "https://www.youtube.com",
-                    """<html><body style="margin:0;padding:0;background:#000">
-                       <iframe width="100%" height="100%"
-                       src="https://www.youtube.com/embed/$videoId?playsinline=1&rel=0"
-                       frameborder="0" allowfullscreen></iframe>
-                       </body></html>""",
-                    "text/html", "UTF-8", null
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-        )
-    }
-}
-
-@Composable
 private fun SectionTitle(modifier: Modifier = Modifier, text: String) {
     Text(
         text.uppercase(),
@@ -653,21 +609,135 @@ private fun SectionTitle(modifier: Modifier = Modifier, text: String) {
     )
 }
 
-// ── YouTube Banner ─────────────────────────────────────────────────
-
-private fun extractYouTubeVideoId(url: String): String? {
-    // youtu.be/VIDEO_ID  o  youtube.com/watch?v=VIDEO_ID
-    val shortMatch = Regex("""youtu\.be/([A-Za-z0-9_\-]{11})""").find(url)
-    if (shortMatch != null) return shortMatch.groupValues[1]
-    val longMatch  = Regex("""[?&]v=([A-Za-z0-9_\-]{11})""").find(url)
-    return longMatch?.groupValues?.get(1)
-}
-
 @Composable
-private fun YouTubeCard(url: String, modifier: Modifier = Modifier) {
+private fun YouTubeCard(
+    url: String,
+    quizQuestions: List<VideoQuestion>  = emptyList(),
+    quizVersion: String                 = "",
+    userAnsweredVersion: String         = "",
+    onQuizComplete: () -> Unit          = {},
+    modifier: Modifier                  = Modifier
+) {
     val videoId = remember(url) { extractYouTubeVideoId(url) } ?: return
-    var playing by remember { mutableStateOf(false) }
 
+    // MutableState como objeto para capturarlo por referencia en lambdas de View
+    val showPlayerState = remember { mutableStateOf(false) }
+    var showPlayer by showPlayerState
+
+    // Quiz: mostrar si hay preguntas, versión válida y el user no respondió esta versión
+    val showQuizButton = quizVersion.isNotBlank()
+        && quizQuestions.size == 3
+        && userAnsweredVersion != quizVersion
+    var showQuiz by remember { mutableStateOf(false) }
+
+    val context      = androidx.compose.ui.platform.LocalContext.current
+    val audioManager = remember {
+        context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+    }
+
+    // Audio focus: silencia música al abrir, la reanuda al cerrar
+    DisposableEffect(showPlayer) {
+        if (showPlayer) {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                null,
+                android.media.AudioManager.STREAM_MUSIC,
+                android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(null)
+        }
+        onDispose { @Suppress("DEPRECATION") audioManager.abandonAudioFocus(null) }
+    }
+
+    // ── Overlay sobre android.R.id.content (Window principal de la Activity) ──
+    // MIUI throttlea el SurfaceTexture del video si el WebView está en una
+    // Window secundaria (Dialog). Agregar el overlay directamente al content
+    // view garantiza que comparte el pipeline de hardware de la Window principal.
+    if (showPlayer) {
+        DisposableEffect(videoId) {
+            val activity = context as? android.app.Activity
+                ?: return@DisposableEffect onDispose {}
+            val rootView = activity.findViewById<android.widget.FrameLayout>(android.R.id.content)
+            val density  = context.resources.displayMetrics.density
+            fun dp(v: Int) = (v * density).toInt()
+
+            val embedHtml = """<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<style>*{margin:0;padding:0}html,body,iframe{width:100%;height:100%;background:#000;border:none;overflow:hidden}</style>
+</head><body>
+<iframe src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&playsinline=1&rel=0&modestbranding=1&controls=1"
+ allow="autoplay;fullscreen;accelerometer;encrypted-media;gyroscope;picture-in-picture"
+ allowfullscreen></iframe>
+</body></html>"""
+
+            val webView = WebView(context).apply {
+                settings.apply {
+                    javaScriptEnabled                = true
+                    domStorageEnabled                = true
+                    loadWithOverviewMode             = true
+                    useWideViewPort                  = true
+                    mediaPlaybackRequiresUserGesture = false
+                    mixedContentMode                 = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    userAgentString                  =
+                        "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+                }
+                webViewClient = object : android.webkit.WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView, request: android.webkit.WebResourceRequest
+                    ): Boolean {
+                        // Solo permitir la URL del embed — bloquear TODO lo demás
+                        // (recomendaciones, canal, búsqueda, etc.)
+                        return !request.url.toString().contains("/embed/")
+                    }
+                }
+                webChromeClient = object : WebChromeClient() {
+                    // Bloquear apertura de links en nueva ventana (_blank, target="_top", etc.)
+                    override fun onCreateWindow(
+                        view: WebView, isDialog: Boolean,
+                        isUserGesture: Boolean, resultMsg: android.os.Message?
+                    ) = false
+                }
+                loadDataWithBaseURL(
+                    "https://www.youtube-nocookie.com", embedHtml, "text/html", "UTF-8", null
+                )
+            }
+
+            // Botón ✕ nativo (sin pasar por Compose)
+            val closeBtn = android.widget.TextView(context).apply {
+                text      = "✕"
+                textSize  = 17f
+                gravity   = android.view.Gravity.CENTER
+                setTextColor(android.graphics.Color.WHITE)
+                setBackgroundColor(android.graphics.Color.argb(180, 0, 0, 0))
+                setOnClickListener { showPlayerState.value = false }
+            }
+
+            val overlay = android.widget.FrameLayout(context).apply {
+                setBackgroundColor(android.graphics.Color.BLACK)
+                addView(webView, android.widget.FrameLayout.LayoutParams(-1, -1))
+                addView(closeBtn, android.widget.FrameLayout.LayoutParams(dp(40), dp(40)).apply {
+                    gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                    setMargins(0, dp(8), dp(8), 0)
+                })
+            }
+
+            val screenW  = context.resources.displayMetrics.widthPixels
+            val videoH   = screenW * 9 / 16
+            rootView.addView(overlay, android.widget.FrameLayout.LayoutParams(-1, videoH).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            })
+
+            onDispose {
+                webView.stopLoading()
+                webView.destroy()
+                rootView.removeView(overlay)
+            }
+        }
+    }
+
+    // ── Thumbnail con botón ▶ (siempre visible en el scroll) ──────────────
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -675,73 +745,187 @@ private fun YouTubeCard(url: String, modifier: Modifier = Modifier) {
             .border(1.dp, FlowlyBorder, RoundedCornerShape(16.dp))
             .aspectRatio(16f / 9f)
     ) {
-        if (playing) {
-            // WebView con iframe de YouTube — inline, sin redirect
-            AndroidView(
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        setLayerType(View.LAYER_TYPE_HARDWARE, null)
-                        settings.apply {
-                            javaScriptEnabled           = true
-                            domStorageEnabled           = true
-                            loadWithOverviewMode        = true
-                            useWideViewPort             = true
-                            mediaPlaybackRequiresUserGesture = false
-                            mixedContentMode            = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                            allowContentAccess          = true
-                        }
-                        webChromeClient = WebChromeClient()
-                    }
-                },
-                update = { webView ->
-                    val html = """
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                          <meta name="viewport" content="width=device-width,initial-scale=1">
-                          <style>
-                            * { margin:0; padding:0; background:#000; }
-                            iframe { width:100%; height:100vh; border:none; }
-                          </style>
-                        </head>
-                        <body>
-                          <iframe
-                            src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&rel=0&modestbranding=1"
-                            allow="autoplay; fullscreen"
-                            allowfullscreen>
-                          </iframe>
-                        </body>
-                        </html>
-                    """.trimIndent()
-                    webView.loadDataWithBaseURL(
-                        "https://www.youtube.com", html, "text/html", "UTF-8", null
-                    )
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            // Thumbnail de YouTube con botón play encima
-            AsyncImage(
-                model        = "https://img.youtube.com/vi/$videoId/hqdefault.jpg",
-                contentDescription = "Video",
-                contentScale = ContentScale.Crop,
-                modifier     = Modifier.fillMaxSize()
-            )
-            // Overlay oscuro + ícono play
+        AsyncImage(
+            model              = "https://img.youtube.com/vi/$videoId/hqdefault.jpg",
+            contentDescription = "Video",
+            contentScale       = ContentScale.Crop,
+            modifier           = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier         = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.35f))
+                .clickable { showPlayer = true },
+            contentAlignment = Alignment.Center
+        ) {
             Box(
-                modifier          = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
-                    .clickable { playing = true },
-                contentAlignment  = Alignment.Center
+                modifier         = Modifier
+                    .size(56.dp)
+                    .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(50)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier         = Modifier
-                        .size(56.dp)
-                        .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(50)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("▶", fontSize = 22.sp, color = Color.Black)
+                Text("▶", fontSize = 22.sp, color = Color.Black)
+            }
+        }
+
+        // Banner de quiz — aparece en la punta superior si hay preguntas disponibles
+        if (showQuizButton) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 10.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(FlowlyAccent)
+                    .clickable { showQuiz = true }
+                    .padding(horizontal = 14.dp, vertical = 7.dp)
+            ) {
+                Text(
+                    "🎯 ¡Respondé y ganá 250 MOVE!",
+                    fontSize   = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color.Black
+                )
+            }
+        }
+    }
+
+    // Dialog del quiz
+    if (showQuiz) {
+        VideoQuizDialog(
+            questions  = quizQuestions,
+            onComplete = { onQuizComplete(); showQuiz = false },
+            onDismiss  = { showQuiz = false }
+        )
+    }
+}
+
+// ── Quiz del video ─────────────────────────────────────────────────
+
+@Composable
+private fun VideoQuizDialog(
+    questions: List<VideoQuestion>,
+    onComplete: () -> Unit,
+    onDismiss:  () -> Unit
+) {
+    var step     by remember { mutableIntStateOf(0) }
+    var selected by remember { mutableIntStateOf(-1) }
+    var failed   by remember { mutableStateOf(false) }
+    var done     by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(FlowlyCard, RoundedCornerShape(20.dp))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            when {
+                // ── Éxito: todas correctas ─────────────────────────
+                done -> {
+                    Text("🎉", fontSize = 48.sp)
+                    Spacer(Modifier.height(12.dp))
+                    Text("¡Perfecto!", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Respondiste las 3 correctamente",
+                        fontSize  = 14.sp, color = FlowlyMuted, textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    Text("+250 MOVE", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent)
+                    Text("acreditados en tu cuenta", fontSize = 12.sp, color = FlowlyMuted)
+                    Spacer(Modifier.height(22.dp))
+                    FlowlyPrimaryButton(text = "¡Genial!", onClick = onDismiss)
+                }
+
+                // ── Error: respuesta incorrecta ────────────────────
+                failed -> {
+                    Text("❌", fontSize = 48.sp)
+                    Spacer(Modifier.height(12.dp))
+                    Text("Incorrecto", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                    Spacer(Modifier.height(8.dp))
+                    val q = questions[step]
+                    Text(
+                        "La respuesta correcta era:\n\"${q.opciones.getOrElse(q.correcta) { "" }}\"",
+                        fontSize  = 13.sp, color = FlowlyMuted,
+                        textAlign = TextAlign.Center, lineHeight = 20.sp
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    FlowlyOutlineButton(text = "Cerrar", onClick = onDismiss)
+                }
+
+                // ── Pregunta activa ────────────────────────────────
+                else -> {
+                    val q = questions[step]
+                    Text(
+                        "🎯  Pregunta ${step + 1} de ${questions.size}",
+                        fontSize = 12.sp, color = FlowlyAccent, fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        q.pregunta,
+                        fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        color = FlowlyText, textAlign = TextAlign.Center, lineHeight = 22.sp
+                    )
+                    Spacer(Modifier.height(18.dp))
+
+                    q.opciones.forEachIndexed { i, opcion ->
+                        val isSelected = selected == i
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 5.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (isSelected) FlowlyAccent.copy(alpha = 0.12f)
+                                    else FlowlyCard2
+                                )
+                                .border(
+                                    1.dp,
+                                    if (isSelected) FlowlyAccent else FlowlyBorder,
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .clickable { selected = i }
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .background(
+                                        if (isSelected) FlowlyAccent else FlowlyBorder,
+                                        RoundedCornerShape(50)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected)
+                                    Text("✓", fontSize = 12.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                            }
+                            Text(opcion, fontSize = 14.sp, color = FlowlyText)
+                        }
+                    }
+
+                    Spacer(Modifier.height(22.dp))
+                    FlowlyPrimaryButton(
+                        text    = if (step == questions.lastIndex) "Finalizar" else "Siguiente →",
+                        enabled = selected >= 0,
+                        onClick = {
+                            val q2 = questions[step]
+                            if (selected == q2.correcta) {
+                                if (step == questions.lastIndex) {
+                                    done = true
+                                    onComplete()
+                                } else {
+                                    step++
+                                    selected = -1
+                                }
+                            } else {
+                                failed = true
+                            }
+                        }
+                    )
                 }
             }
         }

@@ -333,6 +333,43 @@ fun ProfileScreen(navController: NavController) {
                     }
                     Text("›", fontSize = 18.sp, color = FlowlyAccent)
                 }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Admin · Video & Quiz
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .background(androidx.compose.ui.graphics.Color(0xFF1A2E1A), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .border(1.dp, FlowlyAccent.copy(alpha = 0.4f), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .clickable { navController.navigate(Routes.ADMIN_STORE) }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text("🎬", fontSize = 20.sp)
+                        Column {
+                            Text(
+                                "Panel de administrador",
+                                fontSize   = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = FlowlyAccent
+                            )
+                            Text(
+                                "Video · Quiz de preguntas",
+                                fontSize = 11.sp,
+                                color    = FlowlyMuted
+                            )
+                        }
+                    }
+                    Text("›", fontSize = 18.sp, color = FlowlyAccent)
+                }
             }
 
             Spacer(Modifier.height(8.dp))

@@ -130,6 +130,26 @@ class FlowlyRepository(private val context: Context) {
         crearNotificacion(uid, notif)
     }
 
+    // ── Quiz del video ───────────────────────────────────────────
+
+    suspend fun completeVideoQuiz(uid: String, version: String, reward: Int = 250): Result<Unit> =
+        runCatching {
+            userRef(uid).update(
+                mapOf(
+                    "tokensActuales"           to FieldValue.increment(reward.toLong()),
+                    "move30Dias"               to FieldValue.increment(reward.toLong()),
+                    "videoQuizAnsweredVersion" to version
+                )
+            ).await()
+            crearNotificacion(uid, Notificacion(
+                uid       = uid,
+                titulo    = "Quiz del video 🎯",
+                cuerpo    = "+$reward MOVE por responder correctamente",
+                tipo      = "quiz",
+                createdAt = System.currentTimeMillis()
+            ))
+        }
+
     // ── Canjes ───────────────────────────────────────────────────
 
     suspend fun getCanjes(uid: String): Result<List<Canje>> = runCatching {
@@ -410,15 +430,44 @@ class FlowlyRepository(private val context: Context) {
                 imagenUrl     = m["imagenUrl"] as? String ?: ""
             )
         }
-        val mercadoPagoUrl = snap.getString("mercadoPagoUrl") ?: ""
-        val youtubeUrl     = snap.getString("youtubeUrl") ?: ""
+        val mercadoPagoUrl   = snap.getString("mercadoPagoUrl") ?: ""
+        val youtubeUrl       = snap.getString("youtubeUrl") ?: ""
+        val videoQuizVersion = snap.getString("videoQuizVersion") ?: ""
+        @Suppress("UNCHECKED_CAST")
+        val rawQuiz = snap.get("videoQuiz") as? List<Map<String, Any>> ?: emptyList()
+        val videoQuiz = rawQuiz.map { m ->
+            com.flowly.move.data.model.VideoQuestion(
+                pregunta = m["pregunta"] as? String ?: "",
+                opciones = (m["opciones"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                correcta = (m["correcta"] as? Long)?.toInt() ?: 0
+            )
+        }
         StoreConfig(
-            umbralUsuarios  = umbral,
-            productos       = if (productos.isEmpty()) DEFAULT_STORE_PRODUCTS else productos,
-            referralBaseUrl = referralBaseUrl,
-            mercadoPagoUrl  = mercadoPagoUrl,
-            youtubeUrl      = youtubeUrl
+            umbralUsuarios   = umbral,
+            productos        = if (productos.isEmpty()) DEFAULT_STORE_PRODUCTS else productos,
+            referralBaseUrl  = referralBaseUrl,
+            mercadoPagoUrl   = mercadoPagoUrl,
+            youtubeUrl       = youtubeUrl,
+            videoQuizVersion = videoQuizVersion,
+            videoQuiz        = videoQuiz
         )
+    }
+
+    suspend fun saveVideoConfig(
+        youtubeUrl: String,
+        quizVersion: String,
+        quizQuestions: List<com.flowly.move.data.model.VideoQuestion>
+    ): Result<Unit> = runCatching {
+        val data = mutableMapOf<String, Any>(
+            "youtubeUrl"       to youtubeUrl,
+            "videoQuizVersion" to quizVersion,
+            "videoQuiz"        to quizQuestions.map { q ->
+                mapOf("pregunta" to q.pregunta, "opciones" to q.opciones, "correcta" to q.correcta)
+            }
+        )
+        db.collection("config").document("store")
+            .set(data, com.google.firebase.firestore.SetOptions.merge())
+            .await()
     }
 
     // ── Canjes (config dinámica desde admin) ─────────────────────
@@ -802,10 +851,18 @@ class FlowlyRepository(private val context: Context) {
      * @return true si se asignó un nuevo campeón, false en cualquier otro caso.
      */
     suspend fun checkAndAssignCampeon(): Result<Boolean> = runCatching {
-        val cal = Calendar.getInstance()
+        // Usar Locale.ROOT en ambos calendarios para garantizar semana ISO 8601
+        // (lunes = primer día). Sin esto, dispositivos con locale US (domingo = primer día)
+        // calculan mal el "lunes de esta semana" y pueden saltarse la asignación.
+        val cal = Calendar.getInstance(Locale.ROOT).apply {
+            firstDayOfWeek        = Calendar.MONDAY
+            minimalDaysInFirstWeek = 4
+        }
 
         // Calcular el lunes 15:00 de esta semana (momento de asignación)
-        val assignmentDeadline = Calendar.getInstance().apply {
+        val assignmentDeadline = Calendar.getInstance(Locale.ROOT).apply {
+            firstDayOfWeek        = Calendar.MONDAY
+            minimalDaysInFirstWeek = 4
             set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
             set(Calendar.HOUR_OF_DAY, 15)
             set(Calendar.MINUTE, 0)
@@ -817,7 +874,13 @@ class FlowlyRepository(private val context: Context) {
         if (cal.before(assignmentDeadline)) return@runCatching false
 
         // Calcular la semana ISO actual, ej. "2026-W12"
-        val weekYear = SimpleDateFormat("YYYY-'W'ww", Locale.ROOT).format(cal.time)
+        val sdf = SimpleDateFormat("YYYY-'W'ww", Locale.ROOT).apply {
+            calendar = Calendar.getInstance(Locale.ROOT).apply {
+                firstDayOfWeek        = Calendar.MONDAY
+                minimalDaysInFirstWeek = 4
+            }
+        }
+        val weekYear = sdf.format(cal.time)
 
         val ref = campeonRef()
 

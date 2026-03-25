@@ -176,6 +176,17 @@ class UserViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Acredita 250 MOVE y marca el quiz como respondido para esta versión. */
+    fun completeVideoQuiz(version: String) {
+        val uid = _user.value?.uid ?: return
+        viewModelScope.launch {
+            flowlyRepository.completeVideoQuiz(uid, version).onSuccess {
+                val updated = flowlyRepository.getUser(uid).getOrNull()
+                if (updated != null) _user.value = updated
+            }
+        }
+    }
+
     fun signOut(onDone: () -> Unit) {
         viewModelScope.launch {
             repository.signOut()

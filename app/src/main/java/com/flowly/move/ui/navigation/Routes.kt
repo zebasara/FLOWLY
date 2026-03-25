@@ -23,6 +23,7 @@ object Routes {
     const val EDIT_PROFILE     = "edit_profile"
     const val MISIONES         = "misiones"
     const val ADMIN_CANJES     = "admin_canjes"
+    const val ADMIN_STORE      = "admin_store"
 
     fun completeProfile(uid: String) = "complete_profile/$uid"
     fun confirmCanje(amount: String, move: String, categoria: String = "cash") = "confirm_canje/$amount/$move/$categoria"
