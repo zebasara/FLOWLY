@@ -75,7 +75,7 @@ fun CanjesScreen(navController: NavController) {
             title = { Text("Alias requerido", color = FlowlyText, fontWeight = FontWeight.Bold) },
             text  = {
                 Text(
-                    "Para canjear necesitás configurar tu alias de Mercado Pago en tu perfil.",
+                    "Para canjear necesitás configurar tu alias de cobro en tu perfil.",
                     color = FlowlyMuted, fontSize = 14.sp, lineHeight = 20.sp
                 )
             },
@@ -188,7 +188,7 @@ fun CanjesScreen(navController: NavController) {
                 }
             }
 
-            SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "transferencia a mercado pago")
+            SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "transferencia · canjes en efectivo")
 
             // ── Opciones dinámicas desde Firestore ───────────────────────────
             if (options.isEmpty()) {
@@ -241,7 +241,7 @@ fun CanjesScreen(navController: NavController) {
 
             // ── Botón Mercado Pago (solo si hay URL configurada desde admin) ─
             if (mercadoPagoUrl.isNotBlank()) {
-                SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "mercado pago")
+                SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "descargá la app de pagos")
 
                 Row(
                     modifier = Modifier

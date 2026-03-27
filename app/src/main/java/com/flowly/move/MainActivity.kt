@@ -2,6 +2,7 @@ package com.flowly.move
 
 import android.content.Intent
 import android.graphics.Color
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -23,7 +24,36 @@ import com.google.firebase.ktx.Firebase
 class MainActivity : ComponentActivity() {
 
     // ── Música de fondo ───────────────────────────────────────────────────
-    private var bgMusic: MediaPlayer? = null
+    private var bgMusic:   MediaPlayer? = null
+    private var audioMgr:  AudioManager? = null
+    /** true = la música fue pausada por pérdida de foco (video), no por lifecycle */
+    private var musicPausedByFocus = false
+
+    /**
+     * Listener de AudioFocus registrado junto con bgMusic.
+     * Cuando otra app (o el video de YouTube en-app) toma el foco,
+     * el sistema notifica aquí y pausamos/reanudamos la música en consecuencia.
+     */
+    private val audioFocusListener = AudioManager.OnAudioFocusChangeListener { change ->
+        when (change) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // Foco recuperado → reanudar música
+                musicPausedByFocus = false
+                bgMusic?.let { if (!it.isPlaying) it.start() }
+                bgMusic?.setVolume(0.4f, 0.4f)
+            }
+            AudioManager.AUDIOFOCUS_LOSS,
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // Video u otra app tomó el foco → pausar música
+                musicPausedByFocus = true
+                bgMusic?.let { if (it.isPlaying) it.pause() }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // Bajar volumen en vez de pausar (notificaciones, etc.)
+                bgMusic?.setVolume(0.08f, 0.08f)
+            }
+        }
+    }
 
     // ── Update via Firestore ──────────────────────────────────────────────
     private var showUpdateDialog  by mutableStateOf(false)
@@ -75,7 +105,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        bgMusic?.let { if (!it.isPlaying) it.start() }
+        // Solo reanudar si la música no fue pausada por el video (pérdida de foco)
+        if (!musicPausedByFocus) {
+            bgMusic?.let { if (!it.isPlaying) it.start() }
+        }
     }
 
     override fun onPause() {
@@ -86,6 +119,8 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         FirebaseAuth.getInstance().removeAuthStateListener(authListener)
+        @Suppress("DEPRECATION")
+        audioMgr?.abandonAudioFocus(audioFocusListener)
         bgMusic?.stop()
         bgMusic?.release()
         bgMusic = null
@@ -140,16 +175,42 @@ class MainActivity : ComponentActivity() {
         showUpdateDialog = false
     }
 
+    /** Pausa la música por un video en-app (no por lifecycle de Activity). */
+    fun pauseMusic() {
+        musicPausedByFocus = true
+        bgMusic?.let { if (it.isPlaying) it.pause() }
+    }
+
+    /** Reanuda la música después de cerrar el video en-app. */
+    fun resumeMusic() {
+        musicPausedByFocus = false
+        bgMusic?.let { if (!it.isPlaying) it.start() }
+    }
+
     /** Reproduce música de fondo en loop desde res/raw/startup.mp3 */
     private fun initBgMusic() {
         try {
             val soundId = resources.getIdentifier("startup", "raw", packageName)
-            if (soundId != 0) {
-                bgMusic = MediaPlayer.create(this, soundId)?.apply {
-                    isLooping = true
-                    setVolume(0.4f, 0.4f)
-                    start()
-                }
+            if (soundId == 0) return
+
+            audioMgr = getSystemService(AUDIO_SERVICE) as AudioManager
+
+            bgMusic = MediaPlayer.create(this, soundId)?.apply {
+                isLooping = true
+                setVolume(0.4f, 0.4f)
+            } ?: return
+
+            // Solicitar foco de audio registrando nuestro listener.
+            // A partir de este momento el sistema nos avisará cuando otra
+            // fuente (el video de YouTube, notificaciones, etc.) tome el foco.
+            @Suppress("DEPRECATION")
+            val granted = audioMgr?.requestAudioFocus(
+                audioFocusListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            )
+            if (granted == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                bgMusic?.start()
             }
         } catch (_: Exception) { /* sin archivo de sonido, continúa sin música */ }
     }

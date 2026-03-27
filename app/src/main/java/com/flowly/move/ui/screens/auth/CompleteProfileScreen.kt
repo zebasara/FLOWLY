@@ -153,7 +153,7 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
                 placeholder   = if (provincia.isBlank()) "Primero elegí la provincia" else "Seleccioná tu ciudad"
             )
 
-            FlowlyInput(aliasMP, { aliasMP = it }, "Alias Mercado Pago (opcional)", "martin.gonzalez.mp")
+            FlowlyInput(aliasMP, { aliasMP = it }, "Alias de cobro (opcional)", "martin.gonzalez.mp")
 
             // Código de referido solo para usuarios nuevos
             if (!isReinstall) {
@@ -169,7 +169,7 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
 
             FlowlyCard2 {
                 Text(
-                    "💡 El alias de Mercado Pago es necesario para recibir tus canjes. Podés agregarlo ahora o más tarde desde tu perfil.",
+                    "💡 El alias de cobro es necesario para recibir tus canjes. Podés agregarlo ahora o más tarde desde tu perfil.",
                     fontSize   = 12.sp,
                     color      = FlowlyMuted,
                     lineHeight = 18.sp

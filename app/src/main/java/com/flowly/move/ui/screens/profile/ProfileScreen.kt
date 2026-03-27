@@ -219,7 +219,7 @@ fun ProfileScreen(navController: NavController) {
                 FlowlySeparator()
                 DataRow("Teléfono",           telefono.ifBlank { "No configurado" })
                 FlowlySeparator()
-                DataRow("Alias Mercado Pago", aliasMP.ifBlank { "No configurado" }, valueColor = FlowlyAccent)
+                DataRow("Alias de cobro", aliasMP.ifBlank { "No configurado" }, valueColor = FlowlyAccent)
             }
 
             Spacer(Modifier.height(8.dp))

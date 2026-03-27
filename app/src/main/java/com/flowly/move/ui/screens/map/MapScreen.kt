@@ -173,7 +173,7 @@ fun MapScreen(navController: NavController) {
                 Text(
                     "Mientras MOVErme esté activo, tu ubicación será usada para registrar " +
                     "tu actividad y acreditarte puntos MOVE.\n\n" +
-                    "Tu posición exacta no es visible para otros usuarios.\n\n" +
+                    "Tu ubicación no es compartida con otros usuarios. Solo se muestra quién está activo en este momento.\n\n" +
                     "Al detener la sesión, el registro se detiene automáticamente.\n\n" +
                     "Podés revisar nuestra Política de Privacidad en flowly.app/privacidad",
                     lineHeight = 20.sp

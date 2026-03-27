@@ -71,28 +71,30 @@ class RankingsViewModel(app: Application) : AndroidViewModel(app) {
             val tokensReales = repo.getUser(c.uid).getOrNull()?.tokensActuales ?: c.tokensActuales
             _campeon.value = c.copy(tokensActuales = tokensReales)
 
+            // Clave compuesta semana|uid: detecta cambio de campeón dentro de la misma semana
+            val campeonKey = "${c.semana}|${c.uid}"
             if (c.uid == uid) {
                 // El usuario logueado es el campeón — mostrar celebración si no la vio
                 val lastCelebrated = prefs.lastCelebratedCampeonSemana.first()
-                if (lastCelebrated != c.semana) _showCampeonCelebration.value = true
+                if (lastCelebrated != campeonKey) _showCampeonCelebration.value = true
             } else {
                 // Otro usuario es el campeón — mostrar anuncio si no lo vio
                 val lastSeen = prefs.lastSeenCampeonSemana.first()
-                if (lastSeen != c.semana) _showNewCampeonDialog.value = c
+                if (lastSeen != campeonKey) _showNewCampeonDialog.value = c
             }
         }
     }
 
     fun dismissNewCampeonDialog() {
-        val semana = _campeon.value?.semana ?: return
+        val c = _campeon.value ?: return
         _showNewCampeonDialog.value = null
-        viewModelScope.launch { prefs.markCampeonSemanaVista(semana) }
+        viewModelScope.launch { prefs.markCampeonSemanaVista("${c.semana}|${c.uid}") }
     }
 
     fun dismissCelebration() {
-        val semana = _campeon.value?.semana ?: return
+        val c = _campeon.value ?: return
         _showCampeonCelebration.value = false
-        viewModelScope.launch { prefs.markCampeonCelebrado(semana) }
+        viewModelScope.launch { prefs.markCampeonCelebrado("${c.semana}|${c.uid}") }
     }
 
     /** Carga solo el #1 global de Argentina (limit 1 del ranking general). */

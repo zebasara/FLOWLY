@@ -167,6 +167,9 @@
     <button class="tab-btn" onclick="showTab('fondo')">💰 Fondo Premios</button>
     <button class="tab-btn" onclick="showTab('canjes-pendientes')">📦 Canjes Pendientes</button>
     <button class="tab-btn" onclick="showTab('productos')">🛍️ Productos</button>
+    <button class="tab-btn" onclick="showTab('torneo')">⚡ Torneo Relámpago</button>
+    <button class="tab-btn" onclick="showTab('anuncios')">📢 Anuncios</button>
+    <button class="tab-btn" onclick="showTab('reset')" style="color:#E65C5C">☢️ Reset DB</button>
   </div>
 
   <main>
@@ -458,6 +461,33 @@
         <div class="section-title">top 10 mensual actual · para saber a quién pagarle</div>
         <div id="fondo-ranking"><div class="loading">Cargando…</div></div>
       </div>
+
+      <div class="section">
+        <div class="section-title">🧾 comprobantes de pago · visibles en la app</div>
+        <div class="card">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            Subí los comprobantes de los pagos realizados a los 10 ganadores del mes anterior.<br/>
+            Se muestran en la app dentro de la pestaña Fondo de Premios (burbuja 🧾 abajo a la derecha).<br/>
+            <strong style="color:var(--accent)">Podés subir imagen desde tu dispositivo o pegar una URL directamente.</strong>
+          </p>
+
+          <div id="comprobantes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+            <!-- se genera dinámicamente -->
+          </div>
+
+          <div id="comp-upload-progress" style="display:none;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="comp-upload-label">Subiendo…</div>
+            <div style="background:var(--card2);border-radius:4px;height:6px;overflow:hidden">
+              <div id="comp-upload-bar" style="background:var(--accent);height:100%;width:0%;transition:width .2s"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveComprobantes()">💾 Guardar comprobantes</button>
+            <span id="comp-status" style="font-size:12px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -568,6 +598,158 @@
       </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB · Torneo Relámpago
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-torneo">
+      <div class="tab-header">
+        <h2>⚡ Torneo Relámpago</h2>
+        <button class="btn btn-secondary btn-small" onclick="loadTorneo()">↺ Actualizar</button>
+      </div>
+
+      <!-- Estado actual -->
+      <div class="section">
+        <div class="section-title">estado actual</div>
+        <div id="torneo-estado" class="card" style="font-size:13px;color:var(--muted)">Cargando…</div>
+      </div>
+
+      <!-- Crear / editar torneo -->
+      <div class="section">
+        <div class="section-title">lanzar nuevo torneo</div>
+        <div class="card">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            El torneo se activa inmediatamente al guardar. La burbuja ⚡ aparece en la app solo si hay un torneo activo.<br/>
+            <strong style="color:var(--accent)">El ID se genera automáticamente con la fecha de inicio.</strong>
+          </p>
+          <div class="card-row">
+            <div class="field">
+              <label>Tipo de torneo</label>
+              <select id="torneo-tipo">
+                <option value="moves">💜 MOVE ganados</option>
+                <option value="kilometros">🏃 Kilómetros caminados</option>
+                <option value="referidos">👥 Referidos traídos</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label>Título del torneo</label>
+            <input type="text" id="torneo-titulo" placeholder="¿Quién camina más este finde?" />
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label>Premio (texto visible en la app)</label>
+            <input type="text" id="torneo-premio" placeholder="$5.000 ARS en efectivo" />
+          </div>
+          <div class="card-row" style="margin-top:10px">
+            <div class="field">
+              <label>Fecha y hora de inicio</label>
+              <input type="datetime-local" id="torneo-inicio" />
+            </div>
+            <div class="field">
+              <label>Fecha y hora de fin</label>
+              <input type="datetime-local" id="torneo-fin" />
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-primary" onclick="lanzarTorneo()">🚀 Lanzar torneo</button>
+            <button class="btn btn-danger btn-small" onclick="finalizarTorneo()">🏁 Finalizar y declarar ganador</button>
+            <button class="btn btn-secondary btn-small" onclick="desactivarTorneo()">✕ Cancelar (sin ganador)</button>
+            <button class="btn btn-secondary btn-small" onclick="archivarTorneo()" style="border-color:#AA44FF;color:#DD77FF">🗑️ Archivar (ocultar burbuja)</button>
+            <span id="torneo-status" style="font-size:12px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ranking actual -->
+      <div class="section" id="torneo-ranking-section" style="display:none">
+        <div class="section-title" id="torneo-ranking-label">ranking actual de participantes</div>
+        <div id="torneo-ranking" style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB · Anuncios
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-anuncios">
+      <div class="tab-header">
+        <h2>📢 Anuncios</h2>
+        <button class="btn btn-secondary btn-small" onclick="loadAnuncio()">↺ Actualizar</button>
+      </div>
+
+      <!-- Estado actual -->
+      <div class="section">
+        <div class="section-title">anuncio activo en la app</div>
+        <div class="card" id="anuncio-estado">
+          <span style="color:var(--muted)">Cargando…</span>
+        </div>
+      </div>
+
+      <!-- Formulario nuevo anuncio -->
+      <div class="section">
+        <div class="section-title">enviar nuevo anuncio</div>
+        <div class="card">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            El anuncio aparece en la app con un 🔔 y un <strong style="color:#E53935">punto rojo</strong> en el ícono de inicio.<br/>
+            El punto desaparece cuando el usuario lo lee. Podés reemplazarlo en cualquier momento.
+          </p>
+          <div class="field" style="margin-bottom:12px">
+            <label>Título del anuncio</label>
+            <input type="text" id="anuncio-titulo" placeholder="ej: ¡Nueva función disponible!" maxlength="80" />
+          </div>
+          <div class="field" style="margin-bottom:16px">
+            <label>Mensaje</label>
+            <textarea id="anuncio-mensaje" rows="5" placeholder="Escribí el contenido del anuncio aquí..." style="resize:vertical"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-primary" onclick="enviarAnuncio()">📢 Publicar anuncio</button>
+            <button class="btn btn-danger btn-small" onclick="borrarAnuncio()">🗑️ Borrar anuncio (ocultar 🔔)</button>
+            <span id="anuncio-status" style="font-size:12px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TAB · Reset DB
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-reset">
+      <div class="tab-header">
+        <h2>☢️ Reset de Base de Datos</h2>
+      </div>
+
+      <div class="section">
+        <div class="section-title">⚠️ zona de peligro — solo para pasar de testing a producción</div>
+        <div class="card" style="border:1px solid var(--danger)">
+          <p style="font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px">
+            Este botón <strong style="color:var(--danger)">resetea a CERO todos los usuarios</strong> que no sean admin.<br/>
+            Se borran: tokens, km, niveles, insignias, rachas, misiones, progreso de video y campeón semanal.
+          </p>
+          <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+            <strong style="color:var(--accent2)">Se conserva:</strong> nombre, email, ciudad, foto, alias de cobro, referidoPor y estado admin.<br/>
+            <strong style="color:var(--danger)">Esta acción NO se puede deshacer.</strong> Usala solo cuando la app pase a producción real.
+          </p>
+
+          <div style="background:#1a0a0a;border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;color:var(--muted);line-height:1.8">
+            <strong style="color:var(--text)">Qué se resetea por usuario:</strong><br/>
+            tokensActuales → 0 &nbsp;·&nbsp; nivel → 1 &nbsp;·&nbsp; kmTotales → 0 &nbsp;·&nbsp; move30Dias → 0<br/>
+            badges → [] &nbsp;·&nbsp; diasConsecutivosVideos → 0 &nbsp;·&nbsp; moveEnHolding → 0<br/>
+            videosCompletadosTotales → 0 &nbsp;·&nbsp; videoQuizAnsweredVersion → ""<br/>
+            misionesReclamadasHoy → [] &nbsp;·&nbsp; campeonSemanalRacha → 0<br/>
+            <strong style="color:var(--accent2)">También limpia:</strong> config/campeon (campeón semanal activo)
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <button
+              class="btn btn-danger"
+              style="font-size:15px;padding:14px 28px;letter-spacing:.5px"
+              onclick="window.resetearTodosLosUsuarios()">
+              ☢️ RESETEAR TODOS LOS USUARIOS
+            </button>
+            <span id="reset-status" style="font-size:13px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -575,7 +757,7 @@
 
 <!-- ── Tab switching logic ───────────────────────────────────────────────── -->
 <script>
-  const TAB_IDS = ['general','canjes','fondo','canjes-pendientes','productos'];
+  const TAB_IDS = ['general','canjes','fondo','canjes-pendientes','productos','torneo','anuncios','reset'];
 
   function showTab(name) {
     // Panels
@@ -589,6 +771,9 @@
     });
     // Scroll to top of content
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Cargar datos al cambiar de tab
+    if (name === 'torneo'    && typeof window.loadTorneo   === 'function') window.loadTorneo();
+    if (name === 'anuncios'  && typeof window.loadAnuncio  === 'function') window.loadAnuncio();
   }
 </script>
 
@@ -598,7 +783,7 @@
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, collectionGroup, query, orderBy, where, getDocs, getDocsFromServer, limit }
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, collectionGroup, query, orderBy, where, getDocs, getDocsFromServer, limit, writeBatch }
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { getCountFromServer }
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -992,6 +1177,7 @@
       }
     } catch(e) { /* silencioso */ }
     await renderRankingFondo();
+    await loadComprobantes();
   };
 
   async function renderRankingFondo() {
@@ -1060,6 +1246,102 @@
       statusEl.textContent = 'Error: ' + e.message;
       showToast('Error al guardar: ' + e.message, true);
     }
+  };
+
+  // ── Comprobantes de pago ───────────────────────────────────────────────
+  let _comprobantesUrls = Array(10).fill('');
+
+  window.eliminarComprobante = function(i) {
+    _comprobantesUrls[i] = '';
+    window.renderComprobantesGrid();
+  };
+
+  window.actualizarUrlComprobante = function(i, val) {
+    _comprobantesUrls[i] = val;
+  };
+
+  window.renderComprobantesGrid = function() {
+    const grid = document.getElementById('comprobantes-grid');
+    grid.innerHTML = _comprobantesUrls.map((url, i) => `
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--card2)">
+        <div style="position:relative;height:140px;background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center"
+             onclick="document.getElementById('comp-file-${i}').click()">
+          ${url
+            ? `<img src="${url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"/>`
+            : `<div style="text-align:center"><div style="font-size:28px">📎</div><div style="font-size:11px;color:var(--muted);margin-top:4px">Click para subir</div></div>`
+          }
+          <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);padding:3px 6px;font-size:10px;color:#fff;text-align:center">
+            Ganador ${i + 1}
+          </div>
+        </div>
+        <input type="file" id="comp-file-${i}" accept="image/*" style="display:none"
+               onchange="handleComprobantePick(${i}, this)" />
+        <div style="padding:6px 8px;display:flex;gap:6px;align-items:center">
+          <input type="text" value="${url}" placeholder="o pegá URL aquí"
+                 id="comp-url-${i}"
+                 oninput="actualizarUrlComprobante(${i}, this.value)"
+                 style="flex:1;font-size:11px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);min-width:0"/>
+          ${url ? `<button onclick="eliminarComprobante(${i})"
+                           style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;flex-shrink:0">✕</button>` : ''}
+        </div>
+      </div>`).join('');
+  };
+
+  window.handleComprobantePick = async function(index, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const label = document.getElementById('comp-upload-label');
+    const bar   = document.getElementById('comp-upload-bar');
+    const prog  = document.getElementById('comp-upload-progress');
+    prog.style.display = 'block';
+    label.textContent  = `Subiendo ganador ${index + 1}…`;
+    bar.style.width    = '0%';
+    try {
+      const path = `comprobantes/ganador_${index + 1}.jpg`;
+      const ref  = storageRef(storage, path);
+      const task = uploadBytesResumable(ref, file);
+      await new Promise((resolve, reject) => {
+        task.on('state_changed',
+          snap => { bar.style.width = (snap.bytesTransferred / snap.totalBytes * 100) + '%'; },
+          reject,
+          async () => {
+            _comprobantesUrls[index] = await getDownloadURL(task.snapshot.ref);
+            resolve();
+          }
+        );
+      });
+      renderComprobantesGrid();
+      showToast(`✅ Imagen del ganador ${index + 1} subida`);
+    } catch(e) {
+      showToast('Error al subir: ' + e.message, true);
+    } finally {
+      prog.style.display = 'none';
+    }
+  };
+
+  window.saveComprobantes = async function() {
+    const urls = _comprobantesUrls.filter(u => u.trim() !== '');
+    const statusEl = document.getElementById('comp-status');
+    statusEl.textContent = 'Guardando…';
+    try {
+      await updateDoc(fondoRef, { comprobantesUrls: urls, updatedAt: Date.now() });
+      statusEl.textContent = '';
+      showToast(`🧾 ${urls.length} comprobante${urls.length !== 1 ? 's' : ''} guardado${urls.length !== 1 ? 's' : ''} correctamente`);
+    } catch(e) {
+      statusEl.textContent = 'Error: ' + e.message;
+      showToast('Error al guardar: ' + e.message, true);
+    }
+  };
+
+  window.loadComprobantes = async function() {
+    try {
+      const snap = await getDoc(fondoRef);
+      const urls = snap.exists() ? (snap.data().comprobantesUrls || []) : [];
+      _comprobantesUrls = Array(10).fill('').map((_, i) => urls[i] || '');
+    } catch(e) {
+      _comprobantesUrls = Array(10).fill('');
+    }
+    renderComprobantesGrid();
   };
 
   window.loadCanjesConfig = async function() {
@@ -1283,6 +1565,412 @@
   }
 
   window.showToast = showToast;
+
+  // ── Torneo Relámpago ───────────────────────────────────────────────────
+  const torneoRef = doc(db, 'config', 'torneoActual');
+
+  window.loadTorneo = async function() {
+    try {
+      const snap = await getDoc(torneoRef);
+      const t    = snap.exists() ? snap.data() : null;
+      renderTorneoEstado(t);   // maneja visibilidad de la sección de ranking
+      if (t && t.id) {
+        // Precargar campos del formulario con los valores actuales
+        document.getElementById('torneo-tipo').value   = t.tipo        || 'moves';
+        document.getElementById('torneo-titulo').value = t.titulo       || '';
+        document.getElementById('torneo-premio').value = t.premioTexto  || '';
+        if (t.fechaInicio) document.getElementById('torneo-inicio').value = tsToLocal(t.fechaInicio);
+        if (t.fechaFin)    document.getElementById('torneo-fin').value    = tsToLocal(t.fechaFin);
+        await loadRankingTorneo(t.id, t.tipo);
+      }
+    } catch(e) { showToast('Error al cargar torneo: ' + e.message, true); }
+  };
+
+  function tsToLocal(ms) {
+    const d = new Date(ms);
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function renderTorneoEstado(t) {
+    const el = document.getElementById('torneo-estado');
+
+    // Sin torneo o archivado (id vacío)
+    if (!t || !t.id) {
+      el.innerHTML = '<span style="color:var(--muted)">Sin torneo cargado. La burbuja ⚡ no aparece en la app.</span>';
+      document.getElementById('torneo-ranking-section').style.display = 'none';
+      return;
+    }
+
+    const now        = Date.now();
+    const esActivo   = t.activo && t.fechaFin > now;
+    const esFinalizd = !t.activo && t.ganadorNombre;   // finalizado con ganador
+    const esCancelado= !t.activo && !t.ganadorNombre;  // desactivado sin ganador
+
+    const tagStyle = esActivo    ? 'background:rgba(126,230,33,.15);color:#7EE621'
+                   : esFinalizd  ? 'background:rgba(170,68,255,.18);color:#DD77FF'
+                   :               'background:rgba(230,92,92,.12);color:#E65C5C';
+    const tagText  = esActivo    ? '🟢 Activo'
+                   : esFinalizd  ? '🏆 Finalizado'
+                   :               '⛔ Cancelado / sin ganador';
+
+    const fin    = t.fechaFin    ? new Date(t.fechaFin).toLocaleString('es-AR')    : '—';
+    const inicio = t.fechaInicio ? new Date(t.fechaInicio).toLocaleString('es-AR') : '—';
+
+    el.innerHTML = `
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <span class="tag" style="${tagStyle};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${tagText}</span>
+        <span style="color:var(--text);font-weight:600">${t.titulo || '(sin título)'}</span>
+        <span style="color:var(--muted)">${t.premioTexto || ''}</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+        Tipo: <strong style="color:var(--text)">${t.tipo || '—'}</strong> ·
+        Inicio: <strong style="color:var(--text)">${inicio}</strong> ·
+        Fin: <strong style="color:var(--text)">${fin}</strong>
+      </div>
+      ${esFinalizd ? `
+        <div style="margin-top:12px;padding:12px 16px;background:rgba(170,68,255,.1);border:1px solid rgba(170,68,255,.3);border-radius:10px;display:flex;align-items:center;gap:12px">
+          ${t.ganadorPhotoUrl
+            ? `<img src="${t.ganadorPhotoUrl}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #DD77FF" />`
+            : `<div style="width:40px;height:40px;border-radius:50%;background:#3A0A6A;display:flex;align-items:center;justify-content:center;color:#DD77FF;font-weight:700;font-size:16px">${(t.ganadorNombre||'?')[0].toUpperCase()}</div>`
+          }
+          <div>
+            <div style="font-size:13px;color:#DD77FF;font-weight:700">🏆 ${t.ganadorNombre}</div>
+            <div style="font-size:11px;color:var(--muted)">Ganador · ${t.premioTexto}</div>
+          </div>
+        </div>` : ''}`;
+
+    // Mostrar/ocultar sección de ranking
+    const rankSection = document.getElementById('torneo-ranking-section');
+    const rankLabel   = document.getElementById('torneo-ranking-label');
+    if (t.id) {
+      rankSection.style.display = 'block';
+      rankLabel.textContent = esFinalizd ? 'Ranking final de participantes'
+                            : esActivo   ? 'Ranking actual de participantes'
+                            :              'Participantes registrados';
+    } else {
+      rankSection.style.display = 'none';
+    }
+  }
+
+  async function loadRankingTorneo(torneoId, tipo) {
+    const rankEl = document.getElementById('torneo-ranking');
+    rankEl.innerHTML = '<div class="loading" style="padding:12px">Cargando ranking…</div>';
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, 'torneos', torneoId, 'participantes'),
+          orderBy('delta', 'desc'),
+          limit(50)
+        )
+      );
+      if (snap.empty) {
+        rankEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Aún no hay participantes.</p>';
+        return;
+      }
+      const fmtDelta = (delta, tp) =>
+        tp === 'kilometros' ? (delta ?? 0).toFixed(2) + ' km'
+        : tp === 'referidos' ? Math.round(delta ?? 0) + ' ref.'
+        : Math.round(delta ?? 0) + ' MOVE';
+
+      rankEl.innerHTML = snap.docs.map((d, i) => {
+        const p = d.data();
+        const medal      = ['🥇','🥈','🥉'][i] ?? `#${i+1}`;
+        const isTop3     = i < 3;
+        const accentColor= i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#CD7F32' : 'var(--accent)';
+        const bg         = isTop3 ? `background:rgba(255,255,255,.03);` : '';
+        return `
+          <div style="${bg}display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border)">
+            <span style="min-width:28px;font-size:${isTop3?'18':'13'}px;color:${accentColor}">${medal}</span>
+            ${p.photoUrl
+              ? `<img src="${p.photoUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+              : `<div style="width:28px;height:28px;border-radius:50%;background:#243024;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);flex-shrink:0">${(p.nombre||'?')[0].toUpperCase()}</div>`
+            }
+            <span style="flex:1;font-size:13px;color:var(--text);font-weight:${isTop3?'600':'400'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre || '—'}</span>
+            <span style="font-size:13px;font-weight:700;color:${accentColor};white-space:nowrap">${fmtDelta(p.delta, tipo)}</span>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      rankEl.innerHTML = `<p style="color:var(--danger);font-size:13px;padding:12px">Error: ${e.message}</p>`;
+    }
+  }
+
+  window.lanzarTorneo = async function() {
+    const tipo   = document.getElementById('torneo-tipo').value;
+    const titulo = document.getElementById('torneo-titulo').value.trim();
+    const premio = document.getElementById('torneo-premio').value.trim();
+    const inicio = document.getElementById('torneo-inicio').value;
+    const fin    = document.getElementById('torneo-fin').value;
+    if (!titulo || !premio || !inicio || !fin) { showToast('Completá todos los campos', true); return; }
+    const tsInicio = new Date(inicio).getTime();
+    const tsFin    = new Date(fin).getTime();
+    if (tsFin <= tsInicio) { showToast('La fecha de fin debe ser posterior al inicio', true); return; }
+    // ID único basado en el momento de CREACIÓN (no de inicio) para evitar colisiones
+    const id = 'torneo_' + Date.now();
+    const statusEl = document.getElementById('torneo-status');
+    statusEl.textContent = 'Guardando…';
+    try {
+      await setDoc(torneoRef, {
+        id, tipo, titulo, premioTexto: premio,
+        fechaInicio: tsInicio, fechaFin: tsFin,
+        activo: true,
+        ganadorUid: '', ganadorNombre: '', ganadorPhotoUrl: '',
+        updatedAt: Date.now()
+      });
+      statusEl.textContent = '';
+      showToast(`⚡ Torneo lanzado hasta ${new Date(tsFin).toLocaleString('es-AR')}`);
+      await loadTorneo();
+    } catch(e) {
+      statusEl.textContent = '';
+      showToast('Error: ' + e.message, true);
+    }
+  };
+
+  window.finalizarTorneo = async function() {
+    const snap = await getDoc(torneoRef);
+    const t    = snap.data();
+    if (!t || !t.id) { showToast('No hay torneo activo', true); return; }
+    if (!t.activo)   { showToast('El torneo ya fue finalizado', true); return; }
+
+    const statusEl = document.getElementById('torneo-status');
+    statusEl.textContent = 'Actualizando deltas…';
+
+    try {
+      // ── Paso 1: leer todos los participantes ─────────────────────────────
+      const pSnap = await getDocs(
+        collection(db, 'torneos', t.id, 'participantes')
+      );
+      if (pSnap.empty) { showToast('No hay participantes aún', true); statusEl.textContent = ''; return; }
+
+      // ── Paso 2: para cada participante, leer su documento de usuario
+      //    y recalcular el delta real antes de declarar ganador ─────────────
+      const campo = t.tipo === 'kilometros' ? 'kmTotales'
+                  : t.tipo === 'referidos'  ? 'totalReferidos'
+                  :                           'move30Dias';
+
+      let mejorDelta = -Infinity;
+      let ganador    = null;
+
+      const promises = pSnap.docs.map(async (pDoc) => {
+        const part = pDoc.data();
+        try {
+          const uSnap = await getDoc(doc(db, 'usuarios', part.uid));
+          if (!uSnap.exists()) return;
+          const u     = uSnap.data();
+          const valor = u[campo] ?? 0;
+          const delta = Math.max(0, valor - (part.valorBase ?? 0));
+          // Actualizar delta en Firestore
+          await updateDoc(pDoc.ref, { delta });
+          if (delta > mejorDelta) { mejorDelta = delta; ganador = { ...part, delta }; }
+        } catch (_) { /* si un usuario fue eliminado, ignorar */ }
+      });
+      await Promise.all(promises);
+
+      if (!ganador) { showToast('No se pudo calcular el ganador', true); statusEl.textContent = ''; return; }
+
+      // ── Paso 3: guardar ganador y desactivar torneo ──────────────────────
+      await setDoc(torneoRef, {
+        ...t,
+        activo:          false,
+        ganadorUid:      ganador.uid       || '',
+        ganadorNombre:   ganador.nombre    || '',
+        ganadorPhotoUrl: ganador.photoUrl  || '',
+        updatedAt:       Date.now()
+      });
+
+      const deltaStr = t.tipo === 'kilometros'
+        ? `${ganador.delta.toFixed(2)} km`
+        : t.tipo === 'referidos'
+          ? `${Math.round(ganador.delta)} referidos`
+          : `${Math.round(ganador.delta)} MOVE`;
+
+      showToast(`🏆 Ganador: ${ganador.nombre} — ${deltaStr}`);
+      statusEl.textContent = '';
+      await loadTorneo();
+    } catch(e) { showToast('Error: ' + e.message, true); statusEl.textContent = ''; }
+  };
+
+  /**
+   * Cancela el torneo sin declarar ganador (la burbuja desaparece de la app).
+   * Usar cuando el torneo fue un error o no tuvo participantes.
+   */
+  window.desactivarTorneo = async function() {
+    if (!confirm('¿Cancelar el torneo? No se declarará ganador y la burbuja desaparecerá de la app.')) return;
+    try {
+      await setDoc(torneoRef, {
+        id: '', activo: false, tipo: 'moves', titulo: '', premioTexto: '',
+        fechaInicio: 0, fechaFin: 0,
+        ganadorUid: '', ganadorNombre: '', ganadorPhotoUrl: '',
+        updatedAt: Date.now()
+      });
+      showToast('Torneo cancelado — burbuja oculta ✓');
+      await loadTorneo();
+    } catch(e) { showToast('Error: ' + e.message, true); }
+  };
+
+  /**
+   * Archiva el torneo finalizado (con ganador ya declarado).
+   * El cartel de ganador desaparece de la app.
+   */
+  // ── Anuncios ──────────────────────────────────────────────────────────────
+  const anuncioRef = doc(db, 'config', 'anuncioActual');
+
+  window.loadAnuncio = async function() {
+    const el = document.getElementById('anuncio-estado');
+    try {
+      const snap = await getDoc(anuncioRef);
+      const a = snap.exists() ? snap.data() : null;
+      if (!a || !a.id || !a.activo) {
+        el.innerHTML = '<span style="color:var(--muted)">Sin anuncio activo. El ícono 🔔 no aparece en la app.</span>';
+        document.getElementById('anuncio-titulo').value  = '';
+        document.getElementById('anuncio-mensaje').value = '';
+      } else {
+        const fecha = a.createdAt ? new Date(a.createdAt).toLocaleString('es-AR') : '—';
+        el.innerHTML = `
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="font-size:24px">📢</span>
+            <div style="flex:1">
+              <div style="font-weight:700;color:var(--text);font-size:15px;margin-bottom:4px">${a.titulo || '(sin título)'}</div>
+              <div style="font-size:13px;color:var(--muted);white-space:pre-wrap;line-height:1.6">${a.mensaje || ''}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:8px">Publicado: ${fecha}</div>
+            </div>
+            <span class="tag tag-green" style="flex-shrink:0">🟢 Activo</span>
+          </div>`;
+        document.getElementById('anuncio-titulo').value  = a.titulo  || '';
+        document.getElementById('anuncio-mensaje').value = a.mensaje || '';
+      }
+    } catch(e) { el.innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`; }
+  };
+
+  window.enviarAnuncio = async function() {
+    const titulo  = document.getElementById('anuncio-titulo').value.trim();
+    const mensaje = document.getElementById('anuncio-mensaje').value.trim();
+    const statusEl = document.getElementById('anuncio-status');
+    if (!titulo)  { showToast('Escribí un título para el anuncio', true); return; }
+    if (!mensaje) { showToast('Escribí un mensaje para el anuncio', true); return; }
+    statusEl.textContent = 'Publicando…';
+    try {
+      const id = 'anuncio_' + Date.now();
+      await setDoc(anuncioRef, { id, titulo, mensaje, createdAt: Date.now(), activo: true });
+      showToast('📢 Anuncio publicado — el 🔔 aparece en la app de todos los usuarios');
+      statusEl.textContent = '';
+      await window.loadAnuncio();
+    } catch(e) { showToast('Error: ' + e.message, true); statusEl.textContent = ''; }
+  };
+
+  window.borrarAnuncio = async function() {
+    if (!confirm('¿Borrar el anuncio? El ícono 🔔 desaparecerá de la app.')) return;
+    try {
+      await setDoc(anuncioRef, { id: '', titulo: '', mensaje: '', createdAt: 0, activo: false });
+      showToast('Anuncio borrado — 🔔 oculto en la app ✓');
+      await window.loadAnuncio();
+    } catch(e) { showToast('Error: ' + e.message, true); }
+  };
+
+  window.archivarTorneo = async function() {
+    if (!confirm('¿Archivar el torneo? El cartel de ganador desaparecerá de la app.')) return;
+    try {
+      await setDoc(torneoRef, {
+        id: '', activo: false, tipo: 'moves', titulo: '', premioTexto: '',
+        fechaInicio: 0, fechaFin: 0,
+        ganadorUid: '', ganadorNombre: '', ganadorPhotoUrl: '',
+        updatedAt: Date.now()
+      });
+      showToast('Torneo archivado — burbuja oculta ✓');
+      await loadTorneo();
+    } catch(e) { showToast('Error: ' + e.message, true); }
+  };
+
+  // ── Reset masivo de usuarios (testing → producción) ───────────────────────
+  window.resetearTodosLosUsuarios = async function() {
+
+    // ── Confirmación 1: aviso general ────────────────────────────────────────
+    const ok1 = confirm(
+      '☢️ ADVERTENCIA CRÍTICA\n\n' +
+      'Esto reseteará a CERO todos los usuarios (excepto admins):\n\n' +
+      '  • Tokens, km, moves, niveles → 0\n' +
+      '  • Insignias, rachas, misiones → borrados\n' +
+      '  • Campeón semanal → limpiado\n\n' +
+      'Se conserva: nombre, email, ciudad, foto y alias de cobro.\n\n' +
+      '⛔ Esta acción NO se puede deshacer.\n\n' +
+      '¿Querés continuar?'
+    );
+    if (!ok1) return;
+
+    // ── Confirmación 2: tipear la palabra clave ───────────────────────────────
+    const typed = prompt(
+      '🔐 Segunda confirmación\n\n' +
+      'Para ejecutar el reset escribí exactamente:\n\n' +
+      'RESETEAR'
+    );
+    if (typed !== 'RESETEAR') {
+      showToast('❌ Cancelado — texto incorrecto o vacío', true);
+      return;
+    }
+
+    const statusEl = document.getElementById('reset-status');
+    statusEl.textContent = '⏳ Leyendo usuarios…';
+
+    try {
+      const usersSnap = await getDocs(collection(db, 'usuarios'));
+      const allDocs   = usersSnap.docs;
+      const total     = allDocs.length;
+      let   processed = 0;
+
+      // Firestore permite máx 500 operaciones por batch; usamos 400 para margen
+      const BATCH_SIZE = 400;
+      for (let i = 0; i < allDocs.length; i += BATCH_SIZE) {
+        const batch = writeBatch(db);
+        const chunk = allDocs.slice(i, i + BATCH_SIZE);
+
+        for (const userDoc of chunk) {
+          const data = userDoc.data();
+          // Saltar cuentas admin — no se tocan
+          if (data.admin === true) continue;
+
+          batch.update(userDoc.ref, {
+            nivel:                      1,
+            limiteTokens:               20000,
+            tokensActuales:             0,
+            diasConsecutivosVideos:     0,
+            videosAcumuladosNivel:      0,
+            saldoMinimoParaSubir:       1500,
+            tokenMovimientoHoy:         0,
+            tokenVideosHoy:             0,
+            move30Dias:                 0,
+            lastTokenResetDate:         '',
+            kmHoy:                      0,
+            kmTotales:                  0,
+            videosCompletadosTotales:   0,
+            lastVideoDate:              '',
+            moveEnHolding:              0,
+            totalReferidos:             0,
+            badges:                     [],
+            misionesReclamadasHoy:      [],
+            campeonSemanalRacha:        0,
+            videoQuizAnsweredVersion:   ''
+          });
+          processed++;
+        }
+
+        await batch.commit();
+        statusEl.textContent = `⏳ Reseteando… ${processed}/${total}`;
+      }
+
+      // Limpiar campeón semanal activo
+      await setDoc(doc(db, 'config', 'campeon'), {
+        uid: '', nombre: '', semana: '', tokensActuales: 0,
+        campeonSemanalRacha: 0, photoUrl: ''
+      });
+
+      statusEl.textContent = `✅ ${processed} usuarios reseteados`;
+      showToast(`✅ Reset completo — ${processed} usuarios reseteados a cero`);
+
+    } catch(e) {
+      statusEl.textContent = '❌ Error: ' + e.message;
+      showToast('❌ Error durante el reset: ' + e.message, true);
+    }
+  };
 </script>
 </body>
 </html>

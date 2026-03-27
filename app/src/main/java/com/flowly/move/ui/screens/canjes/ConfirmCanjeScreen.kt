@@ -102,7 +102,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("vas a recibir", fontSize = 12.sp, color = FlowlyMuted)
                     Text(amount, fontSize = 36.sp, fontWeight = FontWeight.Bold, color = FlowlySuccess)
-                    Text("en tu Mercado Pago", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
+                    Text("en tu cuenta", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
                 }
             }
 
@@ -131,13 +131,13 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                 Text("Destino del pago", fontSize = 12.sp, color = FlowlyMuted)
                 if (aliasMP.isBlank()) {
                     Text(
-                        "⚠️ No tenés alias MP configurado. Andá a Perfil → Editar.",
+                        "⚠️ No tenés alias configurado. Andá a Perfil → Editar.",
                         fontSize = 13.sp, color = FlowlyWarn,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 } else {
                     Text(aliasMP, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = FlowlyText, modifier = Modifier.padding(top = 4.dp))
-                    Text("Mercado Pago · alias registrado", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
+                    Text("alias registrado", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
                 }
             }
 

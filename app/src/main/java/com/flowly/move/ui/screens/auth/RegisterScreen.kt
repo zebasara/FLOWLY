@@ -101,7 +101,7 @@ fun RegisterScreen(navController: NavController) {
             FlowlySeparator()
 
             Text(
-                "Al registrarte aceptás los Términos. El alias de Mercado Pago lo cargás después.",
+                "Al registrarte aceptás los Términos. El alias de cobro lo cargás después.",
                 fontSize = 12.sp,
                 color = FlowlyMuted,
                 lineHeight = 18.sp,

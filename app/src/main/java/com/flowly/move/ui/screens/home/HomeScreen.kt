@@ -36,18 +36,26 @@ import com.flowly.move.ui.screens.misiones.getMisionesDelDia
 import com.flowly.move.ui.screens.store.StoreViewModel
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
+import com.flowly.move.ui.screens.torneo.TorneoOverlay
 import com.flowly.move.ui.theme.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
-    val vm: UserViewModel   = viewModel()
+    val vm: UserViewModel       = viewModel()
     val storeVm: StoreViewModel = viewModel()
+    val anuncioVm: AnuncioViewModel = viewModel()
     val user              by vm.user.collectAsStateWithLifecycle()
     val storeConfig       by storeVm.storeConfig.collectAsStateWithLifecycle()
     val isLoading         by vm.isLoading.collectAsStateWithLifecycle()
     val showWelcome       by vm.showWelcomeDialog.collectAsStateWithLifecycle()
     val pendingBadge      by vm.pendingBadge.collectAsStateWithLifecycle()
     val networkError      by vm.networkError.collectAsStateWithLifecycle()
+    val anuncio           by anuncioVm.anuncio.collectAsStateWithLifecycle()
+    val tieneAnuncioNoLeido by anuncioVm.tieneNoLeido.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -152,7 +160,9 @@ fun HomeScreen(navController: NavController) {
             ) {
             Spacer(Modifier.height(8.dp))
 
-            // Top bar
+            // ── Top bar ───────────────────────────────────────────────────
+            var showAnuncioSheet by remember { mutableStateOf(false) }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -168,12 +178,91 @@ fun HomeScreen(navController: NavController) {
                     if (ciudad.isNotBlank())
                         Text(ciudad, fontSize = 12.sp, color = FlowlyMuted)
                 }
-                FlowlyAvatar(
-                    initials = iniciales,
-                    photoUrl = user?.profilePhotoUrl ?: "",
-                    size     = 38.dp,
-                    modifier = Modifier.clickable { navController.navigate(Routes.PROFILE) }
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Campana de anuncios con punto rojo
+                    if (anuncio != null && anuncio!!.valido) {
+                        Box(contentAlignment = Alignment.TopEnd) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(FlowlyCard)
+                                    .border(1.dp, FlowlyBorder, androidx.compose.foundation.shape.CircleShape)
+                                    .clickable {
+                                        showAnuncioSheet = true
+                                        anuncioVm.marcarComoLeido()
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("🔔", fontSize = 16.sp)
+                            }
+                            // Punto rojo — solo si hay anuncio no leído
+                            if (tieneAnuncioNoLeido) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(Color(0xFFE53935))
+                                        .border(1.5.dp, FlowlyBg, androidx.compose.foundation.shape.CircleShape)
+                                )
+                            }
+                        }
+                    }
+                    FlowlyAvatar(
+                        initials = iniciales,
+                        photoUrl = user?.profilePhotoUrl ?: "",
+                        size     = 38.dp,
+                        modifier = Modifier.clickable { navController.navigate(Routes.PROFILE) }
+                    )
+                }
+            }
+
+            // ── Bottom sheet del anuncio ───────────────────────────────────
+            if (showAnuncioSheet && anuncio != null) {
+                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                ModalBottomSheet(
+                    onDismissRequest = { showAnuncioSheet = false },
+                    sheetState       = sheetState,
+                    containerColor   = FlowlyCard
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("📢", fontSize = 32.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+                        Text(
+                            anuncio!!.titulo,
+                            fontSize   = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = FlowlyText,
+                            textAlign  = TextAlign.Center,
+                            modifier   = Modifier.fillMaxWidth()
+                        )
+                        HorizontalDivider(color = FlowlyBorder)
+                        Text(
+                            anuncio!!.mensaje,
+                            fontSize  = 14.sp,
+                            color     = FlowlyText,
+                            lineHeight = 22.sp
+                        )
+                        val fecha = remember(anuncio!!.createdAt) {
+                            if (anuncio!!.createdAt > 0L)
+                                SimpleDateFormat("d 'de' MMMM, HH:mm", Locale("es", "AR"))
+                                    .format(Date(anuncio!!.createdAt))
+                            else ""
+                        }
+                        if (fecha.isNotBlank()) {
+                            Text(fecha, fontSize = 11.sp, color = FlowlyMuted)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
             }
 
             // Hero card
@@ -410,6 +499,15 @@ fun HomeScreen(navController: NavController) {
             hostState = snackbarHostState,
             modifier  = Modifier.align(Alignment.BottomCenter)
         )
+
+        // ── Burbuja Torneo Relámpago — centro-derecha ─────────────────────
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .offset(x = 6.dp)   // asoma levemente por el borde derecho
+        ) {
+            TorneoOverlay(currentUser = user)
+        }
         } // fin Box
     }
 }
@@ -592,8 +690,12 @@ private fun QuickAccessItem(icon: String, label: String, modifier: Modifier, onC
 private fun extractYouTubeVideoId(url: String): String? = try {
     val uri = android.net.Uri.parse(url)
     when {
+        // https://youtu.be/VIDEO_ID
         uri.host?.contains("youtu.be") == true -> uri.lastPathSegment
-        else -> uri.getQueryParameter("v")
+        // https://www.youtube.com/shorts/VIDEO_ID  (YouTube Shorts)
+        uri.path?.contains("/shorts/") == true -> uri.lastPathSegment
+        // https://www.youtube.com/watch?v=VIDEO_ID (video normal)
+        else                                   -> uri.getQueryParameter("v")
     }
 } catch (e: Exception) { null }
 
@@ -630,25 +732,15 @@ private fun YouTubeCard(
         && userAnsweredVersion != quizVersion
     var showQuiz by remember { mutableStateOf(false) }
 
-    val context      = androidx.compose.ui.platform.LocalContext.current
-    val audioManager = remember {
-        context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
-    }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
-    // Audio focus: silencia música al abrir, la reanuda al cerrar
+    // Pausa/reanuda la música de la app directamente via MainActivity.
+    // Usar requestAudioFocus(null) era frágil: el OS no sabía a quién devolver
+    // el foco al cerrar el video → la música quedaba muda indefinidamente.
     DisposableEffect(showPlayer) {
-        if (showPlayer) {
-            @Suppress("DEPRECATION")
-            audioManager.requestAudioFocus(
-                null,
-                android.media.AudioManager.STREAM_MUSIC,
-                android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            audioManager.abandonAudioFocus(null)
-        }
-        onDispose { @Suppress("DEPRECATION") audioManager.abandonAudioFocus(null) }
+        val activity = context as? com.flowly.move.MainActivity
+        if (showPlayer) activity?.pauseMusic() else activity?.resumeMusic()
+        onDispose { activity?.resumeMusic() }
     }
 
     // ── Overlay sobre android.R.id.content (Window principal de la Activity) ──

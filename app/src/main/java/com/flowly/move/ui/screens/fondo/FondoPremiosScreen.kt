@@ -3,19 +3,26 @@ package com.flowly.move.ui.screens.fondo
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -28,6 +35,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import coil.size.Size
 import com.flowly.move.data.model.DISTRIBUCION_FONDO
 import com.flowly.move.data.model.User
 import com.flowly.move.data.model.iniciales
@@ -89,16 +100,18 @@ private fun calcPremio(montoTotal: Long, posIndex: Int): Long {
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FondoPremiosScreen(navController: NavController) {
     val vm: FondoPremiosViewModel = viewModel()
     val storeVm: StoreViewModel   = viewModel()
-    val fondo       by vm.fondo.collectAsStateWithLifecycle()
-    val montoARS    by vm.montoARS.collectAsStateWithLifecycle()
-    val ranking     by vm.ranking.collectAsStateWithLifecycle()
-    val currentUser by vm.currentUser.collectAsStateWithLifecycle()
-    val isLoading   by vm.isLoading.collectAsStateWithLifecycle()
-    val storeConfig by storeVm.storeConfig.collectAsStateWithLifecycle()
+    val fondo            by vm.fondo.collectAsStateWithLifecycle()
+    val montoARS         by vm.montoARS.collectAsStateWithLifecycle()
+    val ranking          by vm.ranking.collectAsStateWithLifecycle()
+    val currentUser      by vm.currentUser.collectAsStateWithLifecycle()
+    val isLoading        by vm.isLoading.collectAsStateWithLifecycle()
+    val storeConfig      by storeVm.storeConfig.collectAsStateWithLifecycle()
+    val comprobantesUrls by vm.comprobantesUrls.collectAsStateWithLifecycle()
 
     val baseUrl      = storeConfig?.referralBaseUrl?.trimEnd('/') ?: "https://flowly.app/r"
     val userCode     = currentUser?.uid?.take(8) ?: ""
@@ -109,6 +122,9 @@ fun FondoPremiosScreen(navController: NavController) {
         while (true) { delay(1_000L); countdown = calcCountdown() }
     }
 
+    var showComprobantes by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     FlowlyScaffold(navController = navController, currentRoute = Routes.FONDO_PREMIOS) { padding ->
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -116,6 +132,8 @@ fun FondoPremiosScreen(navController: NavController) {
             }
             return@FlowlyScaffold
         }
+
+        Box(modifier = Modifier.fillMaxSize()) {
 
         Column(
             modifier = Modifier
@@ -187,7 +205,58 @@ fun FondoPremiosScreen(navController: NavController) {
                 modifier     = Modifier.padding(horizontal = 16.dp)
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // ── Burbuja flotante de comprobantes ──────────────────────────────────
+        if (comprobantesUrls.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 18.dp)
+                    .shadow(8.dp, CircleShape)
+                    .size(58.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(listOf(Color(0xFF2A6B0A), Color(0xFF1A4500)))
+                    )
+                    .border(1.5.dp, Color(0xFF7EE621).copy(alpha = 0.8f), CircleShape)
+                    .clickable { showComprobantes = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("🧾", fontSize = 18.sp)
+                    Text(
+                        "Pagos",
+                        fontSize   = 8.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = Color(0xFF7EE621),
+                        lineHeight = 10.sp
+                    )
+                }
+            }
+        }
+
+        } // cierre Box
+
+        // ── Modal Bottom Sheet: carousel de comprobantes ──────────────────────
+        if (showComprobantes && comprobantesUrls.isNotEmpty()) {
+            ModalBottomSheet(
+                onDismissRequest  = { showComprobantes = false },
+                sheetState        = sheetState,
+                containerColor    = Color(0xFF121A0A),
+                dragHandle        = {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 8.dp)
+                            .size(width = 40.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFF7EE621).copy(alpha = 0.5f))
+                    )
+                }
+            ) {
+                ComprobantesCarousel(urls = comprobantesUrls)
+            }
         }
     }
 }
@@ -693,5 +762,112 @@ private fun ComoFuncionaCard(pct: Int, modifier: Modifier = Modifier) {
                 lineHeight = 16.sp
             )
         }
+    }
+}
+
+// ── Carousel de comprobantes de pago ──────────────────────────────────────────
+
+@Composable
+private fun ComprobantesCarousel(urls: List<String>) {
+    val filtered = urls.filter { it.isNotBlank() }
+    val pagerState = rememberPagerState(pageCount = { filtered.size })
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Header
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+        ) {
+            Text(
+                "🧾 Comprobantes de pagos",
+                fontSize   = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color      = Color(0xFF7EE621)
+            )
+            Text(
+                "Pagos reales a los 10 ganadores del mes anterior",
+                fontSize = 12.sp,
+                color    = FlowlyMuted
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Pager de imágenes
+        HorizontalPager(
+            state    = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .aspectRatio(3f / 4f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF1A2200))
+                    .border(1.dp, Color(0xFF7EE621).copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                val context = LocalContext.current
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(filtered[page])
+                        .size(Size(800, 1066))          // decodifica a 800×1066 px máx (3:4)
+                        .crossfade(300)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .allowHardware(true)
+                        .build(),
+                    contentDescription = "Comprobante ${page + 1}",
+                    contentScale       = ContentScale.Fit,
+                    modifier           = Modifier.fillMaxSize(),
+                    loading = {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                color       = Color(0xFF7EE621),
+                                strokeWidth = 2.dp,
+                                modifier    = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Indicadores de página
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            repeat(filtered.size) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (pagerState.currentPage == index)
+                                Color(0xFF7EE621)
+                            else
+                                Color(0xFF7EE621).copy(alpha = 0.3f)
+                        )
+                )
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            "${pagerState.currentPage + 1} / ${filtered.size}",
+            fontSize = 11.sp,
+            color    = FlowlyMuted
+        )
     }
 }

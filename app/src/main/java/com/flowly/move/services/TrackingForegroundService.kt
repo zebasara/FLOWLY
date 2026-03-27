@@ -33,6 +33,8 @@ class TrackingForegroundService : Service() {
         private const val NOTIF_ID = 1001
         // Actualiza Firestore cada N updates de GPS (~16 seg con intervalo 2s)
         private const val FIRESTORE_INTERVAL = 8
+        // Acredita MOVE cada X metros (= 1 MOVE por tramo)
+        private const val CREDIT_INTERVAL_METERS = FlowlyRepository.METROS_POR_MOVE.toFloat()
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -53,6 +55,12 @@ class TrackingForegroundService : Service() {
     // Velocidad actual: se actualiza con cada update GPS para el timer de notificación
     private var currentSpeedKmh = 0f
 
+    // ── Crédito progresivo de MOVE ────────────────────────────────────────
+    /** Metros ya acreditados en Firestore durante esta sesión */
+    private var distanceCreditedMeters = 0f
+    /** MOVE disponibles para acreditar hoy (leído al iniciar la sesión) */
+    private var dailyLimitRestante     = FlowlyRepository.DAILY_LIMIT_MOVIMIENTO
+
     private val locationListener = LocationListener { location ->
         lastLocation?.let { prev -> totalDistance += prev.distanceTo(location) }
         lastLocation      = location
@@ -60,14 +68,28 @@ class TrackingForegroundService : Service() {
 
         val durationSec = if (startTime > 0) (System.currentTimeMillis() - startTime) / 1000L else 0L
 
+        // ── Crédito progresivo: acreditar cada CREDIT_INTERVAL_METERS ────────
+        val uncredited = totalDistance - distanceCreditedMeters
+        if (uncredited >= CREDIT_INTERVAL_METERS && dailyLimitRestante > 0 && currentUid.isNotBlank()) {
+            val moves    = (uncredited / CREDIT_INTERVAL_METERS).toInt()
+                .coerceAtMost(dailyLimitRestante)
+            val credited = moves * CREDIT_INTERVAL_METERS
+            distanceCreditedMeters += credited
+            dailyLimitRestante     -= moves
+            serviceScope.launch {
+                repo.acreditarMoveProgresivo(currentUid, moves, credited / 1000f)
+            }
+        }
+
         TrackingController.update(
             TrackingStats(
-                isTracking      = true,
-                distanceMeters  = totalDistance,
-                durationSeconds = durationSec,
-                speedKmh        = currentSpeedKmh,
-                lastLat         = location.latitude,
-                lastLng         = location.longitude
+                isTracking             = true,
+                distanceMeters         = totalDistance,
+                durationSeconds        = durationSec,
+                speedKmh               = currentSpeedKmh,
+                lastLat                = location.latitude,
+                lastLng                = location.longitude,
+                distanceCreditedMeters = distanceCreditedMeters
             )
         )
 
@@ -99,13 +121,26 @@ class TrackingForegroundService : Service() {
 
     private fun startTracking() {
         if (isRunning) return
-        isRunning             = true
-        startTime             = System.currentTimeMillis()
-        totalDistance         = 0f
-        lastLocation          = null
-        locationUpdateCount   = 0
-        currentSpeedKmh       = 0f
+        isRunning              = true
+        startTime              = System.currentTimeMillis()
+        totalDistance          = 0f
+        lastLocation           = null
+        locationUpdateCount    = 0
+        currentSpeedKmh        = 0f
+        distanceCreditedMeters = 0f
+        dailyLimitRestante     = FlowlyRepository.DAILY_LIMIT_MOVIMIENTO
         TrackingController.markStart()
+
+        // Leer cuántos MOVE ya ganó hoy para respetar el límite diario
+        if (currentUid.isNotBlank()) {
+            serviceScope.launch {
+                val user = repo.getUser(currentUid).getOrNull()
+                if (user != null) {
+                    dailyLimitRestante = (FlowlyRepository.DAILY_LIMIT_MOVIMIENTO - user.tokenMovimientoHoy)
+                        .coerceAtLeast(0)
+                }
+            }
+        }
 
         // Publicar isTracking=true inmediatamente — el timer de MapScreen arranca ya
         TrackingController.update(
@@ -179,12 +214,14 @@ class TrackingForegroundService : Service() {
      */
     private fun refreshNotification() {
         val km         = totalDistance / 1000f
+        val moveGanado = (distanceCreditedMeters / CREDIT_INTERVAL_METERS).toInt()
         val elapsedSec = if (startTime > 0L) (System.currentTimeMillis() - startTime) / 1000L else 0L
         val h          = elapsedSec / 3600
         val m          = (elapsedSec % 3600) / 60
         val s          = elapsedSec % 60
         val timeStr    = if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
-        val text       = "%.2f km · %s · %.1f km/h".format(km, timeStr, currentSpeedKmh)
+        val moveStr    = if (moveGanado > 0) " · +$moveGanado MOVE ✅" else ""
+        val text       = "%.2f km · %s · %.1f km/h%s".format(km, timeStr, currentSpeedKmh, moveStr)
         val nm         = getSystemService(NotificationManager::class.java)
         nm.notify(NOTIF_ID, buildNotification(text))
     }

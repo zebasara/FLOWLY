@@ -71,7 +71,8 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Detiene MOVErme y guarda la sesión en Firestore */
     fun stopTracking(context: Context) {
-        val finalStats = TrackingController.stats.value
+        val finalStats        = TrackingController.stats.value
+        val remainingDistance = finalStats.distanceMeters - finalStats.distanceCreditedMeters
 
         val intent = Intent(context, TrackingForegroundService::class.java).apply {
             action = TrackingForegroundService.ACTION_STOP
@@ -82,7 +83,14 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 val uid = prefs.userId.first()
                 if (uid.isNotBlank()) {
-                    repo.registrarSesionMovimiento(uid, finalStats.distanceMeters)
+                    if (remainingDistance > 0f) {
+                        // Distancia aún no acreditada (puede ser < 50 m al cierre de sesión)
+                        // → crédito final + notificación + badges
+                        repo.registrarSesionMovimiento(uid, remainingDistance)
+                    } else {
+                        // Todo fue acreditado progresivamente → solo verificar badges
+                        repo.verificarBadgesDistancia(uid)
+                    }
                 }
             }
         }

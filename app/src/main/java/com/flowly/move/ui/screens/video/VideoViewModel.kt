@@ -38,8 +38,12 @@ class VideoViewModel(app: Application) : AndroidViewModel(app) {
     fun cobrarRecompensa() {
         viewModelScope.launch {
             _uiState.value = VideoUiState.Loading
-            val uid    = prefs.userId.first()
-            val amount = if (_limiteAlcanzado.value) FlowlyRepository.VIDEO_BONUS_AMOUNT
+            val uid  = prefs.userId.first()
+            // Re-leer de Firestore para tener el valor real actualizado (no el flag de init)
+            val user = repo.getUser(uid).getOrNull()
+            val limiteActual = (user?.tokenVideosHoy ?: 0) >= FlowlyRepository.DAILY_LIMIT_VIDEOS
+            _limiteAlcanzado.value = limiteActual
+            val amount = if (limiteActual) FlowlyRepository.VIDEO_BONUS_AMOUNT
                          else FlowlyRepository.VIDEO_REWARD_AMOUNT
             repo.cobrarVideoConBadges(uid, amount).fold(
                 onSuccess = { _uiState.value = VideoUiState.Success },

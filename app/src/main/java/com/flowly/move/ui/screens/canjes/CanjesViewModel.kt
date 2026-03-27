@@ -66,7 +66,7 @@ class CanjesViewModel(app: Application) : AndroidViewModel(app) {
     fun confirmarCanje(montoLabel: String, moveAmount: Int, categoria: String = "cash") {
         val aliasMP = _user.value?.aliasMercadoPago ?: ""
         if (aliasMP.isBlank()) {
-            _uiState.value = CanjesUiState.Error("Necesitás cargar tu alias de Mercado Pago en tu perfil")
+            _uiState.value = CanjesUiState.Error("Necesitás cargar tu alias de cobro en tu perfil")
             return
         }
         if ((_user.value?.tokensActuales ?: 0) < moveAmount) {

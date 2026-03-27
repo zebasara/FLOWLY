@@ -20,9 +20,8 @@ class FlowlyRepository(private val context: Context) {
 
     // ── Límites diarios ──────────────────────────────────────────────────
     companion object {
-        // Tasa: 1 MOVE cada 100m (antes era 1/200m) → 10 MOVE/km
-        // Con 5 km caminados: 50 MOVE; con 10 km: 100 MOVE
-        const val METROS_POR_MOVE        = 100   // metros necesarios para ganar 1 MOVE
+        // Tasa: 1 MOVE cada 16m → 62.5 MOVE/km → límite de 500 MOVE se alcanza en 8 km
+        const val METROS_POR_MOVE        = 16    // metros necesarios para ganar 1 MOVE
         const val DAILY_LIMIT_MOVIMIENTO = 500   // MOVE máx por día caminando/corriendo
         const val DAILY_LIMIT_VIDEOS     = 200   // MOVE por los primeros 4 videos (4 × 50)
         const val VIDEO_REWARD_AMOUNT    = 50    // MOVE por cada uno de los primeros 4 videos
@@ -453,6 +452,56 @@ class FlowlyRepository(private val context: Context) {
         )
     }
 
+    /** Flow en tiempo real — se actualiza automáticamente cuando el admin cambia la config de tienda. */
+    fun storeConfigFlow(): kotlinx.coroutines.flow.Flow<StoreConfig> =
+        kotlinx.coroutines.flow.callbackFlow {
+            val reg = db.collection("config").document("store")
+                .addSnapshotListener { snap, _ ->
+                    if (snap == null || !snap.exists()) {
+                        trySend(StoreConfig(umbralUsuarios = 500, productos = DEFAULT_STORE_PRODUCTS))
+                        return@addSnapshotListener
+                    }
+                    val umbral          = (snap.getLong("umbralUsuarios") ?: 500L).toInt()
+                    val referralBaseUrl = snap.getString("referralBaseUrl") ?: "https://flowly.app/r/"
+                    val mercadoPagoUrl  = snap.getString("mercadoPagoUrl")  ?: ""
+                    val youtubeUrl      = snap.getString("youtubeUrl")      ?: ""
+                    val videoQuizVersion = snap.getString("videoQuizVersion") ?: ""
+                    @Suppress("UNCHECKED_CAST")
+                    val rawProds  = snap.get("productos") as? List<Map<String, Any>> ?: emptyList()
+                    val productos = rawProds.map { m ->
+                        StoreProduct(
+                            id            = m["id"] as? String ?: "",
+                            nombre        = m["nombre"] as? String ?: "",
+                            descripcion   = m["descripcion"] as? String ?: "",
+                            moveRequerido = (m["moveRequerido"] as? Long)?.toInt() ?: 0,
+                            montoLabel    = m["montoLabel"] as? String ?: "",
+                            categoria     = m["categoria"] as? String ?: "cash",
+                            activo        = m["activo"] as? Boolean ?: true,
+                            imagenUrl     = m["imagenUrl"] as? String ?: ""
+                        )
+                    }
+                    @Suppress("UNCHECKED_CAST")
+                    val rawQuiz = snap.get("videoQuiz") as? List<Map<String, Any>> ?: emptyList()
+                    val videoQuiz = rawQuiz.map { m ->
+                        com.flowly.move.data.model.VideoQuestion(
+                            pregunta = m["pregunta"] as? String ?: "",
+                            opciones = (m["opciones"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                            correcta = (m["correcta"] as? Long)?.toInt() ?: 0
+                        )
+                    }
+                    trySend(StoreConfig(
+                        umbralUsuarios   = umbral,
+                        productos        = if (productos.isEmpty()) DEFAULT_STORE_PRODUCTS else productos,
+                        referralBaseUrl  = referralBaseUrl,
+                        mercadoPagoUrl   = mercadoPagoUrl,
+                        youtubeUrl       = youtubeUrl,
+                        videoQuizVersion = videoQuizVersion,
+                        videoQuiz        = videoQuiz
+                    ))
+                }
+            awaitClose { reg.remove() }
+        }
+
     suspend fun saveVideoConfig(
         youtubeUrl: String,
         quizVersion: String,
@@ -533,6 +582,38 @@ class FlowlyRepository(private val context: Context) {
     }
 
     // ── Sesión de movimiento (GPS) ───────────────────────────────────
+
+    /**
+     * Acredita MOVE durante una sesión activa sin crear notificación ni verificar badges.
+     * Se llama cada [METROS_POR_MOVE] metros mientras la sesión está en curso.
+     * El control del límite diario lo hace el servicio en memoria (leyó tokenMovimientoHoy al iniciar).
+     */
+    suspend fun acreditarMoveProgresivo(uid: String, moveAmount: Int, distKm: Float) {
+        if (moveAmount <= 0) return
+        userRef(uid).update(
+            mapOf(
+                "kmHoy"              to FieldValue.increment(distKm.toDouble()),
+                "kmTotales"          to FieldValue.increment(distKm.toDouble()),
+                "tokenMovimientoHoy" to FieldValue.increment(moveAmount.toLong()),
+                "tokensActuales"     to FieldValue.increment(moveAmount.toLong()),
+                "move30Dias"         to FieldValue.increment(moveAmount.toLong())
+            )
+        ).await()
+    }
+
+    /**
+     * Verifica y otorga badges de distancia al finalizar una sesión.
+     * Se llama desde MapViewModel cuando toda la distancia ya fue acreditada progresivamente.
+     */
+    suspend fun verificarBadgesDistancia(uid: String) = runCatching {
+        val user = getUser(uid).getOrNull() ?: return@runCatching
+        val km   = user.kmTotales
+        val b    = user.badges
+        if      (km >= 200 && "maratonista"     !in b) otorgarInsignia(uid, "maratonista")
+        else if (km >= 100 && "100km"           !in b) otorgarInsignia(uid, "100km")
+        else if (km >= 50  && "gran_explorador" !in b) otorgarInsignia(uid, "gran_explorador")
+        else if (km >= 5   && "explorador"      !in b) otorgarInsignia(uid, "explorador")
+    }
 
     /**
      * Guarda los resultados de una sesión MOVErme:
@@ -778,12 +859,14 @@ class FlowlyRepository(private val context: Context) {
     suspend fun getFondoPremios(): Result<com.flowly.move.data.model.FondoPremios?> = runCatching {
         val snap = fondoPremiosRef().get().await()
         if (!snap.exists()) return@runCatching null
+        @Suppress("UNCHECKED_CAST")
         com.flowly.move.data.model.FondoPremios(
-            mes             = snap.getString("mes")                         ?: "",
-            montoDolares    = (snap.getDouble("montoDolares") ?: snap.getLong("montoDolares")?.toDouble() ?: 0.0),
-            porcentajeAdmob = (snap.getLong("porcentajeAdmob")              ?: 35L).toInt(),
-            blueRateCache   = snap.getDouble("blueRateCache")               ?: 0.0,
-            updatedAt       = snap.getLong("updatedAt")                     ?: 0L
+            mes              = snap.getString("mes")                         ?: "",
+            montoDolares     = (snap.getDouble("montoDolares") ?: snap.getLong("montoDolares")?.toDouble() ?: 0.0),
+            porcentajeAdmob  = (snap.getLong("porcentajeAdmob")              ?: 35L).toInt(),
+            blueRateCache    = snap.getDouble("blueRateCache")               ?: 0.0,
+            comprobantesUrls = (snap.get("comprobantesUrls") as? List<String>) ?: emptyList(),
+            updatedAt        = snap.getLong("updatedAt")                     ?: 0L
         )
     }
 
@@ -792,25 +875,28 @@ class FlowlyRepository(private val context: Context) {
         kotlinx.coroutines.flow.callbackFlow {
             val reg = fondoPremiosRef().addSnapshotListener { snap, _ ->
                 if (snap == null || !snap.exists()) { trySend(null); return@addSnapshotListener }
+                @Suppress("UNCHECKED_CAST")
                 trySend(com.flowly.move.data.model.FondoPremios(
-                    mes             = snap.getString("mes")                         ?: "",
-                    montoDolares    = (snap.getDouble("montoDolares") ?: snap.getLong("montoDolares")?.toDouble() ?: 0.0),
-                    porcentajeAdmob = (snap.getLong("porcentajeAdmob")              ?: 35L).toInt(),
-                    blueRateCache   = snap.getDouble("blueRateCache")               ?: 0.0,
-                    updatedAt       = snap.getLong("updatedAt")                     ?: 0L
+                    mes              = snap.getString("mes")                         ?: "",
+                    montoDolares     = (snap.getDouble("montoDolares") ?: snap.getLong("montoDolares")?.toDouble() ?: 0.0),
+                    porcentajeAdmob  = (snap.getLong("porcentajeAdmob")              ?: 35L).toInt(),
+                    blueRateCache    = snap.getDouble("blueRateCache")               ?: 0.0,
+                    comprobantesUrls = (snap.get("comprobantesUrls") as? List<String>) ?: emptyList(),
+                    updatedAt        = snap.getLong("updatedAt")                     ?: 0L
                 ))
             }
             awaitClose { reg.remove() }
         }
 
-    /** Top 10 de Argentina por actividad del mes (move30Dias) */
+
+    /** Top 10 de Argentina por actividad del mes (move30Dias > 0 solamente) */
     suspend fun getRankingMensual(): Result<List<User>> = runCatching {
         db.collection("usuarios")
             .orderBy("move30Dias", Query.Direction.DESCENDING)
             .limit(10)
             .get().await()
             .toObjects(User::class.java)
-            .filter { it.uid.isNotBlank() }
+            .filter { it.uid.isNotBlank() && it.move30Dias > 0 }
     }
 
     // ── Campeón Semanal ──────────────────────────────────────────────────
@@ -884,15 +970,22 @@ class FlowlyRepository(private val context: Context) {
 
         val ref = campeonRef()
 
-        // Leer el estado actual ANTES de escribir (optimistic check)
-        val snapInicial = ref.get().await()
-        val semanaGuardada = snapInicial.getString("semana") ?: ""
-        if (semanaGuardada == weekYear) return@runCatching false   // ya asignado esta semana
-
-        // Marcar semana como "en proceso" para reducir duplicaciones
-        // (no es 100% atómico, pero el peor caso es 2 asignaciones en el mismo lunes)
-        ref.set(mapOf("semana" to weekYear, "assignedAt" to System.currentTimeMillis()),
-            com.google.firebase.firestore.SetOptions.merge()).await()
+        // Transacción atómica: verificar semana y marcarla en una sola operación.
+        // Si dos clientes llegan al mismo tiempo, solo uno gana — el otro ve weekYear ya guardado.
+        val yaAsignado = db.runTransaction { tx ->
+            val snap = tx.get(ref)
+            val semanaGuardada = snap.getString("semana") ?: ""
+            if (semanaGuardada == weekYear) {
+                true   // ya asignado — abortar sin cambios
+            } else {
+                tx.set(ref,
+                    mapOf("semana" to weekYear, "assignedAt" to System.currentTimeMillis()),
+                    com.google.firebase.firestore.SetOptions.merge()
+                )
+                false  // fuimos los primeros — continuar con la asignación
+            }
+        }.await()
+        if (yaAsignado) return@runCatching false
 
         // Buscar el top 3 de Argentina por MOVE
         val top3 = db.collection("usuarios")
@@ -905,9 +998,10 @@ class FlowlyRepository(private val context: Context) {
         val segundoUser = top3.getOrNull(1)
         val terceroUser = top3.getOrNull(2)
 
-        // Calcular racha: si el mismo UID ganó la semana anterior, incrementar
-        val rachaAnterior = snapInicial.getLong("racha")?.toInt() ?: 0
-        val uidAnterior   = snapInicial.getString("uid") ?: ""
+        // Leer datos de la semana anterior para calcular racha
+        val snapAnterior  = ref.get().await()
+        val rachaAnterior = snapAnterior.getLong("racha")?.toInt() ?: 0
+        val uidAnterior   = snapAnterior.getString("uid") ?: ""
         val nuevaRacha    = if (topUser.uid.isNotBlank() && topUser.uid == uidAnterior) rachaAnterior + 1 else 1
 
         // Guardar campeón en config/campeon con tokens YA incluyendo el premio
@@ -995,6 +1089,87 @@ class FlowlyRepository(private val context: Context) {
      * Filtra automáticamente sesiones "fantasma" con más de 5 minutos de antigüedad
      * (por si el servicio murió sin limpiar).
      */
+    // ── Torneos Relámpago ─────────────────────────────────────────────────
+
+    private fun torneoActualRef() = db.collection("config").document("torneoActual")
+    private fun participantesRef(torneoId: String) =
+        db.collection("torneos").document(torneoId).collection("participantes")
+
+    /** Flow en tiempo real del anuncio activo (o null si no hay ninguno). */
+    fun getAnuncioFlow(): kotlinx.coroutines.flow.Flow<com.flowly.move.data.model.Anuncio?> = callbackFlow {
+        val listener = db.collection("config").document("anuncioActual")
+            .addSnapshotListener { snap, _ ->
+                trySend(snap?.toObject(com.flowly.move.data.model.Anuncio::class.java))
+            }
+        awaitClose { listener.remove() }
+    }
+
+    /** Flow en tiempo real del torneo activo (o null si no hay ninguno). */
+    fun getTorneoFlow(): kotlinx.coroutines.flow.Flow<TorneoRelamapago?> = callbackFlow {
+        val listener = torneoActualRef().addSnapshotListener { snap, _ ->
+            val t = snap?.toObject(TorneoRelamapago::class.java)
+            trySend(t)
+        }
+        awaitClose { listener.remove() }
+    }
+
+    /** Flow en tiempo real de los participantes del torneo, ordenados por delta DESC. */
+    fun getParticipantesFlow(torneoId: String): kotlinx.coroutines.flow.Flow<List<TorneoParticipante>> =
+        callbackFlow {
+            val listener = participantesRef(torneoId)
+                .orderBy("delta", Query.Direction.DESCENDING)
+                .limit(50)
+                .addSnapshotListener { snap, _ ->
+                    trySend(snap?.toObjects(TorneoParticipante::class.java) ?: emptyList())
+                }
+            awaitClose { listener.remove() }
+        }
+
+    /** Devuelve la participación del usuario en un torneo, o null si no está inscripto. */
+    suspend fun getMiParticipacion(uid: String, torneoId: String): TorneoParticipante? =
+        participantesRef(torneoId).document(uid).get().await()
+            .toObject(TorneoParticipante::class.java)
+
+    /** Inscribe al usuario en el torneo guardando su valor base actual. */
+    suspend fun inscribirEnTorneo(
+        uid: String, nombre: String, photoUrl: String, torneo: TorneoRelamapago
+    ): Result<Unit> = runCatching {
+        val ref = participantesRef(torneo.id).document(uid)
+        if (ref.get().await().exists()) return@runCatching   // ya inscripto
+
+        val user = getUser(uid).getOrNull() ?: return@runCatching
+        val valorBase = when (torneo.tipo) {
+            "kilometros" -> user.kmTotales.toDouble()
+            "referidos"  -> user.totalReferidos.toDouble()
+            else         -> user.move30Dias.toDouble()   // "moves"
+        }
+        ref.set(TorneoParticipante(
+            uid        = uid,
+            nombre     = nombre,
+            photoUrl   = photoUrl,
+            valorBase  = valorBase,
+            delta      = 0.0,
+            inscritoAt = System.currentTimeMillis()
+        )).await()
+    }
+
+    /**
+     * Recalcula el delta del usuario en el torneo (valorActual - valorBase)
+     * y lo actualiza en Firestore. Se llama al abrir el sheet del torneo.
+     */
+    suspend fun refreshMiDelta(uid: String, torneo: TorneoRelamapago): Result<Unit> = runCatching {
+        val ref  = participantesRef(torneo.id).document(uid)
+        val part = ref.get().await().toObject(TorneoParticipante::class.java) ?: return@runCatching
+        val user = getUser(uid).getOrNull() ?: return@runCatching
+        val valorActual = when (torneo.tipo) {
+            "kilometros" -> user.kmTotales.toDouble()
+            "referidos"  -> user.totalReferidos.toDouble()
+            else         -> user.move30Dias.toDouble()
+        }
+        val delta = (valorActual - part.valorBase).coerceAtLeast(0.0)
+        ref.update("delta", delta).await()
+    }
+
     fun getSesionesActivasFlow(): kotlinx.coroutines.flow.Flow<List<SesionActiva>> =
         callbackFlow {
             val staleMs = 5 * 60 * 1000L  // 5 minutos

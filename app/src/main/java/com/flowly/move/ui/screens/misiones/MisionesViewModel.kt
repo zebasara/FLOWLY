@@ -7,7 +7,9 @@ import com.flowly.move.data.model.User
 import com.flowly.move.data.repository.FlowlyRepository
 import com.flowly.move.data.repository.FlowlyRepository.Companion.VIDEO_REWARD_AMOUNT
 import com.flowly.move.data.repository.FlowlyRepository.Companion.VIDEO_BONUS_AMOUNT
+import com.flowly.move.data.local.UserPreferences
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -104,6 +106,10 @@ class MisionesViewModel(app: Application) : AndroidViewModel(app) {
                 .onSuccess {
                     _success.value = "+${mision.recompensaMove} MOVE reclamados 🎉"
                     load()
+                    // Auto-limpiar después de 3 segundos — no queda basura en memoria
+                    // aunque el usuario cierre la pantalla sin llamar clearMessages()
+                    delay(3_000)
+                    _success.value = null
                 }
                 .onFailure { _error.value = it.message }
         }

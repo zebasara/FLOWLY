@@ -25,6 +25,10 @@ class UserPreferences(private val context: Context) {
         val LOCATION_SHARING_CONSENTED    = booleanPreferencesKey("location_sharing_consented")
         val LAST_SEEN_CAMPEON_SEMANA      = stringPreferencesKey("last_seen_campeon_semana")
         val LAST_CELEBRATED_CAMPEON_SEMANA = stringPreferencesKey("last_celebrated_campeon_semana")
+        /** ID del último torneo para el que se mostró el prompt de inscripción */
+        val LAST_TORNEO_PROMPT_ID         = stringPreferencesKey("last_torneo_prompt_id")
+        /** ID del último anuncio que el usuario leyó (para el punto rojo) */
+        val LAST_READ_ANUNCIO_ID          = stringPreferencesKey("last_read_anuncio_id")
     }
 
     val isLoggedIn: Flow<Boolean> = context.dataStore.data
@@ -71,6 +75,14 @@ class UserPreferences(private val context: Context) {
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it[LAST_CELEBRATED_CAMPEON_SEMANA] ?: "" }
 
+    val lastTorneoPromptId: Flow<String> = context.dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[LAST_TORNEO_PROMPT_ID] ?: "" }
+
+    val lastReadAnuncioId: Flow<String> = context.dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[LAST_READ_ANUNCIO_ID] ?: "" }
+
     suspend fun markCampeonSemanaVista(semana: String) {
         context.dataStore.edit { it[LAST_SEEN_CAMPEON_SEMANA] = semana }
     }
@@ -112,6 +124,14 @@ class UserPreferences(private val context: Context) {
 
     suspend fun setLocationSharingConsented() {
         context.dataStore.edit { it[LOCATION_SHARING_CONSENTED] = true }
+    }
+
+    suspend fun markTorneoPromptShown(torneoId: String) {
+        context.dataStore.edit { it[LAST_TORNEO_PROMPT_ID] = torneoId }
+    }
+
+    suspend fun markAnuncioRead(anuncioId: String) {
+        context.dataStore.edit { it[LAST_READ_ANUNCIO_ID] = anuncioId }
     }
 
     suspend fun clearAll() {

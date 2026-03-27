@@ -9,10 +9,11 @@ package com.flowly.move.data.model
  * Al cierre del mes, se reparte entre el top 10 del ranking mensual.
  */
 data class FondoPremios(
-    val mes: String = "",            // "yyyy-MM" — mes vigente, ej. "2026-03"
-    val montoDolares: Double = 0.0,  // monto en USD (ingresado por el admin desde AdMob)
-    val porcentajeAdmob: Int = 35,   // % de AdMob destinado (informativo para la UI)
-    val blueRateCache: Double = 0.0, // último tipo de cambio blue guardado por el admin — fallback si la API falla
+    val mes: String = "",                              // "yyyy-MM" — mes vigente, ej. "2026-03"
+    val montoDolares: Double = 0.0,                    // monto en USD (ingresado por el admin desde AdMob)
+    val porcentajeAdmob: Int = 35,                     // % de AdMob destinado (informativo para la UI)
+    val blueRateCache: Double = 0.0,                   // último tipo de cambio blue guardado por el admin — fallback si la API falla
+    val comprobantesUrls: List<String> = emptyList(),  // URLs de comprobantes de pagos a ganadores
     val updatedAt: Long = 0L
 )
 

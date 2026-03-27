@@ -5,13 +5,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 data class TrackingStats(
-    val isTracking:      Boolean = false,
-    val distanceMeters:  Float   = 0f,
-    val durationSeconds: Long    = 0L,
-    val speedKmh:        Float   = 0f,
-    val steps:           Int     = 0,
-    val lastLat:         Double  = 0.0,
-    val lastLng:         Double  = 0.0
+    val isTracking:             Boolean = false,
+    val distanceMeters:         Float   = 0f,
+    val durationSeconds:        Long    = 0L,
+    val speedKmh:               Float   = 0f,
+    val steps:                  Int     = 0,
+    val lastLat:                Double  = 0.0,
+    val lastLng:                Double  = 0.0,
+    /** Metros ya acreditados progresivamente en Firestore durante esta sesión */
+    val distanceCreditedMeters: Float   = 0f
 )
 
 /**

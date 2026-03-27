@@ -9,6 +9,7 @@ import com.flowly.move.data.model.User
 import com.flowly.move.data.repository.FlowlyRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 sealed class HoldingUiState {
     object Idle    : HoldingUiState()
@@ -54,7 +55,7 @@ class HoldingViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _uiState.value = HoldingUiState.Loading
             val ahora     = System.currentTimeMillis()
-            val fin       = ahora + (meses * 30L * 24 * 60 * 60 * 1000)
+            val fin       = Calendar.getInstance().apply { add(Calendar.MONTH, meses) }.timeInMillis
             val interes   = (moveAmount * tasaPorMeses(meses)).toInt()
             val holding = Holding(
                 uid        = uid,

@@ -22,6 +22,11 @@ class FondoPremiosViewModel(app: Application) : AndroidViewModel(app) {
     private val _fondo       = MutableStateFlow<FondoPremios?>(null)
     val fondo: StateFlow<FondoPremios?> = _fondo.asStateFlow()
 
+    /** URLs de comprobantes de pagos a ganadores del mes anterior. */
+    val comprobantesUrls: StateFlow<List<String>> = _fondo
+        .map { it?.comprobantesUrls ?: emptyList() }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
+
     /** Monto total ya convertido a ARS usando el dólar blue actual. 0 si aún carga. */
     private val _montoARS    = MutableStateFlow(0L)
     val montoARS: StateFlow<Long> = _montoARS.asStateFlow()
