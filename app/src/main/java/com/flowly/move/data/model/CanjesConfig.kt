@@ -24,7 +24,7 @@ data class CanjeOferta(
  */
 data class CanjesConfig(
     val opciones: List<CanjeOferta> = DEFAULT_CANJE_OFERTAS,
-    val notaMensaje: String = "Un canje por mes · procesado en menos de 48hs hábiles",
+    val notaMensaje: String = "Una recompensa por mes · disponible dentro del período de validación",
     val nivelMinimo: Int = 1
 )
 
@@ -33,8 +33,8 @@ data class CanjesConfig(
  * Refleja las tasas actuales hardcodeadas. Editá estas en Firestore para ajustar.
  */
 val DEFAULT_CANJE_OFERTAS = listOf(
-    CanjeOferta(id = "2000_ars",  label = "\$2.000 ARS",  move = 33_600,  activo = true),
-    CanjeOferta(id = "5000_ars",  label = "\$5.000 ARS",  move = 84_000,  activo = true),
-    CanjeOferta(id = "10000_ars", label = "\$10.000 ARS", move = 168_000, activo = true),
-    CanjeOferta(id = "20000_ars", label = "\$20.000 ARS", move = 336_000, activo = true)
+    CanjeOferta(id = "2000_ars",  label = "Recompensa Nivel 1",  move = 33_600,  activo = true),
+    CanjeOferta(id = "5000_ars",  label = "Recompensa Nivel 2",  move = 84_000,  activo = true),
+    CanjeOferta(id = "10000_ars", label = "Recompensa Nivel 3", move = 168_000, activo = true),
+    CanjeOferta(id = "20000_ars", label = "Recompensa Nivel 4", move = 336_000, activo = true)
 )

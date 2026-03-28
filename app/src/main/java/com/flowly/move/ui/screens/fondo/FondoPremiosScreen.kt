@@ -54,7 +54,7 @@ import java.util.Calendar
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 private fun Long.formatARS(): String =
-    "$" + "%,d".format(this).replace(",", ".")
+    "%,d".format(this).replace(",", ".")
 
 private fun mesActualNombre(): String {
     val meses = listOf(
@@ -145,7 +145,7 @@ fun FondoPremiosScreen(navController: NavController) {
 
             // Título
             Text(
-                "💰 Fondo de Premios",
+                "🏆 Fondo de Beneficios",
                 fontSize   = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color      = FlowlyText,
@@ -227,7 +227,7 @@ fun FondoPremiosScreen(navController: NavController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("🧾", fontSize = 18.sp)
                     Text(
-                        "Pagos",
+                        "Premios",
                         fontSize   = 8.sp,
                         fontWeight = FontWeight.SemiBold,
                         color      = Color(0xFF7EE621),
@@ -288,7 +288,7 @@ private fun FondoPrincipalCard(
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
 
             Text(
-                "este mes en juego",
+                "beneficios disponibles este mes",
                 fontSize      = 12.sp,
                 color         = Color(0xFFF59E0B).copy(alpha = 0.8f),
                 fontWeight    = FontWeight.SemiBold,
@@ -315,7 +315,7 @@ private fun FondoPrincipalCard(
             }
 
             Text(
-                "ARS en premios · ${mesActualNombre()}",
+                "en beneficios · ${mesActualNombre()}",
                 fontSize = 13.sp,
                 color    = FlowlyMuted
             )
@@ -388,7 +388,7 @@ private fun DistribucionCard(montoTotal: Long, modifier: Modifier = Modifier) {
             .padding(16.dp)
     ) {
         Text(
-            "Distribución del premio",
+            "Distribución de beneficios",
             fontSize   = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color      = FlowlyText
@@ -636,7 +636,7 @@ private fun MiPosicionCard(
                     color      = FlowlyText
                 )
                 Text(
-                    "premio estimado si terminás aquí",
+                    "beneficio estimado si terminás aquí",
                     fontSize = 11.sp,
                     color    = FlowlyMuted
                 )
@@ -648,7 +648,7 @@ private fun MiPosicionCard(
                     fontWeight = FontWeight.Bold,
                     color      = medalColor
                 )
-                Text("ARS", fontSize = 10.sp, color = FlowlyMuted)
+                Text("est.", fontSize = 10.sp, color = FlowlyMuted)
             }
         }
     }
@@ -691,7 +691,7 @@ private fun CompartirCard(referralLink: String, modifier: Modifier = Modifier) {
             text    = "Compartir Flowly con mi código",
             onClick = {
                 if (referralLink.isBlank()) return@FlowlyPrimaryButton
-                val texto = "¡Sumate a Flowly y competí por premios en ARS! Ganá MOVE caminando y viendo videos. Registrate con mi código: $referralLink"
+                val texto = "¡Sumate a Flowly y ganá recompensas exclusivas! Sumá MOVE caminando y viendo videos. Registrate con mi código: $referralLink"
                 context.startActivity(
                     Intent.createChooser(
                         Intent(Intent.ACTION_SEND).apply {
@@ -727,10 +727,10 @@ private fun ComoFuncionaCard(pct: Int, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(10.dp))
 
         listOf(
-            "📺" to "Cada vez que ves un anuncio en la app, generás ingresos para el fondo.",
-            "💰" to "Flowly destina el $pct% de esos ingresos a este fondo mensual.",
-            "🏆" to "Al cierre del mes, el top 10 de Argentina (por MOVE del mes) recibe su premio en ARS.",
-            "📈" to "Más usuarios = más anuncios = fondo más grande. ¡Invitá a tus amigos!"
+            "📺" to "Cada vez que ves un anuncio en la app, generás actividad para el fondo de beneficios.",
+            "💰" to "Flowly destina el $pct% de esos ingresos al fondo de beneficios mensual.",
+            "🏆" to "Al cierre del mes, el top 10 de Argentina (por MOVE del mes) accede a los beneficios del período.",
+            "📈" to "Más usuarios = más actividad = fondo más grande. ¡Invitá a tus amigos!"
         ).forEach { (emoji, texto) ->
             Row(
                 modifier              = Modifier.padding(vertical = 5.dp),
@@ -785,13 +785,13 @@ private fun ComprobantesCarousel(urls: List<String>) {
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
             Text(
-                "🧾 Comprobantes de pagos",
+                "🧾 Historial de beneficios",
                 fontSize   = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color      = Color(0xFF7EE621)
             )
             Text(
-                "Pagos reales a los 10 ganadores del mes anterior",
+                "Beneficios entregados a los 10 mejores del mes anterior",
                 fontSize = 12.sp,
                 color    = FlowlyMuted
             )

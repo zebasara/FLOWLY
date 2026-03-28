@@ -33,8 +33,8 @@ fun OnboardingScreen(onDone: () -> Unit) {
     val pages = listOf(
         OnboardingPage(
             icon  = "🚶",
-            title = "Caminá y ganá",
-            body  = "Tu movimiento genera tokens MOVE reales canjeables por plata en Mercado Pago."
+            title = "Cada paso, un MOVE",
+            body  = "Caminá, completá misiones y sumá rachas. Tu actividad diaria se convierte en tokens MOVE que podés usar dentro del ecosistema Flowly."
         ),
         OnboardingPage(
             icon  = "📺",
@@ -61,24 +61,27 @@ fun OnboardingScreen(onDone: () -> Unit) {
             }
         ),
         OnboardingPage(
-            icon  = "💸",
-            title = "Cobrá en Mercado Pago",
-            body  = "Canjeá tus MOVE por transferencias reales o productos. O holdealos para ganar interés.",
+            icon  = "🎁",
+            title = "Tus MOVE valen en serio",
+            body  = "Canjeá en la tienda, competí por el fondo mensual de beneficios y accedé a recompensas exclusivas cuanto más alto llegues.",
             extra = {
                 Spacer(Modifier.height(16.dp))
                 FlowlyCard2 {
                     listOf(
-                        Triple("\$2.000 ARS",  "33.600 MOVE",  FlowlySuccess),
-                        Triple("\$5.000 ARS",  "84.000 MOVE",  FlowlySuccess),
-                        Triple("\$10.000 ARS", "168.000 MOVE", FlowlySuccess)
-                    ).forEachIndexed { i, (label, move, color) ->
+                        Triple("🛍️", "Tienda",          "Productos exclusivos"),
+                        Triple("🏆", "Fondo mensual",    "Top 10 del mes"),
+                        Triple("🔒", "Holding",          "Beneficio extra por nivel")
+                    ).forEachIndexed { i, (emoji, titulo, desc) ->
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = if (i > 0) 4.dp else 0.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(label, fontSize = 12.sp, color = FlowlyMuted)
-                            TagGreen(move)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(emoji, fontSize = 14.sp)
+                                Text(titulo, fontSize = 12.sp, color = FlowlyMuted)
+                            }
+                            TagGreen(desc)
                         }
                     }
                 }

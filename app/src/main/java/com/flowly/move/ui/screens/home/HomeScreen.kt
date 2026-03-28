@@ -549,16 +549,16 @@ private fun FondoPremiosBanner(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                Text("💰", fontSize = 28.sp)
+                Text("🏆", fontSize = 28.sp)
                 Column {
                     Text(
-                        "Fondo de Premios",
+                        "Fondo de Beneficios",
                         fontSize   = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color      = androidx.compose.ui.graphics.Color(0xFFF59E0B)
                     )
                     Text(
-                        "Competí por ARS reales · $mesNombre",
+                        "Fondo de beneficios mensual · $mesNombre",
                         fontSize = 11.sp,
                         color    = FlowlyMuted
                     )
@@ -591,7 +591,7 @@ private fun WelcomeDialog(tokensActuales: Int, onDismiss: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Ganaste 100 MOVE por registrarte en MOVE.",
+                "Ganaste 100 MOVE por unirte a Flowly.",
                 fontSize   = 14.sp,
                 color      = FlowlyMuted,
                 textAlign  = TextAlign.Center,
@@ -612,7 +612,7 @@ private fun WelcomeDialog(tokensActuales: Int, onDismiss: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             FlowlyCard2 {
                 Text(
-                    "🏪 La tienda se abrirá cuando haya 500 usuarios en MOVE. ¡Invitá amigos!",
+                    "🏪 La tienda se activa próximamente. ¡Invitá amigos para acelerar el lanzamiento!",
                     fontSize   = 12.sp,
                     color      = FlowlyMuted,
                     lineHeight = 18.sp,

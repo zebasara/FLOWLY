@@ -180,13 +180,13 @@ private fun ProductCard(
     val canAfford = tokensLibres >= product.moveRequerido
 
     val categoryIcon = when (product.categoria) {
-        "cash"  -> "💸"
+        "cash"  -> "🎁"
         "gift"  -> "🎁"
         "promo" -> "🏷️"
         else    -> "📦"
     }
     val categoryLabel = when (product.categoria) {
-        "cash"  -> "Efectivo"
+        "cash"  -> "Beneficio"
         "gift"  -> "Gift"
         "promo" -> "Promo"
         else    -> "Otro"

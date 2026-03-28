@@ -36,26 +36,26 @@ data class VideoQuestion(
 val DEFAULT_STORE_PRODUCTS = listOf(
     StoreProduct(
         id            = "cash_500",
-        nombre        = "$500 ARS",
-        descripcion   = "Transferencia vía Mercado Pago",
+        nombre        = "Recompensa Nivel 1",
+        descripcion   = "Beneficio exclusivo para miembros activos",
         moveRequerido = 5_000,
-        montoLabel    = "$500",
+        montoLabel    = "Nivel 1",
         categoria     = "cash"
     ),
     StoreProduct(
         id            = "cash_1000",
-        nombre        = "$1.000 ARS",
-        descripcion   = "Transferencia vía Mercado Pago",
+        nombre        = "Recompensa Nivel 2",
+        descripcion   = "Beneficio exclusivo para miembros activos",
         moveRequerido = 9_500,
-        montoLabel    = "$1.000",
+        montoLabel    = "Nivel 2",
         categoria     = "cash"
     ),
     StoreProduct(
         id            = "cash_2000",
-        nombre        = "$2.000 ARS",
-        descripcion   = "Transferencia vía Mercado Pago",
+        nombre        = "Recompensa Nivel 3",
+        descripcion   = "Beneficio exclusivo para miembros activos",
         moveRequerido = 18_000,
-        montoLabel    = "$2.000",
+        montoLabel    = "Nivel 3",
         categoria     = "cash"
     ),
     StoreProduct(

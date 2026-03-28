@@ -286,14 +286,14 @@ private fun HoldingCard(
         FlowlyProgressBar(progress = progress, color = if (vencido) FlowlyAccent else FlowlyAccent2)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Cobrarás %,d MOVE al vencer · +%,d MOVE de interés".format(totalVencer, holding.interesMove),
+            "Recibirás %,d MOVE al vencer · +%,d MOVE de interés".format(totalVencer, holding.interesMove),
             fontSize = 12.sp,
             color = FlowlyMuted
         )
         if (vencido) {
             Spacer(Modifier.height(12.dp))
             FlowlyPrimaryButton(
-                text    = if (isCobrando) "Cobrando…" else "Cobrar %,d MOVE".format(totalVencer),
+                text    = if (isCobrando) "Liberando…" else "Liberar %,d MOVE".format(totalVencer),
                 enabled = !isCobrando,
                 onClick = onCobrar
             )

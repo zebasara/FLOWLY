@@ -271,7 +271,7 @@ fun MetricCard(value: String, label: String, valueColor: Color = FlowlyText, mod
 
 enum class BottomNavItem(val label: String, val emoji: String, val route: String) {
     HOME    ("Inicio",   "🏠", Routes.HOME),
-    CANJES  ("Canjes",   "💱", Routes.CANJES),
+    CANJES  ("Recompensas", "🎁", Routes.CANJES),
     STORE   ("Tienda",   "🛍️", Routes.STORE),
     RANKINGS("Rankings", "🏆", Routes.RANKINGS),
     PROFILE ("Perfil",   "👤", Routes.PROFILE)

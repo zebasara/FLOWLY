@@ -204,7 +204,7 @@ fun EditProfileScreen(navController: NavController) {
                 placeholder   = if (provincia.isBlank()) "Primero elegí la provincia" else "Seleccioná tu ciudad"
             )
 
-            FlowlyInput(aliasMP, { aliasMP = it }, "Alias de cobro", "martin.gonzalez.mp")
+            FlowlyInput(aliasMP, { aliasMP = it }, "Alias", "martin.gonzalez.mp")
 
             Spacer(Modifier.height(24.dp))
 

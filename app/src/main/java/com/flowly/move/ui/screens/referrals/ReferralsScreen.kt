@@ -56,7 +56,7 @@ fun ReferralsScreen(navController: NavController) {
 
     fun shareViaWhatsApp() {
         if (referralLink.isBlank()) return
-        val texto = "¡Unite a MOVE y ganamos juntos! Descargá la app y registrate con mi link: $referralLink"
+        val texto = "¡Sumate a Flowly y acumulá MOVE juntos! Descargá la app y registrate con mi link: $referralLink"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type    = "text/plain"
             putExtra(Intent.EXTRA_TEXT, texto)

@@ -87,7 +87,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                         .clickable { navController.popBackStack() }
                         .padding(end = 12.dp, top = 4.dp, bottom = 4.dp)
                 )
-                Text("Confirmar canje", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                Text("Confirmar recompensa", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
             }
 
             Spacer(Modifier.height(20.dp))
@@ -102,7 +102,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("vas a recibir", fontSize = 12.sp, color = FlowlyMuted)
                     Text(amount, fontSize = 36.sp, fontWeight = FontWeight.Bold, color = FlowlySuccess)
-                    Text("en tu cuenta", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
+                    Text("en tu método registrado", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
                 }
             }
 
@@ -120,7 +120,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                 }
                 FlowlySeparator()
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Saldo tras el canje", fontSize = 12.sp, color = FlowlyMuted)
+                    Text("Saldo tras la validación", fontSize = 12.sp, color = FlowlyMuted)
                     Text("%,d MOVE".format(saldoTras), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = FlowlyAccent2)
                 }
             }
@@ -128,16 +128,16 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
             Spacer(Modifier.height(10.dp))
 
             FlowlyCard {
-                Text("Destino del pago", fontSize = 12.sp, color = FlowlyMuted)
+                Text("Destino de la recompensa", fontSize = 12.sp, color = FlowlyMuted)
                 if (aliasMP.isBlank()) {
                     Text(
-                        "⚠️ No tenés alias configurado. Andá a Perfil → Editar.",
+                        "⚠️ No tenés método de recompensa configurado. Andá a Perfil → Editar.",
                         fontSize = 13.sp, color = FlowlyWarn,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 } else {
                     Text(aliasMP, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = FlowlyText, modifier = Modifier.padding(top = 4.dp))
-                    Text("alias registrado", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
+                    Text("método registrado", fontSize = 12.sp, color = FlowlyMuted, modifier = Modifier.padding(top = 4.dp))
                 }
             }
 
@@ -158,12 +158,12 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                         Text("💳", fontSize = 28.sp)
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "¿No tenés Mercado Pago?",
+                                "¿No tenés método de acreditación?",
                                 fontSize = 13.sp, fontWeight = FontWeight.Bold,
                                 color = Color(0xFF5AB4E5)
                             )
                             Text(
-                                "Necesitás MP para cobrar tus premios. Tocá para descargarlo y ganar bonos de bienvenida.",
+                                "Necesitás configurar un método para recibir tus beneficios. Tocá para obtenerlo.",
                                 fontSize = 11.sp, color = FlowlyMuted,
                                 lineHeight = 16.sp,
                                 modifier = Modifier.padding(top = 2.dp)
@@ -178,7 +178,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
 
             FlowlyCard2 {
                 Text(
-                    "⚠️ Tokens descontados inmediatamente. El pago llega en menos de 48hs hábiles.",
+                    "⚠️ Tokens descontados inmediatamente. La recompensa se acredita dentro del período de validación.",
                     fontSize = 12.sp, color = FlowlyWarn, lineHeight = 18.sp
                 )
             }
@@ -186,7 +186,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
             Spacer(Modifier.height(20.dp))
 
             FlowlyPrimaryButton(
-                text    = "Confirmar canje",
+                text    = "Confirmar recompensa",
                 enabled = aliasMP.isNotBlank(),
                 onClick = { vm.confirmarCanje(amount, moveInt, categoria) }
             )

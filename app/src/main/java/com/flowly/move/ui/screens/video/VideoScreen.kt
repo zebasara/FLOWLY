@@ -225,7 +225,7 @@ fun VideoScreen(navController: NavController) {
                 }
                 adWatched -> {
                     FlowlyPrimaryButton(
-                        text    = "Cobrar $recompensa MOVE y volver",
+                        text    = "Reclamar $recompensa MOVE y volver",
                         onClick = { vm.cobrarRecompensa() }
                     )
                 }

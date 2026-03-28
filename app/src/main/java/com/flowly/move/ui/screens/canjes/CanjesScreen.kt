@@ -75,7 +75,7 @@ fun CanjesScreen(navController: NavController) {
             title = { Text("Alias requerido", color = FlowlyText, fontWeight = FontWeight.Bold) },
             text  = {
                 Text(
-                    "Para canjear necesitás configurar tu alias de cobro en tu perfil.",
+                    "Para recibir recompensas necesitás configurar tu alias en tu perfil.",
                     color = FlowlyMuted, fontSize = 14.sp, lineHeight = 20.sp
                 )
             },
@@ -119,7 +119,7 @@ fun CanjesScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Canjes", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                    Text("Recompensas", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
                     Text("saldo libre: %,d MOVE".format(tokensLibres), fontSize = 12.sp, color = FlowlyMuted)
                 }
                 // Badge de nivel
@@ -152,7 +152,7 @@ fun CanjesScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Alias Mercado Pago", fontSize = 12.sp, color = FlowlyMuted)
+                    Text("Método de recompensa", fontSize = 12.sp, color = FlowlyMuted)
                     if (aliasMP.isBlank()) {
                         Text(
                             "⚠ Tocar para configurar →",
@@ -188,7 +188,7 @@ fun CanjesScreen(navController: NavController) {
                 }
             }
 
-            SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "transferencia · canjes en efectivo")
+            SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "recompensas por validación")
 
             // ── Opciones dinámicas desde Firestore ───────────────────────────
             if (options.isEmpty()) {
@@ -199,7 +199,7 @@ fun CanjesScreen(navController: NavController) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "No hay opciones de canje disponibles en este momento.",
+                        "No hay opciones de recompensa disponibles en este momento.",
                         fontSize = 13.sp,
                         color = FlowlyMuted
                     )
@@ -241,7 +241,7 @@ fun CanjesScreen(navController: NavController) {
 
             // ── Botón Mercado Pago (solo si hay URL configurada desde admin) ─
             if (mercadoPagoUrl.isNotBlank()) {
-                SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "descargá la app de pagos")
+                SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "método de acreditación")
 
                 Row(
                     modifier = Modifier
@@ -261,13 +261,13 @@ fun CanjesScreen(navController: NavController) {
                         Text("💳", fontSize = 26.sp)
                         Column {
                             Text(
-                                "Descargar Mercado Pago",
+                                "Configurar método de acreditación",
                                 fontSize   = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color      = FlowlyText
                             )
                             Text(
-                                "Necesario para recibir tus canjes",
+                                "Necesario para recibir tus recompensas",
                                 fontSize = 11.sp,
                                 color    = FlowlyMuted
                             )
@@ -304,7 +304,7 @@ fun CanjesScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text("📋", fontSize = 22.sp)
-                    Text("Mis canjes", fontSize = 12.sp, color = FlowlyMuted)
+                    Text("Mis recompensas", fontSize = 12.sp, color = FlowlyMuted)
                 }
                 Column(
                     modifier = Modifier

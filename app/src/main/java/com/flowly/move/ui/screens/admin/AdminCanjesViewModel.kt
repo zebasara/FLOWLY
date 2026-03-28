@@ -25,7 +25,7 @@ class AdminCanjesViewModel(app: Application) : AndroidViewModel(app) {
     private val _nivelMinimo  = MutableStateFlow(1)
     val nivelMinimo: StateFlow<Int> = _nivelMinimo.asStateFlow()
 
-    private val _notaMensaje  = MutableStateFlow("Un canje por mes · procesado en menos de 48hs hábiles")
+    private val _notaMensaje  = MutableStateFlow("Una recompensa por mes · disponible dentro del período de validación")
     val notaMensaje: StateFlow<String> = _notaMensaje.asStateFlow()
 
     private val _opciones     = MutableStateFlow<List<CanjeOferta>>(emptyList())

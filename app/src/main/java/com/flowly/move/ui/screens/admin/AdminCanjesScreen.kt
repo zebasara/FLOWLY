@@ -293,7 +293,7 @@ private fun CanjeOfertaRow(
         AdminTextField(
             value         = oferta.label,
             onValueChange = onLabelChange,
-            label         = "Label (ej: \$2.000 ARS)",
+            label         = "Label (ej: Recompensa Nivel 1)",
             singleLine    = true
         )
 

@@ -54,9 +54,9 @@ val TODAS_LAS_INSIGNIAS: Map<String, Insignia> = mapOf(
     // ── Canjes ──────────────────────────────────────────────────────
     "primer_canje" to Insignia(
         id          = "primer_canje",
-        emoji       = "💸",
-        titulo      = "Primer canje",
-        descripcion = "Realizaste tu primer canje de MOVE. ¡El dinero es tuyo!"
+        emoji       = "🎁",
+        titulo      = "Primera recompensa",
+        descripcion = "Solicitaste tu primera recompensa. ¡El ecosistema Flowly está funcionando para vos!"
     ),
 
     // ── Holding ─────────────────────────────────────────────────────

@@ -43,7 +43,7 @@ fun MyCanjesScreen(navController: NavController) {
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Mis canjes", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                Text("Mis recompensas", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
             }
 
             if (isLoading) {
@@ -59,7 +59,7 @@ fun MyCanjesScreen(navController: NavController) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Todavía no hiciste ningún canje.",
+                        "Todavía no solicitaste ninguna recompensa.",
                         fontSize = 14.sp,
                         color = FlowlyMuted
                     )
@@ -74,10 +74,10 @@ fun MyCanjesScreen(navController: NavController) {
                         else         -> "Pendiente"
                     }
                     val detail = when (canje.estado) {
-                        "completado" -> "Transferencia acreditada en tu cuenta"
+                        "completado" -> "Recompensa acreditada en tu cuenta"
                         "cancelado"  -> "MOVE devueltos a tu cuenta"
                         "enviado"    -> "En camino · revisá el estado con el soporte"
-                        else         -> "En proceso · menos de 48hs hábiles"
+                        else         -> "En proceso · disponible dentro del período de validación"
                     }
 
                     FlowlyCard(modifier = Modifier.padding(horizontal = 16.dp)) {

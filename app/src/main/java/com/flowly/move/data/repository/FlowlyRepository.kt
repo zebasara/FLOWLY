@@ -225,7 +225,7 @@ class FlowlyRepository(private val context: Context) {
         batch.commit().await()
         crearNotificacion(uid, Notificacion(
             uid     = uid,
-            titulo  = "Holding cobrado 🔓",
+            titulo  = "Holding liberado 🔓",
             cuerpo  = "Recibiste %,d MOVE (+%,d de interés)".format(total, holding.interesMove),
             tipo    = "pago",
             createdAt = System.currentTimeMillis()
@@ -530,7 +530,7 @@ class FlowlyRepository(private val context: Context) {
         if (!snap.exists()) return@runCatching CanjesConfig()
 
         val notaMensaje = snap.getString("notaMensaje")
-            ?: "Un canje por mes · procesado en menos de 48hs hábiles"
+            ?: "Una recompensa por mes · disponible dentro del período de validación"
         val nivelMinimo = (snap.getLong("nivelMinimo") ?: 1L).toInt()
 
         @Suppress("UNCHECKED_CAST")
