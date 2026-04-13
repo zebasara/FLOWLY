@@ -95,17 +95,22 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .background(FlowlyCard2, RoundedCornerShape(20.dp)),
+                    .background(
+                        androidx.compose.ui.graphics.Brush.linearGradient(
+                            listOf(FlowlyAccent, FlowlyAccentDark)
+                        ),
+                        RoundedCornerShape(20.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(if (isReinstall) "🔄" else "✏️", fontSize = 28.sp)
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
             Text(
                 if (isReinstall) "Confirmá tus datos" else "Completar perfil",
-                fontSize   = 22.sp,
+                fontSize   = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color      = FlowlyText
             )
@@ -114,10 +119,10 @@ fun CompleteProfileScreen(uid: String, navController: NavController) {
                     "Detectamos que ya tenés una cuenta. Confirmá o actualizá tus datos. Tus MOVE y nivel están guardados."
                 else
                     "Solo tarda un minuto. Necesitamos estos datos para tu cuenta.",
-                fontSize   = 13.sp,
+                fontSize   = 14.sp,
                 color      = FlowlyMuted,
-                lineHeight = 19.sp,
-                modifier   = Modifier.padding(top = 6.dp, bottom = 24.dp)
+                lineHeight = 21.sp,
+                modifier   = Modifier.padding(top = 8.dp, bottom = 28.dp)
             )
 
             if (isReinstall) {

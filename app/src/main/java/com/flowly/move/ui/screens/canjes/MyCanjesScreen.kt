@@ -40,10 +40,10 @@ fun MyCanjesScreen(navController: NavController) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Mis recompensas", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                Text("Mis recompensas", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
             }
 
             if (isLoading) {

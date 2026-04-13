@@ -114,12 +114,12 @@ fun CanjesScreen(navController: NavController) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Recompensas", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                    Text("Recompensas", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
                     Text("saldo libre: %,d MOVE".format(tokensLibres), fontSize = 12.sp, color = FlowlyMuted)
                 }
                 // Badge de nivel
@@ -404,11 +404,10 @@ private fun CanjeItem(
 @Composable
 private fun SectionTitle(modifier: Modifier = Modifier, text: String) {
     Text(
-        text.uppercase(),
-        fontSize     = 11.sp,
-        fontWeight   = FontWeight.SemiBold,
-        color        = Color(0xFF4B6B4B),
-        letterSpacing = 1.sp,
-        modifier     = modifier.padding(top = 14.dp, bottom = 8.dp)
+        text,
+        fontSize   = 13.sp,
+        fontWeight = FontWeight.Bold,
+        color      = FlowlyTextSub,
+        modifier   = modifier.padding(top = 20.dp, bottom = 10.dp)
     )
 }

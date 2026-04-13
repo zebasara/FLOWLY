@@ -139,10 +139,10 @@ fun RankingsScreen(navController: NavController) {
 
             Text(
                 "Rankings",
-                fontSize   = 17.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color      = FlowlyText,
-                modifier   = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                modifier   = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
             )
 
             // ── Potencial Campeón (líder actual + countdown) ──────────────
@@ -318,7 +318,7 @@ private fun PotencialCampeonCard(
                         iniciales,
                         fontSize   = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color      = Color(0xFF0A120A)
+                        color      = FlowlyBg
                     )
                 }
             }
@@ -445,7 +445,7 @@ private fun CampeonCard(
                         contentScale       = ContentScale.Crop
                     )
                 } else {
-                    Text(iniciales, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(iniciales, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = FlowlyBg)
                 }
             }
 
@@ -570,7 +570,7 @@ private fun NewCampeonDialog(campeon: CampeonSemanal, onDismiss: () -> Unit) {
                         contentScale       = ContentScale.Crop
                     )
                 } else {
-                    Text(iniciales, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(iniciales, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FlowlyBg)
                 }
             }
 
@@ -623,7 +623,7 @@ private fun NewCampeonDialog(campeon: CampeonSemanal, onDismiss: () -> Unit) {
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Ver ranking", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text("Ver ranking", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FlowlyBg)
             }
         }
     }
@@ -718,7 +718,7 @@ private fun CampeonCelebrationDialog(campeon: CampeonSemanal, onDismiss: () -> U
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("¡Genial! 🎉", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0A120A))
+                Text("¡Genial! 🎉", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlyBg)
             }
         }
     }

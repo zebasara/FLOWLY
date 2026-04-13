@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -173,7 +179,7 @@ fun HomeScreen(navController: NavController) {
                 Column {
                     Text(
                         if (nombre.isBlank()) "Hola 👋" else "Hola, $nombre 👋",
-                        fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText
+                        fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FlowlyText
                     )
                     if (ciudad.isNotBlank())
                         Text(ciudad, fontSize = 12.sp, color = FlowlyMuted)
@@ -189,7 +195,7 @@ fun HomeScreen(navController: NavController) {
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(androidx.compose.foundation.shape.CircleShape)
-                                    .background(FlowlyCard)
+                                    .background(FlowlyCard2)
                                     .border(1.dp, FlowlyBorder, androidx.compose.foundation.shape.CircleShape)
                                     .clickable {
                                         showAnuncioSheet = true
@@ -197,7 +203,12 @@ fun HomeScreen(navController: NavController) {
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("🔔", fontSize = 16.sp)
+                                Icon(
+                                    imageVector        = Icons.Rounded.Notifications,
+                                    contentDescription = "Notificaciones",
+                                    tint               = FlowlyTextSub,
+                                    modifier           = Modifier.size(20.dp)
+                                )
                             }
                             // Punto rojo — solo si hay anuncio no leído
                             if (tieneAnuncioNoLeido) {
@@ -205,7 +216,7 @@ fun HomeScreen(navController: NavController) {
                                     modifier = Modifier
                                         .size(10.dp)
                                         .clip(androidx.compose.foundation.shape.CircleShape)
-                                        .background(Color(0xFFE53935))
+                                        .background(FlowlyDanger)
                                         .border(1.5.dp, FlowlyBg, androidx.compose.foundation.shape.CircleShape)
                                 )
                             }
@@ -265,43 +276,95 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // Hero card
-            Column(
+            // ── Hero card — saldo MOVE ────────────────────────────────────
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .background(FlowlyCard, RoundedCornerShape(20.dp))
-                    .border(1.dp, FlowlyBorder, RoundedCornerShape(20.dp))
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(FlowlyCard2, FlowlyCard)
+                        )
+                    )
+                    .border(
+                        1.dp,
+                        Brush.verticalGradient(listOf(FlowlyBorderBright, FlowlyBorder)),
+                        RoundedCornerShape(24.dp)
+                    )
             ) {
-                Text("tu saldo MOVE", fontSize = 12.sp, color = FlowlyMuted)
-                Text(
-                    "%,d".format(tokensActuales),
-                    fontSize = 42.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = FlowlyAccent,
-                    letterSpacing = (-1).sp
+                // Glow ambiental verde sobre el número
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(Color(0x207EE621), Color.Transparent),
+                                radius = 400f
+                            )
+                        )
                 )
-                Text("tokens acumulados · nivel $nivel", fontSize = 12.sp, color = FlowlyMuted)
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = FlowlyBorder)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                Column(
+                    modifier            = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Nivel $nivel", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent2)
-                        Text("%,d límite".format(limiteTokens), fontSize = 12.sp, color = FlowlyMuted)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$rachaDias/5 días", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent)
-                        Text("racha videos", fontSize = 12.sp, color = FlowlyMuted)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$movHoy", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlySuccess)
-                        Text("mov. hoy", fontSize = 12.sp, color = FlowlyMuted)
+                    Text(
+                        "SALDO MOVE",
+                        fontSize      = 11.sp,
+                        fontWeight    = FontWeight.SemiBold,
+                        color         = FlowlyAccent.copy(alpha = 0.7f),
+                        letterSpacing = 2.sp
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "%,d".format(tokensActuales),
+                        fontSize      = 48.sp,
+                        fontWeight    = FontWeight.Bold,
+                        color         = FlowlyAccent,
+                        letterSpacing = (-2).sp
+                    )
+                    Text(
+                        "tokens · nivel $nivel",
+                        fontSize = 13.sp,
+                        color    = FlowlyMuted
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 18.dp),
+                        color    = FlowlyBorder
+                    )
+
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Nivel $nivel", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent2)
+                            Text("%,d límite".format(limiteTokens), fontSize = 11.sp, color = FlowlyMuted)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(36.dp)
+                                .background(FlowlyBorder)
+                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("$rachaDias/5 días", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlyAccent)
+                            Text("racha videos", fontSize = 11.sp, color = FlowlyMuted)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(36.dp)
+                                .background(FlowlyBorder)
+                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("$movHoy", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlySuccess)
+                            Text("mov. hoy", fontSize = 11.sp, color = FlowlyMuted)
+                        }
                     }
                 }
             }
@@ -411,7 +474,12 @@ fun HomeScreen(navController: NavController) {
                             }
                         }
                     }
-                    Text("→", fontSize = 18.sp, color = FlowlyMuted)
+                    Icon(
+                        Icons.Rounded.ChevronRight,
+                        contentDescription = null,
+                        tint     = FlowlyMuted,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
@@ -424,17 +492,28 @@ fun HomeScreen(navController: NavController) {
                     .clickable { navController.navigate(Routes.HOLDING) }
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Text("En holding", fontSize = 12.sp, color = FlowlyMuted)
-                    Text(
-                        "%,d MOVE bloqueados".format(moveEnHolding),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = FlowlyAccent2
-                    )
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            "%,d MOVE".format(moveEnHolding),
+                            fontSize   = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = FlowlyAccent2
+                        )
+                        Icon(
+                            Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                            tint     = FlowlyMuted,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 
@@ -473,18 +552,18 @@ fun HomeScreen(navController: NavController) {
             SectionTitle(modifier = Modifier.padding(horizontal = 16.dp), text = "accesos rápidos")
 
             Row(
-                modifier = Modifier
+                modifier              = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                QuickAccessItem("🔔", "Notifs", modifier = Modifier.weight(1f)) {
+                QuickAccessItem(Icons.Rounded.Notifications, "Notifs", modifier = Modifier.weight(1f)) {
                     navController.navigate(Routes.NOTIFICATIONS)
                 }
-                QuickAccessItem("👥", "Referir", modifier = Modifier.weight(1f)) {
+                QuickAccessItem(Icons.Rounded.People, "Referir", modifier = Modifier.weight(1f)) {
                     navController.navigate(Routes.REFERRALS)
                 }
-                QuickAccessItem("🎯", "Misiones", modifier = Modifier.weight(1f)) {
+                QuickAccessItem(Icons.Rounded.Flag, "Misiones", modifier = Modifier.weight(1f)) {
                     navController.navigate(Routes.MISIONES)
                 }
             }
@@ -528,7 +607,7 @@ private fun FondoPremiosBanner(modifier: Modifier = Modifier) {
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
             .background(
                 Brush.linearGradient(
-                    listOf(androidx.compose.ui.graphics.Color(0xFF2A1A00), androidx.compose.ui.graphics.Color(0xFF0A2010))
+                    listOf(FlowlyCard2, FlowlyCard)
                 )
             )
             .border(
@@ -564,7 +643,12 @@ private fun FondoPremiosBanner(modifier: Modifier = Modifier) {
                     )
                 }
             }
-            Text("→", fontSize = 18.sp, color = FlowlyMuted)
+            Icon(
+                Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint     = FlowlyMuted,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -670,18 +754,29 @@ private fun BadgeDialog(emoji: String, titulo: String, descripcion: String, onDi
 // ── Helpers ────────────────────────────────────────────────────────
 
 @Composable
-private fun QuickAccessItem(icon: String, label: String, modifier: Modifier, onClick: () -> Unit) {
+private fun QuickAccessItem(icon: ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
     Column(
         modifier = modifier
-            .background(FlowlyCard2, RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
+            .background(FlowlyCard2)
+            .border(1.dp, FlowlyBorder, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(vertical = 14.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(icon, fontSize = 22.sp)
-        Text(label, fontSize = 11.sp, color = FlowlyMuted)
+        Icon(
+            imageVector        = icon,
+            contentDescription = label,
+            tint               = FlowlyAccent,
+            modifier           = Modifier.size(22.dp)
+        )
+        Text(
+            label,
+            fontSize   = 11.sp,
+            color      = FlowlyTextSub,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
@@ -702,12 +797,11 @@ private fun extractYouTubeVideoId(url: String): String? = try {
 @Composable
 private fun SectionTitle(modifier: Modifier = Modifier, text: String) {
     Text(
-        text.uppercase(),
-        fontSize      = 11.sp,
-        fontWeight    = FontWeight.SemiBold,
-        color         = FlowlyMuted.copy(alpha = 0.7f),
-        letterSpacing = 1.sp,
-        modifier      = modifier.padding(top = 14.dp, bottom = 8.dp)
+        text,
+        fontSize   = 13.sp,
+        fontWeight = FontWeight.Bold,
+        color      = FlowlyTextSub,
+        modifier   = modifier.padding(top = 20.dp, bottom = 10.dp)
     )
 }
 
@@ -856,7 +950,7 @@ private fun YouTubeCard(
                     .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(50)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("▶", fontSize = 22.sp, color = Color.Black)
+                Text("▶", fontSize = 22.sp, color = FlowlyBg)
             }
         }
 
@@ -875,7 +969,7 @@ private fun YouTubeCard(
                     "🎯 ¡Respondé y ganá 250 MOVE!",
                     fontSize   = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color      = Color.Black
+                    color      = FlowlyBg
                 )
             }
         }
@@ -993,7 +1087,7 @@ private fun VideoQuizDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isSelected)
-                                    Text("✓", fontSize = 12.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                                    Text("✓", fontSize = 12.sp, color = FlowlyBg, fontWeight = FontWeight.Bold)
                             }
                             Text(opcion, fontSize = 14.sp, color = FlowlyText)
                         }

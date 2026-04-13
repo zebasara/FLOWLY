@@ -40,6 +40,38 @@ android {
         buildConfigField("String", "ADMOB_APP_ID",            "\"$admobAppId\"")
         buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"$admobRewardedId\"")
         buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID",   "\"$admobBannerId\"")
+
+        // Unity Ads — Game IDs desde secrets.properties
+        val unityGameId = secrets.getProperty("UNITY_GAME_ID", "6086735")
+        buildConfigField("String", "UNITY_GAME_ID", "\"$unityGameId\"")
+        // Switch principal: true = Unity Ads activo, false = AdMob activo
+        val useUnityAds = secrets.getProperty("USE_UNITY_ADS", "true").toBoolean()
+        buildConfigField("Boolean", "USE_UNITY_ADS", "$useUnityAds")
+        // AppLovin MAX — IDs desde secrets.properties
+        val applovinSdkKey = secrets.getProperty("APPLOVIN_SDK_KEY", "")
+        buildConfigField("String", "APPLOVIN_SDK_KEY", "\"$applovinSdkKey\"")
+        val applovinBannerId = secrets.getProperty("APPLOVIN_BANNER_AD_UNIT_ID", "")
+            .takeIf { it.isNotBlank() } ?: "e18ee3bd1f3a5b55" // test banner
+        val applovinRewardedId = secrets.getProperty("APPLOVIN_REWARDED_AD_UNIT_ID", "")
+            .takeIf { it.isNotBlank() } ?: "d4c6cde265e948e8" // test rewarded
+        buildConfigField("String", "APPLOVIN_BANNER_AD_UNIT_ID",   "\"$applovinBannerId\"")
+        buildConfigField("String", "APPLOVIN_REWARDED_AD_UNIT_ID", "\"$applovinRewardedId\"")
+        val useApplovin = secrets.getProperty("USE_APPLOVIN", "true").toBoolean()
+        buildConfigField("Boolean", "USE_APPLOVIN", "$useApplovin")
+        // Inyectar SDK Key en AndroidManifest via placeholder
+        manifestPlaceholders["applovinSdkKey"] = applovinSdkKey
+
+        // Pangle (TikTok Ads) — IDs desde secrets.properties
+        buildConfigField("String", "PANGLE_APP_ID",
+            "\"${secrets.getProperty("PANGLE_APP_ID", "")}\"")
+        buildConfigField("String", "PANGLE_REWARDED_AD_UNIT_ID",
+            "\"${secrets.getProperty("PANGLE_REWARDED_AD_UNIT_ID", "")}\"")
+        buildConfigField("String", "PANGLE_BANNER_AD_UNIT_ID",
+            "\"${secrets.getProperty("PANGLE_BANNER_AD_UNIT_ID", "")}\"")
+        // true = usa Pangle | false = usa AdMob (cuando llegue el PIN)
+        val usePangle = secrets.getProperty("USE_PANGLE", "false").toBoolean()
+        buildConfigField("Boolean", "USE_PANGLE", "$usePangle")
+
         buildConfigField("String", "MERCADOPAGO_PUBLIC_KEY",
             "\"${secrets.getProperty("MERCADOPAGO_PUBLIC_KEY", "")}\"")
         buildConfigField("String", "BASE_URL",
@@ -139,6 +171,12 @@ dependencies {
 
     // AdMob
     implementation(libs.play.services.ads)
+
+    // Unity Ads
+    implementation(libs.unity.ads)
+
+    // AppLovin MAX — red principal
+    implementation(libs.applovin.sdk)
 
     // Material Icons Extended (SystemUpdate, Download, etc.)
     implementation("androidx.compose.material:material-icons-extended")

@@ -5,6 +5,7 @@
     <!-- Permisos de red -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <!-- GPS / Actividad física -->
     <!-- ACCESS_BACKGROUND_LOCATION NO declarado: con foreground service tipo
@@ -20,6 +21,11 @@
 
     <!-- Vibración para feedback táctil -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Unity Ads: optimización de tipo de red (elimina warning "missing permission").
+         No requiere aprobación del usuario — se concede automáticamente en instalación. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"
+        android:maxSdkVersion="29" />
 
     <application
         android:name=".FlowlyApp"
@@ -38,6 +44,11 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-5863137241796972~6439998100" />
+
+        <!-- AppLovin MAX SDK Key (inyectado desde secrets.properties → manifestPlaceholders) -->
+        <meta-data
+            android:name="applovin.sdk.key"
+            android:value="${applovinSdkKey}" />
 
         <!-- Resuelve conflicto entre play-services-ads y firebase-analytics
              sobre cuál config de Ad Services usar. AdMob gana. -->
@@ -61,6 +72,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="false"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboard|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- Servicio de rastreo GPS en primer plano -->

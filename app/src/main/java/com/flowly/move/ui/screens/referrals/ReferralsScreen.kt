@@ -116,7 +116,7 @@ fun ReferralsScreen(navController: NavController) {
 
             Text(
                 "Referir amigos",
-                fontSize   = 17.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color      = FlowlyText,
                 modifier   = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
@@ -150,13 +150,9 @@ fun ReferralsScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
-            Text(
-                "TU LINK DE REFERIDO",
-                fontSize      = 10.sp,
-                fontWeight    = FontWeight.SemiBold,
-                color         = Color(0xFF4B6B4B),
-                letterSpacing = 1.sp,
-                modifier      = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            SectionTitle(
+                text     = "Tu link de referido",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
             // Link box

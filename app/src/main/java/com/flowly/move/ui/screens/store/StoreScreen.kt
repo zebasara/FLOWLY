@@ -7,9 +7,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -77,7 +78,7 @@ fun StoreScreen(navController: NavController) {
                         Column {
                             Text(
                                 "Tienda",
-                                fontSize   = 17.sp,
+                                fontSize   = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color      = FlowlyText
                             )
@@ -244,7 +245,7 @@ private fun ProductCard(
                         .align(Alignment.BottomCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color(0xDD0A120A))
+                                colors = listOf(Color.Transparent, FlowlyCard2.copy(alpha = 0.9f))
                             )
                         )
                 )
@@ -313,17 +314,24 @@ private fun ProductCard(
             // ── Botón de acción ──────────────────────────────────────
             when {
                 storeOpen && canAfford -> {
-                    Button(
-                        onClick        = onCanjear,
-                        modifier       = Modifier.fillMaxWidth().height(34.dp),
-                        shape          = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors         = ButtonDefaults.buttonColors(
-                            containerColor = FlowlyAccent,
-                            contentColor   = FlowlyBg
-                        )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFF8AF030), Color(0xFF4CAF10))
+                                )
+                            )
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication        = ripple(color = FlowlyBg),
+                                onClick           = onCanjear
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Canjear", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Canjear", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FlowlyBg)
                     }
                 }
 

@@ -1,14 +1,23 @@
 package com.flowly.move.ui.screens.auth
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RadialGradientShader
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,7 +28,15 @@ import androidx.navigation.NavController
 import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
-import android.app.Activity
+
+private val RegisterTopGlow = object : ShaderBrush() {
+    override fun createShader(size: androidx.compose.ui.geometry.Size) =
+        RadialGradientShader(
+            colors = listOf(Color(0x207EE621), Color.Transparent),
+            center = androidx.compose.ui.geometry.Offset(size.width / 2f, 0f),
+            radius = size.width * 0.7f
+        )
+}
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -34,15 +51,10 @@ fun RegisterScreen(navController: NavController) {
     var provincia by remember { mutableStateOf("") }
     var ciudad    by remember { mutableStateOf("") }
 
-    // Flujo de registro en dos pasos:
-    // 1. register() → Success(isNewUser=true)  → guarda perfil automáticamente
-    // 2. saveProfile() → Success(isNewUser=false) → navega a HOME
-    // Para Google: signInWithGoogle() ya retorna isNewUser según Firebase
     LaunchedEffect(uiState) {
         when (val s = uiState) {
             is AuthUiState.Success -> {
                 if (s.isNewUser) {
-                    // Paso 1: guardar perfil con los datos ya ingresados
                     viewModel.saveProfile(
                         uid       = s.uid,
                         nombre    = nombre,
@@ -51,7 +63,6 @@ fun RegisterScreen(navController: NavController) {
                         ciudad    = ciudad
                     )
                 } else {
-                    // Paso 2: perfil guardado (o usuario existente) → ir a HOME
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                     }
@@ -66,85 +77,115 @@ fun RegisterScreen(navController: NavController) {
             .fillMaxSize()
             .background(FlowlyBg)
     ) {
+        // Glow atmosférico
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp)
+                .background(RegisterTopGlow)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 28.dp)
         ) {
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(56.dp))
 
+            // ── Header con back ──────────────────────────────────────────────
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "←",
-                    fontSize = 20.sp,
-                    color = FlowlyMuted,
+                Box(
                     modifier = Modifier
-                        .clickable { navController.popBackStack() }
-                        .padding(end = 12.dp, top = 4.dp, bottom = 4.dp)
-                )
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(FlowlyCard2)
+                        .clickable { navController.popBackStack() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.ArrowBackIosNew,
+                        contentDescription = "Volver",
+                        tint     = FlowlyTextSub,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                Spacer(Modifier.width(14.dp))
                 Column {
-                    Text("Crear cuenta", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
-                    Text("Empezá a ganar MOVE hoy", fontSize = 12.sp, color = FlowlyMuted)
+                    Text(
+                        "Crear cuenta",
+                        fontSize   = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = FlowlyText
+                    )
+                    Text(
+                        "Empezá a ganar MOVE hoy",
+                        fontSize = 12.sp,
+                        color    = FlowlyMuted
+                    )
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(32.dp))
 
-            FlowlyInput(nombre, { nombre = it }, "Nombre completo", "Ej: Martín González")
-            FlowlyInput(email, { email = it }, "Email", "tumail@gmail.com")
-            FlowlyInput(password, { password = it }, "Contraseña", "Mínimo 8 caracteres", isPassword = true)
-            FlowlyInput(telefono, { telefono = it }, "Teléfono", "+54 9 11 1234-5678")
-            FlowlyInput(provincia, { provincia = it }, "Provincia", "Buenos Aires")
-            FlowlyInput(ciudad, { ciudad = it }, "Ciudad", "Tandil")
+            // ── Formulario ────────────────────────────────────────────────────
+            FlowlyInput(nombre,   { nombre = it },   "NOMBRE COMPLETO", "Ej: Martín González")
+            FlowlyInput(email,    { email = it },    "EMAIL",           "tumail@gmail.com")
+            FlowlyInput(password, { password = it }, "CONTRASEÑA",     "Mínimo 8 caracteres", isPassword = true)
+            FlowlyInput(telefono, { telefono = it }, "TELÉFONO",       "+54 9 11 1234-5678")
+            FlowlyInput(provincia,{ provincia = it },"PROVINCIA",      "Buenos Aires")
+            FlowlyInput(ciudad,   { ciudad = it },   "CIUDAD",         "Tandil")
 
-            FlowlySeparator()
+            // Aviso legal
+            FlowlyCard2 {
+                Text(
+                    "Al registrarte aceptás los Términos. El alias lo configurás después desde tu perfil.",
+                    fontSize   = 12.sp,
+                    color      = FlowlyMuted,
+                    lineHeight = 18.sp
+                )
+            }
 
-            Text(
-                "Al registrarte aceptás los Términos. El alias lo configurás después.",
-                fontSize = 12.sp,
-                color = FlowlyMuted,
-                lineHeight = 18.sp,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            Spacer(Modifier.height(20.dp))
 
             FlowlyPrimaryButton(
-                text = "Crear mi cuenta",
+                text    = "Crear mi cuenta",
                 onClick = { viewModel.register(email, password) },
                 enabled = uiState !is AuthUiState.Loading
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
 
+            // Separador
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                verticalAlignment     = Alignment.CenterVertically,
+                modifier              = Modifier.fillMaxWidth()
             ) {
                 HorizontalDivider(modifier = Modifier.weight(1f), color = FlowlyBorder)
-                Text("o", fontSize = 12.sp, color = FlowlyMuted)
+                Text("ó", fontSize = 12.sp, color = FlowlyMuted)
                 HorizontalDivider(modifier = Modifier.weight(1f), color = FlowlyBorder)
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
             FlowlySecondaryButton(
-                text = "Registrarme con Google",
+                text    = "Registrarme con Google",
                 onClick = { viewModel.signInWithGoogle(context as Activity) }
             )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(40.dp))
         }
 
         // Loading
         if (uiState is AuthUiState.Loading) {
             Box(
-                modifier = Modifier
+                modifier         = Modifier
                     .fillMaxSize()
-                    .background(FlowlyBg.copy(alpha = 0.7f)),
+                    .background(FlowlyBg.copy(alpha = 0.75f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = FlowlyAccent)
+                CircularProgressIndicator(color = FlowlyAccent, strokeWidth = 2.5.dp)
             }
         }
 
@@ -152,12 +193,13 @@ fun RegisterScreen(navController: NavController) {
         if (uiState is AuthUiState.Error) {
             val msg = (uiState as AuthUiState.Error).message
             Snackbar(
-                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+                modifier       = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                 containerColor = FlowlyCard2,
-                contentColor = FlowlyDanger,
+                contentColor   = FlowlyDanger,
+                shape          = RoundedCornerShape(14.dp),
                 action = {
                     TextButton(onClick = { viewModel.clearError() }) {
-                        Text("OK", color = FlowlyAccent, fontSize = 12.sp)
+                        Text("OK", color = FlowlyAccent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             ) { Text(msg, fontSize = 13.sp) }

@@ -384,7 +384,7 @@ private fun AdminSection(
             title,
             fontSize      = 10.sp,
             fontWeight    = FontWeight.SemiBold,
-            color         = Color(0xFF4B6B4B),
+            color         = FlowlyTextSub,
             letterSpacing = 0.8.sp
         )
         content()

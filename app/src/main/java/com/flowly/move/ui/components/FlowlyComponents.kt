@@ -4,16 +4,26 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Redeem
+import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.material3.*
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +37,23 @@ import coil.compose.AsyncImage
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
 
+// ── Gradients (shared) ────────────────────────────────────────
+
+private val ButtonGradient = Brush.horizontalGradient(
+    colors = listOf(Color(0xFF8AF030), FlowlyAccentDark)
+)
+private val ProgressGradient = Brush.horizontalGradient(
+    colors = listOf(Color(0xFF8AF030), FlowlyAccentDark)
+)
+private val CardBorderGradient: Brush
+    get() = Brush.verticalGradient(
+        colors = listOf(FlowlyBorderBright, FlowlyBorder)
+    )
+private val CardBgGradient: Brush
+    get() = Brush.verticalGradient(
+        colors = listOf(FlowlyCard, FlowlyCardBottom)
+    )
+
 // ── Cards ─────────────────────────────────────────────────────
 
 @Composable
@@ -34,9 +61,9 @@ fun FlowlyCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(FlowlyCard, RoundedCornerShape(16.dp))
-            .border(1.dp, FlowlyBorder, RoundedCornerShape(16.dp))
-            .padding(14.dp),
+            .background(CardBgGradient, RoundedCornerShape(20.dp))
+            .border(1.dp, CardBorderGradient, RoundedCornerShape(20.dp))
+            .padding(18.dp),
         content = content
     )
 }
@@ -46,8 +73,8 @@ fun FlowlyCard2(modifier: Modifier = Modifier, content: @Composable ColumnScope.
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(FlowlyCard2, RoundedCornerShape(12.dp))
-            .padding(12.dp),
+            .background(FlowlyCard2, RoundedCornerShape(14.dp))
+            .padding(14.dp),
         content = content
     )
 }
@@ -61,19 +88,31 @@ fun FlowlyPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.fillMaxWidth().height(50.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = FlowlyAccent,
-            contentColor = FlowlyBg,
-            disabledContainerColor = FlowlyCard2,
-            disabledContentColor = FlowlyMuted
-        )
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (enabled) ButtonGradient
+                else Brush.linearGradient(listOf(FlowlyCard2, FlowlyCard2))
+            )
+            .clickable(
+                enabled           = enabled,
+                interactionSource = interactionSource,
+                indication        = ripple(color = Color(0x40000000)),
+                onClick           = onClick
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Text(text, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Text(
+            text,
+            fontWeight    = FontWeight.Bold,
+            fontSize      = 15.sp,
+            color         = if (enabled) FlowlyBg else FlowlyMuted,
+            letterSpacing = 0.2.sp
+        )
     }
 }
 
@@ -85,12 +124,12 @@ fun FlowlySecondaryButton(
     textColor: Color = FlowlyText
 ) {
     OutlinedButton(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(50.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
+        onClick   = onClick,
+        modifier  = modifier.fillMaxWidth().height(52.dp),
+        shape     = RoundedCornerShape(16.dp),
+        colors    = ButtonDefaults.outlinedButtonColors(
             containerColor = FlowlyCard2,
-            contentColor = textColor
+            contentColor   = textColor
         ),
         border = BorderStroke(1.dp, FlowlyBorder)
     ) {
@@ -105,13 +144,13 @@ fun FlowlyOutlineButton(
     modifier: Modifier = Modifier
 ) {
     OutlinedButton(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(50.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = FlowlyAccent),
-        border = BorderStroke(1.5.dp, FlowlyAccent)
+        onClick  = onClick,
+        modifier = modifier.fillMaxWidth().height(52.dp),
+        shape    = RoundedCornerShape(16.dp),
+        colors   = ButtonDefaults.outlinedButtonColors(contentColor = FlowlyAccent),
+        border   = BorderStroke(1.5.dp, FlowlyAccent)
     ) {
-        Text(text, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Text(text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }
 
@@ -130,20 +169,25 @@ fun FlowlyInput(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             label,
-            fontSize = 12.sp,
-            color = FlowlyMuted,
-            modifier = Modifier.padding(bottom = 4.dp)
+            fontSize      = 11.sp,
+            fontWeight    = FontWeight.SemiBold,
+            color         = FlowlyTextSub,
+            letterSpacing = 0.5.sp,
+            modifier      = Modifier.padding(bottom = 6.dp)
         )
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = FlowlyMuted, fontSize = 13.sp) },
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = keyboardOptions,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
+            value                  = value,
+            onValueChange          = onValueChange,
+            placeholder            = {
+                Text(placeholder, color = FlowlyMuted.copy(alpha = 0.7f), fontSize = 14.sp)
+            },
+            visualTransformation   = if (isPassword) PasswordVisualTransformation()
+                                     else VisualTransformation.None,
+            keyboardOptions        = keyboardOptions,
+            modifier               = Modifier.fillMaxWidth(),
+            shape                  = RoundedCornerShape(14.dp),
+            singleLine             = true,
+            colors                 = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor      = FlowlyAccent,
                 unfocusedBorderColor    = FlowlyBorder,
                 focusedContainerColor   = FlowlyCard2,
@@ -153,7 +197,7 @@ fun FlowlyInput(
                 unfocusedTextColor      = FlowlyText
             )
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -169,10 +213,16 @@ fun FlowlyInput(
 fun FlowlyTag(text: String, bg: Color, textColor: Color) {
     Box(
         modifier = Modifier
-            .background(bg, RoundedCornerShape(20.dp))
-            .padding(horizontal = 10.dp, vertical = 3.dp)
+            .background(bg, RoundedCornerShape(100.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
-        Text(text, color = textColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            text,
+            color         = textColor,
+            fontSize      = 11.sp,
+            fontWeight    = FontWeight.SemiBold,
+            letterSpacing = 0.2.sp
+        )
     }
 }
 
@@ -187,15 +237,19 @@ fun FlowlyProgressBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(6.dp)
-            .background(FlowlyCard2, RoundedCornerShape(3.dp))
+            .height(8.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(FlowlyCard3)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .fillMaxHeight()
-                .background(color, RoundedCornerShape(3.dp))
-        )
+        val p = progress.coerceIn(0f, 1f)
+        if (p > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(p)
+                    .fillMaxHeight()
+                    .background(ProgressGradient, RoundedCornerShape(4.dp))
+            )
+        }
     }
 }
 
@@ -205,14 +259,16 @@ fun FlowlyProgressBar(
 fun FlowlyAvatar(
     initials: String,
     photoUrl: String = "",
-    size: Dp = 34.dp,
+    size: Dp = 36.dp,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(FlowlyAccent, FlowlyAccent2))),
+            .background(
+                Brush.linearGradient(listOf(FlowlyAccent, FlowlyAccentDark))
+            ),
         contentAlignment = Alignment.Center
     ) {
         if (photoUrl.isNotBlank()) {
@@ -236,14 +292,13 @@ fun FlowlyAvatar(
 // ── Section title & separator ────────────────────────────────
 
 @Composable
-fun SectionTitle(text: String) {
+fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
-        text.uppercase(),
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = Color(0xFF4B6B4B),
-        letterSpacing = 1.sp,
-        modifier = Modifier.padding(top = 14.dp, bottom = 8.dp)
+        text,
+        fontSize   = 13.sp,
+        fontWeight = FontWeight.Bold,
+        color      = FlowlyTextSub,
+        modifier   = modifier.padding(top = 20.dp, bottom = 10.dp)
     )
 }
 
@@ -255,26 +310,36 @@ fun FlowlySeparator(modifier: Modifier = Modifier) {
 // ── Metric mini card ─────────────────────────────────────────
 
 @Composable
-fun MetricCard(value: String, label: String, valueColor: Color = FlowlyText, modifier: Modifier = Modifier) {
+fun MetricCard(
+    value: String,
+    label: String,
+    valueColor: Color = FlowlyText,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
-            .background(FlowlyCard2, RoundedCornerShape(12.dp))
-            .padding(12.dp),
+            .background(FlowlyCard2, RoundedCornerShape(14.dp))
+            .border(1.dp, FlowlyBorder, RoundedCornerShape(14.dp))
+            .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = valueColor)
-        Text(label, fontSize = 11.sp, color = FlowlyMuted)
+        Text(value, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = valueColor)
+        Text(label, fontSize = 11.sp, color = FlowlyMuted, letterSpacing = 0.2.sp)
     }
 }
 
 // ── Bottom Navigation Bar ─────────────────────────────────────
 
-enum class BottomNavItem(val label: String, val emoji: String, val route: String) {
-    HOME    ("Inicio",   "🏠", Routes.HOME),
-    CANJES  ("Recompensas", "🎁", Routes.CANJES),
-    STORE   ("Tienda",   "🛍️", Routes.STORE),
-    RANKINGS("Rankings", "🏆", Routes.RANKINGS),
-    PROFILE ("Perfil",   "👤", Routes.PROFILE)
+enum class BottomNavItem(
+    val label: String,
+    val icon: ImageVector,
+    val route: String
+) {
+    HOME    ("Inicio",   Icons.Rounded.Home,        Routes.HOME),
+    CANJES  ("Canjes",   Icons.Rounded.Redeem,       Routes.CANJES),
+    STORE   ("Tienda",   Icons.Rounded.Storefront,   Routes.STORE),
+    RANKINGS("Ranking",  Icons.Rounded.EmojiEvents,  Routes.RANKINGS),
+    PROFILE ("Perfil",   Icons.Rounded.Person,       Routes.PROFILE)
 }
 
 @Composable
@@ -286,37 +351,46 @@ fun FlowlyBottomNav(navController: NavController, currentRoute: String?) {
             .border(BorderStroke(1.dp, FlowlyBorder), RoundedCornerShape(0.dp))
     ) {
         Row(
-            modifier = Modifier
+            modifier                = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement   = Arrangement.SpaceAround,
+            verticalAlignment       = Alignment.CenterVertically
         ) {
             BottomNavItem.entries.forEach { item ->
                 val isSelected = currentRoute == item.route
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isSelected) FlowlyAccentGlow else Color.Transparent
+                        )
                         .clickable {
                             navController.navigate(item.route) {
                                 launchSingleTop = true
-                                restoreState = true
+                                restoreState    = true
                             }
                         }
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = 14.dp, vertical = 7.dp)
                 ) {
-                    Text(item.emoji, fontSize = 20.sp)
+                    Icon(
+                        imageVector        = item.icon,
+                        contentDescription = item.label,
+                        tint               = if (isSelected) FlowlyAccent else FlowlyMuted,
+                        modifier           = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.height(3.dp))
                     Text(
                         item.label,
-                        fontSize = 9.sp,
+                        fontSize   = 9.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) FlowlyAccent else FlowlyMuted
+                        color      = if (isSelected) FlowlyAccent else FlowlyMuted
                     )
                 }
             }
         }
-        // Espacio para la barra de navegación del sistema (back/home/recientes)
+        // Espacio para la barra de navegación del sistema
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
@@ -336,14 +410,9 @@ fun FlowlyScaffold(
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
-        containerColor = FlowlyBg,
+        containerColor      = FlowlyBg,
         contentWindowInsets = WindowInsets.statusBars,
-        bottomBar = {
-            Column {
-                if (showBanner) FlowlyBannerAd()
-                FlowlyBottomNav(navController, currentRoute)
-            }
-        }
+        bottomBar           = { FlowlyBottomNav(navController, currentRoute) }
     ) { paddingValues ->
         content(paddingValues)
     }

@@ -64,10 +64,10 @@ fun NotificationsScreen(navController: NavController) {
 
             Text(
                 "Notificaciones",
-                fontSize = 17.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = FlowlyText,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                color      = FlowlyText,
+                modifier   = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
             )
 
             if (isLoading) {
@@ -119,17 +119,20 @@ private fun NotifRow(notif: Notificacion, onTap: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onTap() }
-            .padding(vertical = 12.dp),
+            .background(
+                if (!dimmed) dotColor.copy(alpha = 0.04f) else Color.Transparent
+            )
+            .padding(vertical = 14.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Dot (sin leer = color, leída = transparente)
+        // Indicador de tipo con color
         Box(
             modifier = Modifier
-                .padding(top = 5.dp)
-                .size(8.dp)
+                .padding(top = 3.dp)
+                .size(10.dp)
                 .background(
-                    if (dimmed) Color.Transparent else dotColor,
+                    if (dimmed) FlowlyBorder else dotColor,
                     CircleShape
                 )
         )
@@ -137,22 +140,22 @@ private fun NotifRow(notif: Notificacion, onTap: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 notif.titulo,
-                fontSize = 14.sp,
+                fontSize   = 14.sp,
                 fontWeight = if (dimmed) FontWeight.Normal else FontWeight.SemiBold,
-                color = if (dimmed) FlowlyMuted else FlowlyText
+                color      = if (dimmed) FlowlyMuted else FlowlyText
             )
             Text(
                 notif.cuerpo,
-                fontSize = 12.sp,
-                color = FlowlyMuted,
-                lineHeight = 18.sp,
-                modifier = Modifier.padding(top = 4.dp)
+                fontSize   = 13.sp,
+                color      = if (dimmed) FlowlyMuted.copy(alpha = 0.7f) else FlowlyTextSub,
+                lineHeight = 19.sp,
+                modifier   = Modifier.padding(top = 4.dp)
             )
             Text(
                 timeString,
                 fontSize = 11.sp,
-                color = FlowlyMuted.copy(alpha = 0.6f),
-                modifier = Modifier.padding(top = 4.dp)
+                color    = FlowlyMuted.copy(alpha = 0.5f),
+                modifier = Modifier.padding(top = 6.dp)
             )
         }
     }

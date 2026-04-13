@@ -34,6 +34,12 @@
 # ── AdMob / Google Mobile Ads ────────────────────────────────────────────────
 -keep class com.google.android.gms.ads.** { *; }
 
+# ── Unity Ads ─────────────────────────────────────────────────────────────────
+-keep class com.unity3d.ads.** { *; }
+-keep class com.unity3d.services.** { *; }
+-dontwarn com.unity3d.ads.**
+-dontwarn com.unity3d.services.**
+
 # ── Credential Manager / Google Sign-In ─────────────────────────────────────
 -keep class androidx.credentials.** { *; }
 -keep class com.google.android.libraries.identity.** { *; }

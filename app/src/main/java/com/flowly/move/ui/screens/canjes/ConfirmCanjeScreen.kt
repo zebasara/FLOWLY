@@ -87,7 +87,7 @@ fun ConfirmCanjeScreen(amount: String, move: String, categoria: String = "cash",
                         .clickable { navController.popBackStack() }
                         .padding(end = 12.dp, top = 4.dp, bottom = 4.dp)
                 )
-                Text("Confirmar recompensa", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                Text("Confirmar recompensa", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
             }
 
             Spacer(Modifier.height(20.dp))

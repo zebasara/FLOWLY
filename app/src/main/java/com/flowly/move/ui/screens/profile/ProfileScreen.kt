@@ -144,10 +144,10 @@ fun ProfileScreen(navController: NavController) {
 
             Text(
                 "Mi perfil",
-                fontSize   = 17.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color      = FlowlyText,
-                modifier   = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                modifier   = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
             )
 
             // ── Tarjeta de perfil ────────────────────────────────────────────
@@ -298,7 +298,7 @@ fun ProfileScreen(navController: NavController) {
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .background(
-                            Color(0xFF1A2E1A),
+                            FlowlyCard2,
                             RoundedCornerShape(12.dp)
                         )
                         .border(
@@ -341,7 +341,7 @@ fun ProfileScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .background(androidx.compose.ui.graphics.Color(0xFF1A2E1A), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .background(FlowlyCard2, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                         .border(1.dp, FlowlyAccent.copy(alpha = 0.4f), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                         .clickable { navController.navigate(Routes.ADMIN_STORE) }
@@ -522,11 +522,10 @@ private fun DataRow(label: String, value: String, valueColor: Color = FlowlyMute
 @Composable
 private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
-        text.uppercase(),
-        fontSize      = 10.sp,
-        fontWeight    = FontWeight.SemiBold,
-        color         = Color(0xFF4B6B4B),
-        letterSpacing = 1.sp,
-        modifier      = modifier.padding(top = 14.dp, bottom = 8.dp)
+        text,
+        fontSize   = 13.sp,
+        fontWeight = FontWeight.Bold,
+        color      = FlowlyTextSub,
+        modifier   = modifier.padding(top = 20.dp, bottom = 10.dp)
     )
 }

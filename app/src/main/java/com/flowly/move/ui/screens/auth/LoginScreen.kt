@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RadialGradientShader
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -25,6 +28,16 @@ import com.flowly.move.ui.components.*
 import com.flowly.move.ui.navigation.Routes
 import com.flowly.move.ui.theme.*
 
+// Glow radial para el fondo de auth — firma visual de Flowly
+private val AuthTopGlow = object : ShaderBrush() {
+    override fun createShader(size: androidx.compose.ui.geometry.Size) =
+        RadialGradientShader(
+            colors  = listOf(Color(0x2A7EE621), Color.Transparent),
+            center  = androidx.compose.ui.geometry.Offset(size.width / 2f, 0f),
+            radius  = size.width * 0.75f
+        )
+}
+
 @Composable
 fun LoginScreen(navController: NavController) {
     val context    = LocalContext.current
@@ -35,7 +48,6 @@ fun LoginScreen(navController: NavController) {
     var email    by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // ── Dialog recuperar contraseña ───────────────────────────────
     var showResetDialog by remember { mutableStateOf(false) }
     var resetEmail      by remember { mutableStateOf("") }
     var resetFeedback   by remember { mutableStateOf<String?>(null) }
@@ -56,35 +68,40 @@ fun LoginScreen(navController: NavController) {
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false; resetEmail = ""; resetFeedback = null },
-            containerColor   = com.flowly.move.ui.theme.FlowlyCard,
+            containerColor   = FlowlyCard,
+            shape            = RoundedCornerShape(20.dp),
             title = {
                 Text(
                     "Recuperar contraseña",
                     fontSize   = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color      = com.flowly.move.ui.theme.FlowlyText
+                    color      = FlowlyText
                 )
             },
             text = {
-                Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "Ingresá tu email y te enviamos un link para restablecer tu contraseña.",
-                        fontSize = 13.sp,
-                        color    = com.flowly.move.ui.theme.FlowlyMuted
+                        fontSize   = 13.sp,
+                        color      = FlowlyMuted,
+                        lineHeight = 20.sp
                     )
                     OutlinedTextField(
                         value         = resetEmail,
                         onValueChange = { resetEmail = it; resetFeedback = null },
                         label         = { Text("Email", fontSize = 13.sp) },
                         singleLine    = true,
+                        shape         = RoundedCornerShape(12.dp),
                         colors        = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor   = com.flowly.move.ui.theme.FlowlyAccent,
-                            unfocusedBorderColor = com.flowly.move.ui.theme.FlowlyBorder,
-                            focusedLabelColor    = com.flowly.move.ui.theme.FlowlyAccent,
-                            unfocusedLabelColor  = com.flowly.move.ui.theme.FlowlyMuted,
-                            cursorColor          = com.flowly.move.ui.theme.FlowlyAccent,
-                            focusedTextColor     = com.flowly.move.ui.theme.FlowlyText,
-                            unfocusedTextColor   = com.flowly.move.ui.theme.FlowlyText
+                            focusedBorderColor      = FlowlyAccent,
+                            unfocusedBorderColor    = FlowlyBorder,
+                            focusedLabelColor       = FlowlyAccent,
+                            unfocusedLabelColor     = FlowlyMuted,
+                            cursorColor             = FlowlyAccent,
+                            focusedTextColor        = FlowlyText,
+                            unfocusedTextColor      = FlowlyText,
+                            focusedContainerColor   = FlowlyCard2,
+                            unfocusedContainerColor = FlowlyCard2
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -92,22 +109,20 @@ fun LoginScreen(navController: NavController) {
                         Text(
                             resetFeedback!!,
                             fontSize = 12.sp,
-                            color    = if (resetFeedback!!.startsWith("✅"))
-                                com.flowly.move.ui.theme.FlowlySuccess
-                            else
-                                com.flowly.move.ui.theme.FlowlyDanger
+                            color    = if (resetFeedback!!.startsWith("✅")) FlowlySuccess
+                                       else FlowlyDanger
                         )
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.sendPasswordReset(resetEmail) }) {
-                    Text("Enviar", color = com.flowly.move.ui.theme.FlowlyAccent, fontWeight = FontWeight.SemiBold)
+                    Text("Enviar", color = FlowlyAccent, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false; resetEmail = ""; resetFeedback = null }) {
-                    Text("Cancelar", color = com.flowly.move.ui.theme.FlowlyMuted)
+                    Text("Cancelar", color = FlowlyMuted)
                 }
             }
         )
@@ -135,120 +150,164 @@ fun LoginScreen(navController: NavController) {
             .fillMaxSize()
             .background(FlowlyBg)
     ) {
+        // ── Glow atmosférico superior — firma visual Flowly ────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(340.dp)
+                .background(AuthTopGlow)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(60.dp))
+            Spacer(Modifier.height(72.dp))
+
+            // ── Logo ──────────────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .background(
+                        Brush.linearGradient(listOf(FlowlyAccent, FlowlyAccentDark)),
+                        RoundedCornerShape(20.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("⚡", fontSize = 30.sp)
+            }
+
+            Spacer(Modifier.height(20.dp))
 
             Text(
                 "Flowly",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = FlowlyAccent,
-                letterSpacing = (-1).sp
+                fontSize      = 36.sp,
+                fontWeight    = FontWeight.Bold,
+                color         = FlowlyAccent,
+                letterSpacing = (-1.5).sp
             )
+            Spacer(Modifier.height(6.dp))
             Text(
-                "bienvenido de vuelta",
-                fontSize = 13.sp,
-                color = FlowlyMuted,
-                modifier = Modifier.padding(bottom = 36.dp)
+                "Bienvenido de vuelta",
+                fontSize   = 14.sp,
+                color      = FlowlyMuted,
+                textAlign  = TextAlign.Center
             )
 
+            Spacer(Modifier.height(40.dp))
+
+            // ── Formulario ────────────────────────────────────────────────
             FlowlyInput(
-                value = email,
+                value         = email,
                 onValueChange = { email = it },
-                label = "Email",
-                placeholder = "tumail@gmail.com"
+                label         = "EMAIL",
+                placeholder   = "tumail@gmail.com"
             )
 
             FlowlyInput(
-                value = password,
+                value         = password,
                 onValueChange = { password = it },
-                label = "Contraseña",
-                placeholder = "Tu contraseña",
-                isPassword = true
+                label         = "CONTRASEÑA",
+                placeholder   = "Tu contraseña",
+                isPassword    = true
             )
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "Olvidé mi contraseña",
                     fontSize = 12.sp,
-                    color = FlowlyAccent2,
+                    color    = FlowlyAccent2,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = 20.dp)
+                        .clip(RoundedCornerShape(6.dp))
                         .clickable { showResetDialog = true; resetEmail = email }
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
                 )
             }
 
             FlowlyPrimaryButton(
-                text = "Ingresar",
+                text    = "Ingresar",
                 onClick = { viewModel.login(email, password) },
                 enabled = uiState !is AuthUiState.Loading
             )
 
-            Spacer(Modifier.height(16.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1f), color = FlowlyBorder)
-                Text("  o  ", fontSize = 12.sp, color = FlowlyMuted)
-                HorizontalDivider(modifier = Modifier.weight(1f), color = FlowlyBorder)
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            FlowlySecondaryButton(
-                text = "Continuar con Google",
-                onClick = { viewModel.signInWithGoogle(context as Activity) }
-            )
-
             Spacer(Modifier.height(24.dp))
 
-            Row {
-                Text("¿No tenés cuenta? ", fontSize = 13.sp, color = FlowlyMuted)
+            // ── Separador ─────────────────────────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier          = Modifier.fillMaxWidth()
+            ) {
+                HorizontalDivider(
+                    modifier  = Modifier.weight(1f),
+                    color     = FlowlyBorder
+                )
                 Text(
-                    "Registrarte",
-                    fontSize = 13.sp,
-                    color = FlowlyAccent,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { navController.navigate(Routes.REGISTER) }
+                    "  ó  ",
+                    fontSize = 12.sp,
+                    color    = FlowlyMuted
+                )
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color    = FlowlyBorder
                 )
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(20.dp))
+
+            FlowlySecondaryButton(
+                text    = "Continuar con Google",
+                onClick = { viewModel.signInWithGoogle(context as Activity) }
+            )
+
+            Spacer(Modifier.height(32.dp))
+
+            Row {
+                Text("¿No tenés cuenta? ", fontSize = 14.sp, color = FlowlyMuted)
+                Text(
+                    "Registrarte",
+                    fontSize   = 14.sp,
+                    color      = FlowlyAccent,
+                    fontWeight = FontWeight.Bold,
+                    modifier   = Modifier.clickable { navController.navigate(Routes.REGISTER) }
+                )
+            }
+
+            Spacer(Modifier.height(48.dp))
         }
 
-        // Loading overlay
+        // ── Loading overlay ────────────────────────────────────────────────
         if (uiState is AuthUiState.Loading) {
             Box(
-                modifier = Modifier
+                modifier         = Modifier
                     .fillMaxSize()
-                    .background(FlowlyBg.copy(alpha = 0.7f)),
+                    .background(FlowlyBg.copy(alpha = 0.75f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = FlowlyAccent)
+                CircularProgressIndicator(
+                    color         = FlowlyAccent,
+                    strokeWidth   = 2.5.dp
+                )
             }
         }
 
-        // Error snackbar
+        // ── Error snackbar ─────────────────────────────────────────────────
         if (uiState is AuthUiState.Error) {
             val msg = (uiState as AuthUiState.Error).message
             Snackbar(
-                modifier = Modifier
+                modifier       = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(16.dp),
                 containerColor = FlowlyCard2,
-                contentColor = FlowlyDanger,
+                contentColor   = FlowlyDanger,
+                shape          = RoundedCornerShape(14.dp),
                 action = {
                     TextButton(onClick = { viewModel.clearError() }) {
-                        Text("OK", color = FlowlyAccent, fontSize = 12.sp)
+                        Text("OK", color = FlowlyAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             ) {

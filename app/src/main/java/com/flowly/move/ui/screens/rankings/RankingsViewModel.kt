@@ -107,11 +107,15 @@ class RankingsViewModel(app: Application) : AndroidViewModel(app) {
     fun loadRankings(scope: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repo.getRankings(scope, ciudad, provincia).onSuccess {
-                _rankings.value = it
-                // Si volvemos al tab Argentina, actualizar también el top
-                if (scope == "all") _topArgentina.value = it.firstOrNull()
-            }
+            _rankings.value = emptyList()
+            repo.getRankings(scope, ciudad, provincia)
+                .onSuccess {
+                    _rankings.value = it
+                    if (scope == "all") _topArgentina.value = it.firstOrNull()
+                }
+                .onFailure {
+                    _rankings.value = emptyList()
+                }
             _isLoading.value = false
         }
     }

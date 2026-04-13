@@ -8,26 +8,84 @@ import coil.Coil
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import com.applovin.sdk.AppLovinMediationProvider
+import com.applovin.sdk.AppLovinSdk
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.firebase.FirebaseApp
+import com.unity3d.ads.IUnityAdsInitializationListener
+import com.unity3d.ads.UnityAds
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File
 
 class FlowlyApp : Application() {
+
+    companion object {
+        /** true cuando AppLovin MAX terminó su inicialización. */
+        @Volatile var applovinReady = false
+            private set
+
+        /** true cuando Unity Ads terminó su inicialización. */
+        @Volatile var unityAdsReady = false
+            private set
+
+        const val CHANNEL_TRACKING = "tracking_channel"
+        const val CHANNEL_GENERAL  = "general_channel"
+    }
+
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
         initCoil()
-        // Dispositivos de prueba solo en debug
-        if (BuildConfig.DEBUG) {
-            val requestConfiguration = RequestConfiguration.Builder()
-                .setTestDeviceIds(listOf("D4CD646FEBDFD16F08459FEAD0EE09A1"))
-                .build()
-            MobileAds.setRequestConfiguration(requestConfiguration)
+        // AdMob — inicializar en hilo secundario para no bloquear el primer frame
+        Thread {
+            if (BuildConfig.DEBUG) {
+                MobileAds.setRequestConfiguration(
+                    RequestConfiguration.Builder()
+                        .setTestDeviceIds(listOf("D4CD646FEBDFD16F08459FEAD0EE09A1"))
+                        .build()
+                )
+            }
+            MobileAds.initialize(this)
+        }.start()
+
+        // ── AppLovin MAX — red principal ─────────────────────────────────────
+        if (BuildConfig.USE_APPLOVIN) {
+            AppLovinSdk.getInstance(this).apply {
+                mediationProvider = AppLovinMediationProvider.MAX
+                initializeSdk(AppLovinSdk.SdkInitializationListener {
+                    applovinReady = true
+                    if (BuildConfig.DEBUG) {
+                        android.util.Log.d("AppLovin", "MAX SDK initialized")
+                    }
+                })
+            }
         }
-        MobileAds.initialize(this)
+
+        // ── Pangle (TikTok Ads) — INACTIVO (requiere empresa registrada) ────
+        // SDK no incluido. USE_PANGLE=false en secrets.properties.
+
+        // ── Unity Ads — solo se inicializa cuando está activo ──────────────
+        if (BuildConfig.USE_UNITY_ADS && BuildConfig.UNITY_GAME_ID.isNotBlank()) {
+            UnityAds.initialize(
+                this,
+                BuildConfig.UNITY_GAME_ID,
+                BuildConfig.DEBUG,
+                object : IUnityAdsInitializationListener {
+                    override fun onInitializationComplete() { unityAdsReady = true }
+                    override fun onInitializationFailed(
+                        error: UnityAds.UnityAdsInitializationError?,
+                        message: String?
+                    ) {
+                        if (BuildConfig.DEBUG) {
+                            android.util.Log.w("UnityAds", "Init failed: $error – $message")
+                        }
+                    }
+                }
+            )
+        }
+
         // Canal de notificaciones para el servicio GPS
         createNotificationChannels()
     }
@@ -102,8 +160,4 @@ class FlowlyApp : Application() {
         )
     }
 
-    companion object {
-        const val CHANNEL_TRACKING = "tracking_channel"
-        const val CHANNEL_GENERAL  = "general_channel"
-    }
 }

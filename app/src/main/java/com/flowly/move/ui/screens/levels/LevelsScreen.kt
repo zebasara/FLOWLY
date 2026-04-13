@@ -81,10 +81,10 @@ fun LevelsScreen(navController: NavController) {
 
             Text(
                 "Sistema de niveles",
-                fontSize = 17.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = FlowlyText,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                color      = FlowlyText,
+                modifier   = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
             )
 
             // Tarjeta nivel actual
@@ -113,13 +113,9 @@ fun LevelsScreen(navController: NavController) {
             if (nivelActual < 10) {
                 Spacer(Modifier.height(12.dp))
 
-                Text(
-                    "PARA SUBIR AL NIVEL $nivelSiguiente NECESITÁS LAS DOS",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF4B6B4B),
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                SectionTitle(
+                    text     = "Para subir al nivel $nivelSiguiente necesitás las dos",
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
 
                 // Condición 1: Videos consecutivos
@@ -138,7 +134,7 @@ fun LevelsScreen(navController: NavController) {
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
-                                .background(Color(0xFF1C3A08), RoundedCornerShape(6.dp)),
+                                .background(FlowlyCard2, RoundedCornerShape(6.dp)),
                             contentAlignment = Alignment.Center
                         ) { Text("📺", fontSize = 14.sp) }
 
@@ -192,7 +188,7 @@ fun LevelsScreen(navController: NavController) {
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
-                                .background(Color(0xFF2D1A00), RoundedCornerShape(6.dp)),
+                                .background(FlowlyCard3, RoundedCornerShape(6.dp)),
                             contentAlignment = Alignment.Center
                         ) { Text("💰", fontSize = 14.sp) }
 
@@ -262,12 +258,8 @@ fun LevelsScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
 
-            Text(
-                "TODOS LOS NIVELES",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF4B6B4B),
-                letterSpacing = 1.sp,
+            SectionTitle(
+                text     = "Todos los niveles",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
@@ -304,8 +296,8 @@ private fun NivelRow(nivel: NivelData, isActual: Boolean) {
                 .size(32.dp)
                 .background(
                     when (nivel.estado) {
-                        "done" -> Color(0xFF1C3A08)
-                        "curr" -> Color(0xFF2D1A00)
+                        "done" -> FlowlyCard2
+                        "curr" -> FlowlyCard3
                         else   -> FlowlyCard2
                     },
                     CircleShape

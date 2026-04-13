@@ -107,7 +107,7 @@ fun EditProfileScreen(navController: NavController) {
                 )
                 Text(
                     "Editar perfil",
-                    fontSize   = 17.sp,
+                    fontSize   = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color      = FlowlyText
                 )

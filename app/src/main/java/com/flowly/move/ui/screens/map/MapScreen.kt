@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -187,7 +188,7 @@ fun MapScreen(navController: NavController) {
                         vm.startTracking(context)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = FlowlyAccent)
-                ) { Text("Acepto", color = Color.Black, fontWeight = FontWeight.Bold) }
+                ) { Text("Acepto", color = FlowlyBg, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 TextButton(onClick = { showConsentDialog = false }) {
@@ -294,7 +295,7 @@ fun MapScreen(navController: NavController) {
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 12.dp, end = 12.dp)
-                        .background(Color(0xCC1A1A1A), RoundedCornerShape(20.dp))
+                        .background(FlowlyCard.copy(alpha = 0.85f), RoundedCornerShape(20.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment     = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -304,7 +305,7 @@ fun MapScreen(navController: NavController) {
                             .size(8.dp)
                             .background(FlowlyDanger, CircleShape)
                     )
-                    Text("EN VIVO", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text("EN VIVO", fontSize = 10.sp, color = FlowlyText, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 }
             }
 
@@ -314,7 +315,7 @@ fun MapScreen(navController: NavController) {
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(top = 12.dp, start = 12.dp)
-                        .background(Color(0xCC1A1A1A), RoundedCornerShape(20.dp))
+                        .background(FlowlyCard.copy(alpha = 0.85f), RoundedCornerShape(20.dp))
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -341,7 +342,7 @@ fun MapScreen(navController: NavController) {
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = topPad, end = 10.dp)
-                    .background(Color(0xBB0A120A), RoundedCornerShape(16.dp))
+                    .background(FlowlyCard.copy(alpha = 0.78f), RoundedCornerShape(16.dp))
                     .padding(horizontal = 8.dp, vertical = 8.dp)
                     .widthIn(min = 50.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -389,7 +390,7 @@ fun MapScreen(navController: NavController) {
                                     modifier = Modifier
                                         .size(34.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF182018))
+                                        .background(FlowlyCard2)
                                         .border(1.5.dp, FlowlyAccent, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -413,7 +414,7 @@ fun MapScreen(navController: NavController) {
                     .padding(end = 16.dp, bottom = 200.dp)
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF1C1C1C))
+                    .background(FlowlyCard2)
                     .clickable {
                         myOverlayRef.value?.enableFollowLocation()
                     },
@@ -428,7 +429,7 @@ fun MapScreen(navController: NavController) {
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .background(
-                        color = Color(0xF01C1C1C),
+                        color = FlowlyCard.copy(alpha = 0.94f),
                         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                     )
                     .padding(horizontal = 20.dp, vertical = 16.dp),
@@ -439,7 +440,7 @@ fun MapScreen(navController: NavController) {
                     modifier = Modifier
                         .width(40.dp)
                         .height(4.dp)
-                        .background(Color(0xFF444444), RoundedCornerShape(2.dp))
+                        .background(FlowlyBorderBright, RoundedCornerShape(2.dp))
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -458,7 +459,7 @@ fun MapScreen(navController: NavController) {
                         modifier = Modifier
                             .width(1.dp)
                             .height(40.dp)
-                            .background(Color(0xFF333333))
+                            .background(FlowlyBorder)
                     )
                     MapStatItem(
                         icon  = "⏱",
@@ -469,7 +470,7 @@ fun MapScreen(navController: NavController) {
                         modifier = Modifier
                             .width(1.dp)
                             .height(40.dp)
-                            .background(Color(0xFF333333))
+                            .background(FlowlyBorder)
                     )
                     MapStatItem(
                         icon  = "⚡",
@@ -481,13 +482,15 @@ fun MapScreen(navController: NavController) {
                 Spacer(Modifier.height(16.dp))
 
                 if (stats.isTracking) {
-                    Button(
-                        onClick  = { vm.stopTracking(context) },
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
-                        shape  = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A2A2A))
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(FlowlyCard2)
+                            .border(1.dp, FlowlyDanger.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                            .clickable { vm.stopTracking(context) },
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
                             "⏹  Detener MOVErme",
@@ -497,22 +500,27 @@ fun MapScreen(navController: NavController) {
                         )
                     }
                 } else {
-                    Button(
-                        onClick  = {
-                            if (consentGiven) vm.startTracking(context)
-                            else showConsentDialog = true
-                        },
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
-                        shape  = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = FlowlyAccent)
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFF8AF030), Color(0xFF4CAF10))
+                                )
+                            )
+                            .clickable {
+                                if (consentGiven) vm.startTracking(context)
+                                else showConsentDialog = true
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
                             "▶  Iniciar MOVErme",
                             fontSize   = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color      = Color.Black
+                            color      = FlowlyBg
                         )
                     }
                 }
@@ -579,8 +587,8 @@ private fun MapStatItem(icon: String, label: String, value: String) {
     ) {
         Text(icon, fontSize = 14.sp)
         Spacer(Modifier.height(2.dp))
-        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
-        Text(label, fontSize = 10.sp, color = Color(0xFF888888))
+        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+        Text(label, fontSize = 10.sp, color = FlowlyMuted)
     }
 }
 

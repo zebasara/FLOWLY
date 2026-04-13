@@ -63,10 +63,16 @@ data class User(
     val videoQuizAnsweredVersion: String = "",
     // Metadata
     val createdAt: Long = 0L,
-    val profilePhotoUrl: String = ""
+    val profilePhotoUrl: String = "",
+    // Blockchain — campo opcional, presente solo si el usuario activó retiro cripto
+    val walletAddress: String = ""
 )
 
-/** Iniciales del usuario — calculadas en cliente, no se almacenan en Firestore. */
+/**
+ * Iniciales del usuario — propiedad de extensión calculada en cliente.
+ * NO se almacena en Firestore. Si Firestore tiene un campo "iniciales",
+ * CustomClassMapper lo ignora porque no hay setter en la data class.
+ */
 val User.iniciales: String get() {
     val parts = nombre.trim().split(" ")
     return when {

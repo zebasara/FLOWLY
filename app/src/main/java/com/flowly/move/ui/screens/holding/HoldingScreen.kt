@@ -86,12 +86,12 @@ fun HoldingScreen(navController: NavController) {
             Spacer(Modifier.height(8.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Holding", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
+                    Text("Holding", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FlowlyText)
                     Text("bloqueá y ganá interés", fontSize = 12.sp, color = FlowlyMuted)
                 }
             }
@@ -110,13 +110,9 @@ fun HoldingScreen(navController: NavController) {
             }
 
             // Selector de monto
-            Text(
-                "ELEGÍ CUÁNTO HOLDEAR",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF4B6B4B),
-                letterSpacing = 1.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            SectionTitle(
+                text     = "Elegí cuánto holdear",
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             Row(
@@ -148,13 +144,9 @@ fun HoldingScreen(navController: NavController) {
             }
 
             // Selector de plazo
-            Text(
-                "ELEGÍ EL PLAZO",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF4B6B4B),
-                letterSpacing = 1.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            SectionTitle(
+                text     = "Elegí el plazo",
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             Column(
@@ -217,13 +209,9 @@ fun HoldingScreen(navController: NavController) {
             // Holdings activos
             val activosHoldings = holdings.filter { it.estado == "activo" }
             if (activosHoldings.isNotEmpty()) {
-                Text(
-                    "MIS HOLDINGS ACTIVOS",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF4B6B4B),
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                SectionTitle(
+                    text     = "Mis holdings activos",
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
 
                 activosHoldings.forEach { holding ->

@@ -81,7 +81,7 @@ fun UpdateAvailableDialog(
                 .clip(RoundedCornerShape(32.dp))
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF111E11), Color(0xFF0A120A))
+                        colors = listOf(FlowlyCard, FlowlyBg)
                     )
                 )
                 .border(
@@ -190,7 +190,7 @@ fun UpdateAvailableDialog(
                     shape  = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = FlowlyAccent,
-                        contentColor   = Color(0xFF0A120A)
+                        contentColor   = FlowlyBg
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 6.dp,

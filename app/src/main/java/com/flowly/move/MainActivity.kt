@@ -12,8 +12,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.flowly.move.ui.components.FlowlyBannerAd
 import com.flowly.move.ui.components.UpdateAvailableDialog
 import com.flowly.move.ui.navigation.FlowlyNavGraph
 import com.flowly.move.ui.theme.FlowlyTheme
@@ -88,6 +93,17 @@ class MainActivity : ComponentActivity() {
             FlowlyTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
                     FlowlyNavGraph()
+
+                    // Banner persistente — se crea UNA sola vez y sobrevive la navegación
+                    // Posicionado encima del bottom nav (~80dp) sin tocar el system nav bar
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                            .padding(bottom = 80.dp)
+                    ) {
+                        FlowlyBannerAd()
+                    }
 
                     // Cartel de nueva versión disponible
                     if (showUpdateDialog) {

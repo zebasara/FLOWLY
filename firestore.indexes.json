@@ -15,6 +15,22 @@
         { "fieldPath": "estado",     "order": "ASCENDING"  },
         { "fieldPath": "createdAt",  "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ciudad",         "order": "ASCENDING"  },
+        { "fieldPath": "tokensActuales", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "provincia",      "order": "ASCENDING"  },
+        { "fieldPath": "tokensActuales", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

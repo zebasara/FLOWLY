@@ -146,7 +146,7 @@ fun FondoPremiosScreen(navController: NavController) {
             // Título
             Text(
                 "🏆 Fondo de Beneficios",
-                fontSize   = 17.sp,
+                fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color      = FlowlyText,
                 modifier   = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
@@ -218,9 +218,9 @@ fun FondoPremiosScreen(navController: NavController) {
                     .size(58.dp)
                     .clip(CircleShape)
                     .background(
-                        Brush.linearGradient(listOf(Color(0xFF2A6B0A), Color(0xFF1A4500)))
+                        Brush.linearGradient(listOf(FlowlyAccentDark, Color(0xFF184000)))
                     )
-                    .border(1.5.dp, Color(0xFF7EE621).copy(alpha = 0.8f), CircleShape)
+                    .border(1.5.dp, FlowlyAccent.copy(alpha = 0.8f), CircleShape)
                     .clickable { showComprobantes = true },
                 contentAlignment = Alignment.Center
             ) {
@@ -230,7 +230,7 @@ fun FondoPremiosScreen(navController: NavController) {
                         "Premios",
                         fontSize   = 8.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color      = Color(0xFF7EE621),
+                        color      = FlowlyAccent,
                         lineHeight = 10.sp
                     )
                 }
@@ -244,14 +244,14 @@ fun FondoPremiosScreen(navController: NavController) {
             ModalBottomSheet(
                 onDismissRequest  = { showComprobantes = false },
                 sheetState        = sheetState,
-                containerColor    = Color(0xFF121A0A),
+                containerColor    = FlowlyCard,
                 dragHandle        = {
                     Box(
                         modifier = Modifier
                             .padding(top = 12.dp, bottom = 8.dp)
                             .size(width = 40.dp, height = 4.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(Color(0xFF7EE621).copy(alpha = 0.5f))
+                            .background(FlowlyAccent.copy(alpha = 0.5f))
                     )
                 }
             ) {
@@ -280,7 +280,7 @@ private fun FondoPrincipalCard(
             )
             .border(
                 1.5.dp,
-                Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFF7EE621))),
+                Brush.linearGradient(listOf(Color(0xFFF59E0B), FlowlyAccent)),
                 RoundedCornerShape(20.dp)
             )
             .padding(20.dp)
@@ -788,7 +788,7 @@ private fun ComprobantesCarousel(urls: List<String>) {
                 "🧾 Historial de beneficios",
                 fontSize   = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color      = Color(0xFF7EE621)
+                color      = FlowlyAccent
             )
             Text(
                 "Beneficios entregados a los 10 mejores del mes anterior",
@@ -810,8 +810,8 @@ private fun ComprobantesCarousel(urls: List<String>) {
                     .padding(horizontal = 20.dp)
                     .aspectRatio(3f / 4f)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF1A2200))
-                    .border(1.dp, Color(0xFF7EE621).copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+                    .background(FlowlyCard2)
+                    .border(1.dp, FlowlyAccent.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 val context = LocalContext.current
@@ -830,7 +830,7 @@ private fun ComprobantesCarousel(urls: List<String>) {
                     loading = {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(
-                                color       = Color(0xFF7EE621),
+                                color       = FlowlyAccent,
                                 strokeWidth = 2.dp,
                                 modifier    = Modifier.size(32.dp)
                             )
@@ -854,9 +854,9 @@ private fun ComprobantesCarousel(urls: List<String>) {
                         .clip(CircleShape)
                         .background(
                             if (pagerState.currentPage == index)
-                                Color(0xFF7EE621)
+                                FlowlyAccent
                             else
-                                Color(0xFF7EE621).copy(alpha = 0.3f)
+                                FlowlyAccent.copy(alpha = 0.3f)
                         )
                 )
             }

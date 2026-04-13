@@ -16,6 +16,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // AppLovin MAX SDK repository
+        maven { url = uri("https://artifacts.applovin.com/android") }
     }
 }
 
