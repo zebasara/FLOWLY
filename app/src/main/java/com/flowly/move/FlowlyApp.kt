@@ -56,9 +56,6 @@ class FlowlyApp : Application() {
                 mediationProvider = AppLovinMediationProvider.MAX
                 initializeSdk(AppLovinSdk.SdkInitializationListener {
                     applovinReady = true
-                    if (BuildConfig.DEBUG) {
-                        android.util.Log.d("AppLovin", "MAX SDK initialized")
-                    }
                 })
             }
         }
@@ -77,11 +74,7 @@ class FlowlyApp : Application() {
                     override fun onInitializationFailed(
                         error: UnityAds.UnityAdsInitializationError?,
                         message: String?
-                    ) {
-                        if (BuildConfig.DEBUG) {
-                            android.util.Log.w("UnityAds", "Init failed: $error – $message")
-                        }
-                    }
+                    ) { /* fallo silencioso en producción */ }
                 }
             )
         }

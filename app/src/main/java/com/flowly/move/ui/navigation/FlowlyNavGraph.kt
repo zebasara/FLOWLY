@@ -3,13 +3,18 @@ package com.flowly.move.ui.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.*
 import androidx.navigation.compose.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.flowly.move.data.local.UserPreferences
+import com.flowly.move.ui.theme.FlowlyAccent
 import com.flowly.move.ui.theme.FlowlyBg
 import com.flowly.move.ui.screens.auth.*
 import com.flowly.move.ui.screens.canjes.*
@@ -42,9 +47,32 @@ fun FlowlyNavGraph() {
     val isProfileComplete: Boolean? by prefs.isProfileComplete.collectAsState(initial = null)
     val userId:            String?  by prefs.userId.collectAsState(initial = null)
 
-    // Splash negro mientras DataStore carga (< 50 ms en el 99% de los casos)
-    if (isLoggedIn == null || isOnboardingDone == null || isProfileComplete == null || userId == null) {
-        Box(Modifier.fillMaxSize().background(FlowlyBg))
+    // Timeout de seguridad: si DataStore tarda más de 4s (disco lleno, corrupción,
+    // primer arranque muy lento) forzamos el flujo de login en vez de pantalla negra
+    var loadTimedOut by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(4_000)
+        loadTimedOut = true
+    }
+
+    // Copias locales inmutables para que el smart-cast funcione y evitar !! sobre
+    // delegated properties (que Kotlin no puede smart-castear de forma segura)
+    val loggedIn    = isLoggedIn
+    val onboarding  = isOnboardingDone
+    val profileDone = isProfileComplete
+    val uid         = userId
+
+    // Mostrar spinner mientras DataStore carga (< 50 ms en el 99% de los casos)
+    if (!loadTimedOut && (loggedIn == null || onboarding == null || profileDone == null || uid == null)) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(FlowlyBg),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                color       = FlowlyAccent,
+                strokeWidth = 2.dp
+            )
+        }
         return
     }
 
@@ -52,12 +80,18 @@ fun FlowlyNavGraph() {
     // Firebase Auth restaura su sesión del disco de forma asíncrona — usar currentUser
     // directamente en este punto puede devolver null en arranque frío aunque el usuario
     // esté logueado. DataStore se escribe explícitamente en login/logout, por eso es fiable.
+    // Si hubo timeout, asumir valores seguros: onboarding=visto, loggedIn=false
+    val safeLoggedIn    = loggedIn    ?: false
+    val safeOnboarding  = onboarding  ?: true
+    val safeProfileDone = profileDone ?: false
+    val safeUid         = uid         ?: ""
+
     val startDest = when {
-        !isOnboardingDone!!                               -> Routes.ONBOARDING
-        !isLoggedIn!!                                     -> Routes.LOGIN
-        !isProfileComplete!! && userId!!.isNotBlank()     -> Routes.completeProfile(userId!!)
-        !isProfileComplete!!                              -> Routes.LOGIN
-        else                                              -> Routes.HOME
+        !safeOnboarding                             -> Routes.ONBOARDING
+        !safeLoggedIn                               -> Routes.LOGIN
+        !safeProfileDone && safeUid.isNotBlank()    -> Routes.completeProfile(safeUid)
+        !safeProfileDone                            -> Routes.LOGIN
+        else                                        -> Routes.HOME
     }
 
     val navController = rememberNavController()

@@ -64,11 +64,12 @@ class MainActivity : ComponentActivity() {
     private var showUpdateDialog  by mutableStateOf(false)
     private var updateVersionName  = ""
     private var updateMessage      = ""
-    private var updateChecked      = false   // evita chequear múltiples veces
+    // @Volatile garantiza visibilidad entre hilos: el AuthStateListener puede correr
+    // en un hilo distinto al main thread en algunas versiones del SDK de Firebase.
+    @Volatile private var updateChecked = false
 
     // ── Auth listener ─────────────────────────────────────────────────────
     private val authListener = FirebaseAuth.AuthStateListener { auth ->
-        android.util.Log.d("UpdateCheck", "AuthState: uid=${auth.currentUser?.uid} checked=$updateChecked")
         if (auth.currentUser != null && !updateChecked) {
             updateChecked = true
             checkForUpdates()
@@ -154,34 +155,25 @@ class MainActivity : ComponentActivity() {
      *   message     (string) — ej: "Mejoramos el sistema de puntos..."
      */
     private fun checkForUpdates() {
-        android.util.Log.d("UpdateCheck", "Consultando config/appVersion... localCode=${BuildConfig.VERSION_CODE}")
         Firebase.firestore
             .collection("config")
             .document("appVersion")
             .get()
             .addOnSuccessListener { doc ->
-                android.util.Log.d("UpdateCheck", "Doc existe=${doc.exists()} data=${doc.data}")
                 if (!doc.exists()) return@addOnSuccessListener
 
                 // Normalizamos las claves (trim) por si tienen espacios accidentales en Firestore
                 val data = doc.data?.mapKeys { it.key.trim() } ?: return@addOnSuccessListener
 
-                val remoteCode = (data["versionCode"] as? Long)?.toInt() ?: run {
-                    android.util.Log.w("UpdateCheck", "Campo versionCode no encontrado. Claves: ${data.keys}")
-                    return@addOnSuccessListener
-                }
-                val localCode = BuildConfig.VERSION_CODE
-                android.util.Log.d("UpdateCheck", "remoteCode=$remoteCode localCode=$localCode → mostrarDialog=${remoteCode > localCode}")
-                if (remoteCode > localCode) {
+                val remoteCode = (data["versionCode"] as? Long)?.toInt()
+                    ?: return@addOnSuccessListener
+                if (remoteCode > BuildConfig.VERSION_CODE) {
                     updateVersionName = (data["versionName"] as? String) ?: ""
                     updateMessage     = (data["message"]     as? String) ?: ""
                     showUpdateDialog  = true
-                    android.util.Log.d("UpdateCheck", "¡Mostrando diálogo de actualización!")
                 }
             }
-            .addOnFailureListener { e ->
-                android.util.Log.e("UpdateCheck", "ERROR: ${e.javaClass.simpleName}: ${e.message}")
-            }
+            .addOnFailureListener { /* fallo silencioso: la app sigue funcionando sin el check */ }
     }
 
     /** Abre la app en Play Store para que el usuario actualice */

@@ -202,10 +202,10 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
                             if (referidorUid != null && referidorUid != uid) {
                                 // +200 MOVE al referidor + insignias + notificación
                                 flowlyRepository.registrarReferido(referidorUid)
-                                    .onFailure { android.util.Log.e("Referral", "Error referidor: ${it.message}") }
+                                    .onFailure { /* fallo silencioso: referido no acreditado */ }
                                 // +100 MOVE al nuevo usuario por usar código válido
                                 flowlyRepository.otorgarBonoReferido(uid)
-                                    .onFailure { android.util.Log.e("Referral", "Error bono nuevo: ${it.message}") }
+                                    .onFailure { /* fallo silencioso: bono no acreditado */ }
                             }
                         }
                     }

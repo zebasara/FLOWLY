@@ -1,3 +1,17 @@
+# ── Eliminar todos los logs en release (seguridad + rendimiento) ─────────────
+# Borra en compilación todas las llamadas a android.util.Log.*
+# Garantiza que ningún log llegue a producción, aunque alguna dependencia los use.
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+    public static int wtf(...);
+    public static java.lang.String getStackTraceString(java.lang.Throwable);
+}
+
 # ── Stack traces legibles ────────────────────────────────────────────────────
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
@@ -26,6 +40,12 @@
 -dontwarn okio.**
 -keep class okhttp3.** { *; }
 -keep interface okhttp3.** { *; }
+
+# ── Reglas generadas por R8 (missing_rules.txt) ───────────────────────────────
+-dontwarn com.squareup.okhttp.CipherSuite
+-dontwarn com.squareup.okhttp.ConnectionSpec
+-dontwarn com.squareup.okhttp.TlsVersion
+-dontwarn java.lang.reflect.AnnotatedType
 
 # ── OSMDroid ─────────────────────────────────────────────────────────────────
 -keep class org.osmdroid.** { *; }

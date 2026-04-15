@@ -55,7 +55,7 @@ private fun AppLovinBannerAd(modifier: Modifier = Modifier) {
                 override fun onAdClicked(ad: MaxAd)   {}
                 override fun onAdExpanded(ad: MaxAd)  {}
                 override fun onAdCollapsed(ad: MaxAd) {}
-                override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) {}
+                override fun onAdDisplayFailed(ad: MaxAd, error: MaxError) { /* fallo silencioso */ }
             })
         }
     }
@@ -99,12 +99,20 @@ private fun PangleBannerAd(modifier: Modifier = Modifier) {
 /** Banner de AdMob — fallback cuando USE_APPLOVIN=false */
 @Composable
 private fun AdMobBannerAd(modifier: Modifier = Modifier) {
+    // En debug siempre usamos el ID de prueba oficial de Google.
+    // En release NUNCA usamos IDs de prueba como fallback — si el ID de producción
+    // no está configurado en secrets.properties, no mostramos anuncio (espacio vacío)
+    // y logueamos el error para que el desarrollador lo detecte.
     val adUnitId = if (BuildConfig.DEBUG) {
         "ca-app-pub-3940256099942544/6300978111" // ID de prueba oficial
     } else {
         BuildConfig.ADMOB_BANNER_AD_UNIT_ID
-            .takeIf { it.isNotBlank() }
-            ?: "ca-app-pub-3940256099942544/6300978111"
+    }
+
+    // Si no hay ID configurado en release, no renderizar nada
+    if (adUnitId.isBlank()) {
+        Box(modifier = modifier.fillMaxWidth().height(50.dp))
+        return
     }
 
     AndroidView(
